@@ -1,0 +1,13 @@
+.ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+.swiper-button-next, .swiper-button-prev{
+
+}
+
+.swiper-button-next:after, .swiper-button-prev:after{
+  font-size: 25px !important;
+  font-weight: 700 ;
+}
