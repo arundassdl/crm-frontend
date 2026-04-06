@@ -1,15 +1,14 @@
 let ENV = 'DEV';
 
 export const CONSTANTS = {
-  API_BASE_URL:
-  process.env.NEXT_PUBLIC_FRAPPE_URL || 'http://127.0.0.1:8012',
-// ENV === 'PROD' ? '' : 'https://nsfsmapp.socialdnalabs.com',
+  API_BASE_URL: process.env.NEXT_PUBLIC_FRAPPE_URL || 'https://crmapp.evoq.app',
+  // ENV === 'PROD' ? '' : 'https://nsfsmapp.socialdnalabs.com',
   API_MANDATE_PARAMS: '/api/method/sdl_user_management.sdk.api',
   API_FSM_MANDATE_PARAMS: '/api/method/sdl_fsm.sdk.api',
   API_MANDATE_FRAPPE_PARAMS: '/api/method',
-  VERSION: 'v1',
+  APPCODE: process.env.NEXT_PUBLIC_APP_CODE || 'CRM',
+  VERSION: process.env.NEXT_PUBLIC_VERSION || 'v1',
   ENABLE_APPLY_COUPON_CODE: true,
-  APPCODE: 'FSM',
   ENABLE_STORE_CREDIT: true,
   ENABLE_REDIRECT_FEATURE: true,
   ENABLE_PRODUCT_ENQUIRY_FEATURE: false,
