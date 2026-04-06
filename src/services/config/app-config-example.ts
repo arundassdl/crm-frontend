@@ -2,7 +2,7 @@ let ENV = 'DEV';
 
 export const CONSTANTS = {
   API_BASE_URL:
-    ENV === 'PROD' ? '' : 'http://127.0.0.1:8012',
+  process.env.NEXT_PUBLIC_FRAPPE_URL || 'http://127.0.0.1:8012',
 // ENV === 'PROD' ? '' : 'https://nsfsmapp.socialdnalabs.com',
   API_MANDATE_PARAMS: '/api/method/sdl_user_management.sdk.api',
   API_FSM_MANDATE_PARAMS: '/api/method/sdl_fsm.sdk.api',
