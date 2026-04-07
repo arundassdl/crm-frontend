@@ -1,7 +1,7 @@
 let ENV = 'DEV';
 
 export const CONSTANTS = {
-  API_BASE_URL: process.env.NEXT_PUBLIC_FRAPPE_URL ?? '',
+  API_BASE_URL: process.env.NEXT_PUBLIC_FRAPPE_URL ?? 'https://crmapp.evoq.app',
   // ENV === 'PROD' ? '' : 'https://nsfsmapp.socialdnalabs.com',
   API_MANDATE_PARAMS: '/api/method/sdl_user_management.sdk.api',
   API_FSM_MANDATE_PARAMS: '/api/method/sdl_fsm.sdk.api',

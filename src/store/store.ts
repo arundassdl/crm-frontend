@@ -1,5 +1,5 @@
-import rootReducer from './root-reducer';
 import { configureStore } from '@reduxjs/toolkit';
+import rootReducer from './root-reducer';
 import storage from 'redux-persist/lib/storage';
 import { persistReducer, persistStore } from 'redux-persist';
 // import thunk from 'redux-thunk';
@@ -21,17 +21,24 @@ export const makeStore = () => {
   return configureStore({
     reducer: persistedReducer,
     devTools: process.env.NODE_ENV !== 'production',
-  middleware: [],
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware(),
   })
 }
 
 // Infer the type of makeStore
 export type AppStore = ReturnType<typeof makeStore>
+// export const store = configureStore({
+//   reducer: persistedReducer,
+//   devTools: process.env.NODE_ENV !== 'production',
+//   middleware: [],
+// });
 export const store = configureStore({
-  reducer: persistedReducer,
+  reducer: rootReducer,
   devTools: process.env.NODE_ENV !== 'production',
-  middleware: [],
-});
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware(),
+})
 
 export const persistor = persistStore(store);
 
