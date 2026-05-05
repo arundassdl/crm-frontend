@@ -1,0 +1,97 @@
+{
+  "compilerOptions": {
+    "types": ["node"],
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "noImplicitAny": false,
+    "strictNullChecks": true,
+    "baseUrl": ".",
+    "paths": {
+      // "@/components/*": [
+      //   "components/*"
+      // ],
+      // "@/services/*": [
+      //   "services/*"
+      // ],
+      // "@/store/*": [
+      //   "store/*"
+      // ],
+      // "@/validation/*": [
+      //   "validation/*"
+      // ],
+      // "@/hooks/*": [
+      //   "hooks/*"
+      // ],
+      // "@/styles/*": [
+      //   "styles/*"
+      // ],
+      // "@/cards/*": [
+      //   "cards/*"
+      // ],
+      // "@/interfaces/*": [
+      //   "interfaces/*"
+      // ],
+      // "@/models/*": [
+      //   "models/*"
+      // ],
+      "@/*": [
+        "./src/*"
+      ],
+      "@core/*": [
+        "./src/@core/*"
+      ],
+      "@layouts/*": [
+        "./src/@layouts/*"
+      ],
+      "@menu/*": [
+        "./src/@menu/*"
+      ],
+      "@assets/*": [
+        "./src/assets/*"
+      ],
+      "@components/*": [
+        "./src/components/*"
+      ],
+      "@configs/*": [
+        "./src/configs/*"
+      ],
+      "@views/*": [
+        "./src/views/*"
+      ],
+      "@store/*": [
+        "./src/app/store/*"
+      ],
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "hooks/LanguageHook/multilingual-hook.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

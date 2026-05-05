@@ -1,0 +1,69 @@
+/**
+ * Module Federation — analytics mount (`#analytics-root` + `#analytics-container`).
+ * Host owns VerticalLayout + navbar; remote must not add a second shell (scope only to these ids).
+ * Avoid `100vh` / `overflow: hidden` here — scroll lives in `.analytics-mf-host-viewport` (see component).
+ */
+#analytics-root[data-mf-wrapper='flow'] {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#analytics-root[data-mf-wrapper='contents'] {
+  display: contents;
+}
+
+/* Remote surface: stays under host sticky navbar (`StyledHeader`, z-index: 1201) */
+#analytics-container.analytics-mf-remote-surface {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* Remote dashboards often use column flex + centered children — stretch the first real DOM level */
+#analytics-container.analytics-mf-remote-surface > * {
+  width: 100% !important;
+  max-width: none !important;
+  align-self: stretch !important;
+}
+
+/* MUI <Container maxWidth="…"> inside federated chunks */
+#analytics-container .MuiContainer-root {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+.analytics-mf-legacy-root {
+  position: relative;
+  width: 100%;
+}
+
+/* Force the remote dashboard wrapper to take 100% width, overriding its inner layout constraint. */
+.analytics-layout-content {
+  padding: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+#analytics-root,
+#analytics-container,
+.analytics-mf-host-viewport {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 1 auto;
+}
+
+/* User identified class that is restricting width from the remote app */
+.analytics-shell__width__variable {
+  max-width: 100% !important;
+  width: 100% !important;
+}
