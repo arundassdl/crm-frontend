@@ -1,9 +1,14 @@
 import {
+  ANALYTICS_APP_URL_PUBLIC_HOST_DEFAULT,
   ANALYTICS_MF_ALTERNATE_IDS,
   ANALYTICS_MF_LEGACY_PRIMARY,
   ANALYTICS_MF_REMOTE_NAME,
   ANALYTICS_MF_ROUTE_MODULES,
-} from '@/config/microfrontends/analytics';
+} from '@/config/microfrontends/analytics'
+import {
+  REPORTS_MF_REMOTE_NAME,
+  REPORTS_APP_URL_PUBLIC_HOST_DEFAULT,
+} from '@/config/microfrontends/reports'
 
 let ENV = 'DEV';
 
@@ -59,10 +64,23 @@ export const CONSTANTS = {
   DEFAULT_CURRENCY_VALUE: 'rupee',
   DEFAULT_LANGUAGE: 'en',
   ENABLE_SHOP_ON_AMAZON: false,
-  /** Origin of the analytics remote (Module Federation) */
-  ANALYTICS_APP_URL: 'http://localhost:3012',
+  /**
+   * Base URL of the analytics MF app (see `app-config.ts`). Production default includes `/analytics` path.
+   */
+  ANALYTICS_APP_URL:
+    process.env.NEXT_PUBLIC_ANALYTICS_APP_URL ??
+    (process.env.NODE_ENV === 'production'
+      ? ANALYTICS_APP_URL_PUBLIC_HOST_DEFAULT
+      : 'http://localhost:3012'),
   /** Must match the remote `name: '…'` in ModuleFederationPlugin (see `ANALYTICS_MF_REMOTE_NAME` in microfrontends config). */
   ANALYTICS_MF_REMOTE_NAME,
+  /** Base URL of the reports MF app (origin + Next `basePath`) — mirror `app-config.ts`. */
+  REPORTS_APP_URL:
+    process.env.NEXT_PUBLIC_REPORTS_APP_URL ??
+    (process.env.NODE_ENV === 'production'
+      ? REPORTS_APP_URL_PUBLIC_HOST_DEFAULT
+      : 'http://localhost:3002/reports'),
+  REPORTS_MF_REMOTE_NAME,
   /**
    * Legacy fallback module + alternates: see `config/microfrontends/analytics.ts` to add screens.
    */

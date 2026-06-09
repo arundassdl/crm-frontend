@@ -5,10 +5,59 @@ import axios from 'axios';
 import { CONSTANTS } from '@/services/config/app-config';
 import { redirect, usePathname } from 'next/navigation'
 import { getAllowedRolesForPath } from '@/lib/route-role-utils';
+import { getAnalyticsHostPathRewrite } from '@/lib/mf/analyticsHostPathRewrite';
+import { REPORTS_DETAIL_HREF_PREFIX, REPORTS_EDIT_HREF_PREFIX, REPORTS_LIST_HREF } from '@/lib/reports/reportRoutes';
 
 const notProtectedRoutes = ['/login', '/register', '/forgot-password' , '/update-password'];
+
+/** Normalize pathname for menu-based role checks (exact match only in {@link getAllowedRolesForPath}). */
+function pathForMenuRoleLookup(pathname: string): string {
+  if (
+    pathname === '/reports/create' ||
+    pathname.startsWith('/reports/create/') ||
+    pathname.startsWith('/reports/edit/') ||
+    pathname === '/reports/edit'
+  ) {
+    return '/reports'
+  }
+  if (pathname.startsWith('/reports/details/') || pathname === '/reports/details') {
+    return '/reports'
+  }
+  const detailSlashIdx = pathname.indexOf('/detail/')
+  if (detailSlashIdx !== -1) {
+    return pathname.substring(0, detailSlashIdx)
+  }
+  return pathname
+}
+
 export async function middleware(request: NextRequest, event: NextFetchEvent) {
   try {
+    /** Federated reports listing legacy URLs → CRM canonical detail route. */
+    const legacyDetail = request.nextUrl.pathname.match(/^\/details\/([^/]+)\/?$/)
+    if (legacyDetail) {
+      const url = request.nextUrl.clone()
+      url.pathname = `${REPORTS_DETAIL_HREF_PREFIX}/${legacyDetail[1]}`
+      return NextResponse.redirect(url)
+    }
+
+    /** Standalone reports-app edit path → CRM canonical edit route. */
+    const legacyEdit = request.nextUrl.pathname.match(/^\/edit\/([^/]+)\/?$/)
+    if (legacyEdit) {
+      const url = request.nextUrl.clone()
+      url.pathname = `${REPORTS_EDIT_HREF_PREFIX}/${legacyEdit[1]}`
+      return NextResponse.redirect(url)
+    }
+
+    /** Standalone reports-app listing path → CRM federated listing shell. */
+    if (
+      request.nextUrl.pathname === '/listing' ||
+      request.nextUrl.pathname === '/listing/'
+    ) {
+      const url = request.nextUrl.clone()
+      url.pathname = REPORTS_LIST_HREF
+      return NextResponse.redirect(url)
+    }
+
     if (CONSTANTS.ENABLE_REDIRECT_FEATURE) {
 
 
@@ -33,6 +82,17 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
       if (url.pathname.startsWith('/_next')) {
         return NextResponse.next();
       }
+
+      if (url.pathname.startsWith('/reports/api/')) {
+        return NextResponse.next();
+      }
+
+      const analyticsPathRewrite = getAnalyticsHostPathRewrite(url.pathname);
+      if (analyticsPathRewrite) {
+        url.pathname = analyticsPathRewrite;
+        return NextResponse.redirect(url);
+      }
+
       if ((!isLoggedIn || isLoggedIn == "false") && isNotProtectedRoute === false) {
         // If the user is not authenticated and trying to access a protected route
         url.pathname = '/login';
@@ -54,16 +114,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
 
           // console.log(url.pathname, 'url.pathname');
           const userroleCookie = (request.cookies.get('role_profile')?.value != undefined) ? request.cookies.get('role_profile')?.value : "";
-          // console.log(userroleCookie, 'localstorage middleware');
-          const separator = "/detail";
-          const indexOfSeparator = url.pathname.indexOf(separator);
-          let resultString;
-          if (indexOfSeparator !== -1) {
-            resultString = url.pathname.substring(0, indexOfSeparator);
-          } else {
-            // If the separator is not found, the original string is returned
-            resultString = url.pathname; 
-          }
+          const resultString = pathForMenuRoleLookup(url.pathname)
 
           // console.log(resultString, 'resultString');
 

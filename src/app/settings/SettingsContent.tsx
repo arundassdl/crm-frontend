@@ -18,6 +18,8 @@ const componentMap: Record<string, ComponentType> = {
   'user-users': dynamic(() => import('./UserUsersSettingsPanel')),
   /** `/setup/customization/modules` → key `setup-customization-modules`, URL `?tab=customization&subtab=modules` */
   'setup-customization-modules': dynamic(() => import('./ModuleSettingsPanel')),
+  /** `/setup/layouts` → key `setup-customization-home-page`, URL `?tab=customization&subtab=home-page` */
+  'setup-customization-home-page': dynamic(() => import('./ModuleSettingsPanel')),
   /** `/user/permission` → tab key `user-permission`, URL `?tab=security&subtab=permission` */
   'user-permission': dynamic(() => import('./PermissionSettingsPanel')),
   /** `/user/roles` → tab key `user-roles`, URL `?tab=security&subtab=roles` (+ optional `detail=`) */
@@ -141,6 +143,21 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
         >
           <Component />
         </Suspense>
+      )
+    }
+    if (normalized === 'setup-customization-home-page') {
+      return (
+        <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
+          <Suspense
+            fallback={
+              <div className="relative flex min-h-[240px] flex-1 items-center justify-center bg-[var(--mui-palette-background-paper)] pt-[2.4rem] text-[var(--mui-palette-text-secondary)]">
+                Loading...
+              </div>
+            }
+          >
+            <Component />
+          </Suspense>
+        </div>
       )
     }
     return (

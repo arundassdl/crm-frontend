@@ -1,7 +1,9 @@
 export { AnalyticsFederationRoot } from './AnalyticsFederationRoot'
-export { getResolvedAnalyticsRemoteEntryUrl } from './mfHost'
 export {
   ensureAnalyticsHostInitialized,
+  ensureReportsHostInitialized,
+  getResolvedAnalyticsRemoteEntryUrl,
+  getResolvedReportsRemoteEntryUrl,
   loadRemoteAsDefaultComponent,
   loadRemoteAsDefaultFromCandidates,
   uniqueModuleIds,

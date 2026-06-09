@@ -25,6 +25,12 @@ const LayoutContent = ({ children }: ChildrenType) => {
   /** Module Federation — `src/pages/analytics/*` (Pages Router) must use the “light” main branch, not the Card layout. */
   const isAnalyticsRoute =
     mainColumnFullWidth || pathname.startsWith('/analytics')
+  /** Federated reports shell: `/reports`, `/report/[code]`. */
+  const isReportsAddonRoute =
+    pathname.startsWith('/reports') || pathname.startsWith('/report/')
+  /** Home dashboard should use the full main column width. */
+  const isDashboardHomeRoute = pathname === '/' || pathname === ''
+  const isWideAddonMainChrome = isAnalyticsRoute || isReportsAddonRoute || isDashboardHomeRoute
   /** Settings + user detail under `/user/users/detail/*` use the same embedded chrome; drop Card vertical padding (was 1.25rem 0). */
   const isSettingsRoute =
     pathname.startsWith('/settings') || pathname.startsWith('/user/users/detail')
@@ -33,25 +39,29 @@ const LayoutContent = ({ children }: ChildrenType) => {
     pathname.startsWith(route)
   );
   const hideBreadcrumb =
+    pathname === '/' ||
+    pathname === '' ||
     pathname.includes('/layouts/edit/') ||
     pathname.includes('/layouts/create') ||
     pathname === '/settings' ||
     pathname.startsWith('/settings/') ||
     pathname.startsWith('/user/users/detail') ||
     mainColumnFullWidth ||
-    pathname.startsWith('/analytics')
+    pathname.startsWith('/analytics') ||
+    pathname.startsWith('/reports') ||
+    pathname.startsWith('/report/')
 
   return (
     <StyledMain
-      isContentCompact={isAnalyticsRoute ? false : true}
+      isContentCompact={isWideAddonMainChrome ? false : true}
       className={classnames(
         verticalLayoutClasses.content,
         verticalLayoutClasses.contentCompact,
-        isAnalyticsRoute && 'analytics-layout-content',
+        isWideAddonMainChrome && 'analytics-layout-content',
         'flex-auto is-full min-h-0'
       )}
     >
-      {isNotProtectedRoute || pathname == "/" || isAnalyticsRoute ? (
+      {isNotProtectedRoute || pathname == "/" || isWideAddonMainChrome ? (
         <Box sx={{ width: '100%', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           {!hideBreadcrumb && (
             <NextBreadcrumb

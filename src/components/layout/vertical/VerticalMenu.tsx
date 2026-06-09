@@ -33,7 +33,7 @@ import ArticleIcon from '@mui/icons-material/Article';
 // import EventNoteIcon from '@mui/icons-material/EventNote';
 // import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import { verticalMenuItems } from '@/components/layout/vertical/vertical-menu-config';
-import * as Icons from "@mui/icons-material";
+import { renderMenuIcon } from '@/utils/muiIconByName';
 
 type RenderExpandIconProps = {
   open?: boolean
@@ -197,15 +197,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
    * `{ label: "Settings", submenu: true, path: "/settings", icon: "ri-settings-2-line", ... }`.
    * Those render as `<i className="ri-…">`; other strings fall back to `@mui/icons-material` by name.
    */
-  const getIcon = (iconName?: string) => {
-    const trimmed = iconName?.trim()
-    if (!trimmed) return <ArticleIcon />
-    if (trimmed.startsWith('ri-')) {
-      return <i className={trimmed} />
-    }
-    const IconComponent = Icons[trimmed as keyof typeof Icons]
-    return IconComponent ? <IconComponent fontSize="small" /> : <i className={trimmed} />
-  }
+  const getIcon = (iconName?: string) => renderMenuIcon(iconName)
 
   /** Recursively render a menu item: SubMenu for items with children, MenuItem for leaves. */
   const renderMenuItem = (item: any, keyPrefix = '', depth = 0): ReactNode => {

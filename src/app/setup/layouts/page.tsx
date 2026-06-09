@@ -1,10 +1,8 @@
-import React from 'react';
-import LayoutListing from '@/components/layout-builder/LayoutListing';
+import React from "react";
+import HomePageListing from "@/components/HomePage/HomePageListing";
 
 const LayoutBuilderPage = () => {
-    return (
-        <LayoutListing />
-    );
+  return <HomePageListing />;
 };
 
 export default LayoutBuilderPage;

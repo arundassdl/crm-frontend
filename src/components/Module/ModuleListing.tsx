@@ -33,7 +33,7 @@ import FolderIcon from "@mui/icons-material/Folder";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import SearchIcon from "@mui/icons-material/Search";
-import * as Icons from "@mui/icons-material";
+import { getMuiIconByName } from "@/utils/muiIconByName";
 import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "@/components/Link";
@@ -43,15 +43,13 @@ import { get_array_from_roledoctype } from "@/services/api/roles/roles-api";
 import { showToast } from "@/components/ToastNotificationNew";
 import LayoutPermissionDialog from "@/components/layout-builder/LayoutPermissionDialog";
 import { moduleSettingsDetailPath } from "@/app/settings/utils/moduleSettingsRoutes";
+import { normalizeModuleListingRows } from "@/utils/normalizeModuleListingRows";
 
 const DOCTYPE = "SDL Module Map";
 
 /** Map menu_icon string from API to a MUI icon component, using the same pattern as VerticalMenu. */
 function getMenuIconComponent(iconName?: string) {
-  const name = (iconName || "").trim();
-  if (!name) return FolderIcon;
-  const IconComp = Icons[name as keyof typeof Icons];
-  return IconComp || FolderIcon;
+  return getMuiIconByName(iconName, FolderIcon);
 }
 
 /** Get field value from row (supports both "field" and "SDL Module Map.field" keys) */
@@ -190,7 +188,7 @@ const ModuleListing = ({ embedInSettings = false }: ModuleListingProps) => {
         };
         const res = await axios.get(url, config);
         const message = res?.data?.message ?? [];
-        setRows(Array.isArray(message) ? message : message?.records ?? []);
+        setRows(normalizeModuleListingRows(message));
       } finally {
         setLoading(false);
       }

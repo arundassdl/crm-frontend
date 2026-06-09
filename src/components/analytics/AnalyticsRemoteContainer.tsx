@@ -8,18 +8,21 @@ import {
   useRef,
 } from 'react'
 import { useRouter } from 'next/compat/router'
+import { normalizeDoubledAnalyticsPrefix } from '@/lib/mf/analyticsHostPathRewrite'
 
 /**
  * Maps remote standalone paths (`/dashboard`, `/dashboard/create`) to CRM host routes.
  */
 export function mapRemoteDashboardPathToHost(pathname: string, search: string, hash: string): string {
   if (pathname === '/dashboard' || pathname === '/dashboard/') {
-    return `/analytics/dashboard${search}${hash}`
+    return `${normalizeDoubledAnalyticsPrefix('/analytics/dashboard')}${search}${hash}`
   }
   if (pathname.startsWith('/dashboard/')) {
-    return `/analytics/dashboard${pathname.slice('/dashboard'.length)}${search}${hash}`
+    return `${normalizeDoubledAnalyticsPrefix(
+      `/analytics/dashboard${pathname.slice('/dashboard'.length)}`
+    )}${search}${hash}`
   }
-  return `${pathname}${search}${hash}`
+  return `${normalizeDoubledAnalyticsPrefix(pathname)}${search}${hash}`
 }
 
 type Props = { children: ReactNode }
@@ -58,7 +61,6 @@ export function AnalyticsRemoteContainer({ children }: Props) {
       if (url.origin !== window.location.origin) return
 
       const { pathname, search, hash } = url
-      const full = `${pathname}${search}${hash}`
 
       const go = (href: string) => {
         if (router) {
@@ -78,7 +80,8 @@ export function AnalyticsRemoteContainer({ children }: Props) {
       if (pathname.startsWith('/analytics/')) {
         e.preventDefault()
         e.stopPropagation()
-        go(full)
+        const collapsed = normalizeDoubledAnalyticsPrefix(pathname)
+        go(`${collapsed}${search}${hash}`)
         return
       }
     },

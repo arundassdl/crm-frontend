@@ -53,6 +53,7 @@ export default function SettingsPageClient() {
   const tabFromUrl = parsed.tab
   const subtabFromUrl = parsed.subtab
   const detailFromUrl = parsed.detail
+  const viewFromUrl = safeParams.get('view')
 
   /** `?tab=general%26subtab%3Dusers` → replace with `?tab=general&subtab=users` */
   useLayoutEffect(() => {
@@ -87,6 +88,14 @@ export default function SettingsPageClient() {
   const isRolesSettingsUrl = norm(tabFromUrl) === 'security' && norm(subtabFromUrl) === 'roles'
   const isPermissionSettingsUrl = norm(tabFromUrl) === 'security' && norm(subtabFromUrl) === 'permission'
   const isCustomizationSettingsUrl = norm(tabFromUrl) === 'customization'
+  const isCustomizationHomePageUrl =
+    norm(tabFromUrl) === 'customization' && norm(subtabFromUrl) === 'home-page'
+  const isHomePageBuilderUrl =
+    isCustomizationHomePageUrl &&
+    (viewFromUrl === 'dashboard-create' ||
+      viewFromUrl === 'dashboard-edit' ||
+      viewFromUrl === 'home-create' ||
+      viewFromUrl === 'home-edit')
 
   useEffect(() => {
     if (menu.length === 0) {
@@ -96,6 +105,8 @@ export default function SettingsPageClient() {
         setActiveTab('user-roles')
       } else if (isPermissionSettingsUrl) {
         setActiveTab('user-permission')
+      } else if (isCustomizationHomePageUrl || isHomePageBuilderUrl) {
+        setActiveTab('setup-customization-home-page')
       } else if (isCustomizationSettingsUrl) {
         setActiveTab('setup-customization-modules')
       }
@@ -172,6 +183,16 @@ export default function SettingsPageClient() {
       if (!q.get('subtab')) {
         q.set('subtab', 'modules')
       }
+      router.replace(`/settings?${q.toString()}`, { scroll: false })
+      return
+    }
+
+    /** Legacy `/settings?tab=setup-customization-home-page` or `/settings?tab=setup-layouts` */
+    if (tabFromUrl === 'setup-customization-home-page' || tabFromUrl === 'setup-layouts') {
+      setActiveTab('setup-customization-home-page')
+      const q = new URLSearchParams(searchKey)
+      q.set('tab', 'customization')
+      q.set('subtab', 'home-page')
       router.replace(`/settings?${q.toString()}`, { scroll: false })
       return
     }
@@ -282,11 +303,20 @@ export default function SettingsPageClient() {
     }
 
     if (norm(tabFromUrl) === 'customization') {
+      const subNorm = norm(subtabFromUrl)
       const keyFromMenu = findMenuKeyBySettingsUrl(menu, tabFromUrl, subtabFromUrl)
-      setActiveTab(keyFromMenu ?? 'setup-customization-modules')
-      if (!subtabFromUrl) {
-        router.replace('/settings?tab=customization&subtab=modules', { scroll: false })
+      if (subNorm === 'home-page') {
+        setActiveTab(keyFromMenu ?? 'setup-customization-home-page')
+        return
       }
+      if (subNorm === 'modules' || !subtabFromUrl) {
+        setActiveTab(keyFromMenu ?? 'setup-customization-modules')
+        if (!subtabFromUrl) {
+          router.replace('/settings?tab=customization&subtab=modules', { scroll: false })
+        }
+        return
+      }
+      setActiveTab(keyFromMenu ?? 'setup-customization-modules')
       return
     }
 
@@ -300,6 +330,8 @@ export default function SettingsPageClient() {
     router.replace(settingsUrlForMenuItem(first), { scroll: false })
   }, [
     detailFromUrl,
+    isCustomizationHomePageUrl,
+    isHomePageBuilderUrl,
     isPermissionSettingsUrl,
     isRolesSettingsUrl,
     isUsersSettingsUrl,
@@ -325,7 +357,9 @@ export default function SettingsPageClient() {
     !isUsersSettingsUrl &&
     !isRolesSettingsUrl &&
     !isPermissionSettingsUrl &&
-    !isCustomizationSettingsUrl
+    !isCustomizationSettingsUrl &&
+    !isCustomizationHomePageUrl &&
+    !isHomePageBuilderUrl
       ? 'empty'
       : !activeTab
         ? 'tab-loading'
@@ -338,7 +372,9 @@ export default function SettingsPageClient() {
       <div
         className={
           mainState === 'ready' &&
-          (activeTab === 'user-users' || activeTab === 'user-roles')
+          (activeTab === 'user-users' ||
+            activeTab === 'user-roles' ||
+            isHomePageBuilderUrl)
             ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--mui-palette-background-default)]'
             : 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[var(--mui-palette-background-default)]'
         }

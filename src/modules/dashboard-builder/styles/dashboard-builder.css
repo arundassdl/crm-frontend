@@ -1,0 +1,36 @@
+@import 'react-grid-layout/css/styles.css';
+@import 'ag-grid-community/styles/ag-grid.css';
+@import 'ag-grid-community/styles/ag-theme-alpine.css';
+
+.dashboard-view-grid,
+.dashboard-view-grid .react-grid-layout {
+  width: 100% !important;
+  max-width: 100%;
+}
+
+.dashboard-view-grid .react-grid-item {
+  transition: width 200ms ease, height 200ms ease, transform 200ms ease;
+}
+
+.dashboard-builder-grid .react-grid-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-builder-grid .react-grid-item > div {
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-builder-grid .react-grid-item.react-grid-placeholder {
+  background: rgb(37 99 235 / 0.12);
+  border-radius: 0.5rem;
+  opacity: 1;
+}
+
+.dashboard-builder-grid .react-grid-item > .react-resizable-handle::after {
+  border-color: rgb(148 163 184);
+}

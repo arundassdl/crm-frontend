@@ -1,5 +1,6 @@
 "use client";
-import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage'
+import { readAccessTokenDataParsed } from '@/utils/accessTokenDataStorage'
+import { normalizeModuleListingRows } from '@/utils/normalizeModuleListingRows'
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -162,12 +163,7 @@ const LayoutListing: React.FC<LayoutListingProps> = ({
     const module = "SDL Layout";
     const module_name = "Layouts";
 
-    const [userToken, setUserToken] = useState<any>(() => {
-        const initialValue = JSON.parse(
-            readAccessTokenDataRaw()
-        );
-        return initialValue || "";
-    });
+    const [userToken, setUserToken] = useState<any>(() => readAccessTokenDataParsed() || "");
 
     // Left sidebar: modules from get_modulelisting API
     const [moduleRows, setModuleRows] = useState<any[]>([]);
@@ -248,7 +244,7 @@ const LayoutListing: React.FC<LayoutListingProps> = ({
                     timeout: 5000,
                 });
                 const message = res?.data?.message ?? [];
-                const rows = Array.isArray(message) ? message : message?.records ?? [];
+                const rows = normalizeModuleListingRows(message);
                 setModuleRows(rows);
                 // If we have moduleFilterName and no selection yet, or first load, select it
                 if (moduleFilterName && !selectedModule) {

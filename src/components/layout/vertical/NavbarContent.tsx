@@ -69,8 +69,12 @@ const NavbarContent = () => {
       setIsClicked(true)
       return
     }
-    /** Module Federation analytics lives under `pages/` — App Router `usePathname` is empty there without this hook. */
-    if (pathname?.startsWith('/analytics')) {
+    /** Federated addons: analytics (`pages/`) + reports (App Router). */
+    if (
+      pathname?.startsWith('/analytics') ||
+      pathname?.startsWith('/reports') ||
+      pathname?.startsWith('/report/')
+    ) {
       toggleVerticalNav(false)
       setIsClicked(true)
     }

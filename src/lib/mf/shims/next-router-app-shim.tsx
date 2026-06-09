@@ -20,6 +20,7 @@ import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 import type { NextRouter } from 'next/dist/shared/lib/router/router'
 import type { SingletonRouter } from 'next/dist/client/router'
+import { REPORTS_DETAIL_HREF_PREFIX, REPORTS_EDIT_HREF_PREFIX, REPORTS_LIST_HREF } from '@/lib/reports/reportRoutes'
 
 const eventsStub: NextRouter['events'] = {
   on: () => () => undefined,
@@ -45,20 +46,77 @@ function searchParamsToQuery(
   return q
 }
 
+/** Rewrites standalone reports-app paths used inside federated bundles to CRM-owned routes. */
+function rewriteReportsRemoteNavigationHref(href: string): string {
+  const cut = href.search(/[?#]/)
+  const pathPart = cut === -1 ? href : href.slice(0, cut)
+  const rest = cut === -1 ? '' : href.slice(cut)
+
+  const detailMatch = pathPart.match(/^\/details\/([^/]+)\/?$/)
+  if (detailMatch) {
+    return `${REPORTS_DETAIL_HREF_PREFIX}/${detailMatch[1]}${rest}`
+  }
+
+  const editMatch = pathPart.match(/^\/edit\/([^/]+)\/?$/)
+  if (editMatch) {
+    return `${REPORTS_EDIT_HREF_PREFIX}/${editMatch[1]}${rest}`
+  }
+
+  if (pathPart === '/listing' || pathPart === '/listing/') {
+    return `${REPORTS_LIST_HREF}${rest}`
+  }
+
+  return href
+}
+
+/**
+ * Presents CRM-owned report URLs to federated remotes as standalone-app paths + query keys
+ * (`/edit/:id`, `/details/:name`, `/listing`) so Pages-router reads inside remotes still resolve.
+ */
+function normalizeReportsRemoteRouterState(
+  pathname: string,
+  searchParams: ReturnType<typeof useSearchParams>
+): { pathname: string; query: Record<string, string | string[] | undefined> } {
+  const query = searchParamsToQuery(searchParams)
+
+  const editMatch = pathname.match(/^\/reports\/edit\/([^/]+)\/?$/)
+  if (editMatch) {
+    return {
+      pathname: `/edit/${editMatch[1]}`,
+      query: { ...query, id: editMatch[1] },
+    }
+  }
+
+  const detailMatch = pathname.match(/^\/reports\/details\/([^/]+)\/?$/)
+  if (detailMatch) {
+    return {
+      pathname: `/details/${detailMatch[1]}`,
+      query: { ...query, name: detailMatch[1] },
+    }
+  }
+
+  if (pathname === '/reports' || pathname === '/reports/') {
+    return { pathname: '/listing', query }
+  }
+
+  return { pathname, query }
+}
+
 function syntheticFromApp(
   app: AppRouterInstance,
   pathname: string,
   searchParams: ReturnType<typeof useSearchParams>
 ): NextRouter {
-  const query = searchParamsToQuery(searchParams)
+  const normalized = normalizeReportsRemoteRouterState(pathname, searchParams)
+  const query = normalized.query
   const asPath = (() => {
     const s = searchParams?.toString()
-    return s ? `${pathname}?${s}` : pathname
+    return s ? `${normalized.pathname}?${s}` : normalized.pathname
   })()
 
   return {
-    route: pathname,
-    pathname,
+    route: normalized.pathname,
+    pathname: normalized.pathname,
     query,
     asPath,
     isFallback: false,
@@ -72,12 +130,14 @@ function syntheticFromApp(
     domainLocales: undefined,
     events: eventsStub,
     push: ((url: unknown, _as?: unknown, _opts?: unknown) => {
-      const href = typeof url === 'string' ? url : '/'
+      const href =
+        typeof url === 'string' ? rewriteReportsRemoteNavigationHref(url) : '/'
       app.push(href)
       return Promise.resolve(true)
     }) as NextRouter['push'],
     replace: ((url: unknown, _as?: unknown, _opts?: unknown) => {
-      const href = typeof url === 'string' ? url : '/'
+      const href =
+        typeof url === 'string' ? rewriteReportsRemoteNavigationHref(url) : '/'
       app.replace(href)
       return Promise.resolve(true)
     }) as NextRouter['replace'],
@@ -97,15 +157,16 @@ function syntheticFromWindow(
   pathname: string,
   searchParams: ReturnType<typeof useSearchParams>
 ): NextRouter {
-  const query = searchParamsToQuery(searchParams)
+  const normalized = normalizeReportsRemoteRouterState(pathname, searchParams)
+  const query = normalized.query
   const asPath = (() => {
     const s = searchParams?.toString()
-    return s ? `${pathname}?${s}` : pathname
+    return s ? `${normalized.pathname}?${s}` : normalized.pathname
   })()
 
   return {
-    route: pathname,
-    pathname,
+    route: normalized.pathname,
+    pathname: normalized.pathname,
     query,
     asPath,
     isFallback: false,
@@ -119,11 +180,13 @@ function syntheticFromWindow(
     domainLocales: undefined,
     events: eventsStub,
     push: (url: string) => {
-      if (typeof window !== 'undefined') window.location.assign(url)
+      const href = rewriteReportsRemoteNavigationHref(url)
+      if (typeof window !== 'undefined') window.location.assign(href)
       return Promise.resolve(true)
     },
     replace: (url: string) => {
-      if (typeof window !== 'undefined') window.location.replace(url)
+      const href = rewriteReportsRemoteNavigationHref(url)
+      if (typeof window !== 'undefined') window.location.replace(href)
       return Promise.resolve(true)
     },
     reload: () => {
@@ -184,14 +247,16 @@ const RouterDefault = {
     return eventsStub
   },
   push: (url: string) => {
+    const href = rewriteReportsRemoteNavigationHref(url)
     if (typeof window !== 'undefined') {
-      window.location.assign(url)
+      window.location.assign(href)
     }
     return Promise.resolve(true)
   },
   replace: (url: string) => {
+    const href = rewriteReportsRemoteNavigationHref(url)
     if (typeof window !== 'undefined') {
-      window.location.replace(url)
+      window.location.replace(href)
     }
     return Promise.resolve(true)
   },

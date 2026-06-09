@@ -73,7 +73,7 @@ function resolveGeneralSettingsLeaf(pathRaw: string, label: string): 'personal' 
  * fall back to label so the sidebar highlights correctly even when the menu API returns non-canonical
  * paths (e.g. `#`, `/users` without `/user/` prefix, trailing slashes, or case differences).
  */
-type SettingsLeafKind = 'users' | 'roles' | 'permission' | 'modules'
+type SettingsLeafKind = 'users' | 'roles' | 'permission' | 'modules' | 'home-page'
 
 function resolveSubtabSettingsLeaf(
   pathRaw: string,
@@ -121,6 +121,15 @@ function resolveSubtabSettingsLeaf(
   ) {
     return 'modules'
   }
+  if (
+    npLower === '/setup/layouts' ||
+    npLower === '/setup/customization/home-page' ||
+    npLower === '/customization/home-page' ||
+    endsWithIc('/setup/layouts') ||
+    endsWithIc('/customization/home-page')
+  ) {
+    return 'home-page'
+  }
 
   const lb = label.trim().toLowerCase()
   const plb = (parentLabel ?? '').trim().toLowerCase()
@@ -133,6 +142,7 @@ function resolveSubtabSettingsLeaf(
     if (lb === 'roles' || lb === 'role' || lb === 'role list') return 'roles'
     if (lb === 'permission' || lb === 'permissions' || lb === 'access permission') return 'permission'
     if (lb === 'modules' || lb === 'module list' || lb === 'customization modules') return 'modules'
+    if (lb.includes('home page') || lb === 'customization home page') return 'home-page'
   }
 
   /**
@@ -156,6 +166,7 @@ function resolveSubtabSettingsLeaf(
   }
 
   if (lb === 'modules' || lb === 'module list' || lb === 'customization modules') return 'modules'
+  if (lb.includes('home page') || lb === 'customization home page') return 'home-page'
 
   return null
 }
@@ -169,8 +180,9 @@ export function pathToTabKey(path: string): string {
   return np.replace(/^\//, '').replace(/\//g, '-')
 }
 
+/** API may omit `submenu`; nested items are defined by non-empty `children` (same as VerticalMenu). */
 const hasSubmenu = (node: MenuNode) =>
-  Boolean(node.submenu && Array.isArray(node.children) && node.children.length > 0)
+  Array.isArray(node.children) && node.children.length > 0
 
 /** Match VerticalMenu `filterItemByRoles` so the settings sidebar matches the nav. */
 function filterItemByRoles(item: MenuNode, roles: string[]): MenuNode | null {
@@ -289,6 +301,19 @@ function collectLeafItems(nodes: MenuNode[], parentLabel?: string, parentGroupIc
           icon: pickMenuNodeIcon(node),
           settingsTab: 'customization',
           settingsSubtab: 'modules'
+        })
+        continue
+      }
+      if (subtabLeaf === 'home-page') {
+        out.push({
+          label: node.label,
+          key: 'setup-customization-home-page',
+          path: p,
+          group: parentLabel,
+          groupIcon: parentGroupIcon,
+          icon: pickMenuNodeIcon(node),
+          settingsTab: 'customization',
+          settingsSubtab: 'home-page'
         })
         continue
       }

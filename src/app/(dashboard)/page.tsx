@@ -1,24 +1,20 @@
 'use client'
-// MUI Imports
-import Grid from '@mui/material/Grid'
 
-// Components Imports
-import React, { useEffect, useState } from "react";
-import { redirect, usePathname } from 'next/navigation'
+import Box from '@mui/material/Box'
 
 import DashboardPage from '@/components/Dashboard/DashboardPage'
 
 const DashboardAnalytics = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const pathname = usePathname();
-
-  const [userData, setuserData] = useState<any>(() => {    
-    const initialValue = (localStorage.getItem('userProfileData') != 'undefined')?JSON.parse(localStorage.getItem('userProfileData') || '{}'):'{}';
-    return initialValue || "";
-  });
-
   return (
-    <Grid container spacing={6} p={7}>
+    <Box
+      sx={{
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        px: { xs: 2, sm: 3, md: 4 },
+        py: { xs: 2, sm: 2.5, md: 3 },
+      }}
+    >
       <DashboardPage />
       {/* {userData?.userType == "Dealer" || userData?.userType == "Sub Dealer" ? (
         <Grid item xs={12} md={7}>
@@ -88,7 +84,7 @@ const DashboardAnalytics = () => {
       <Grid item xs={12}>
         <Table />
       </Grid> */}
-    </Grid>
+    </Box>
   )
 }
 

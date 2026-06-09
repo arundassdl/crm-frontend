@@ -1,20 +1,30 @@
 /**
- * Module Federation (analytics) — **runtime only** on this host.
+ * Module Federation — **runtime only** on this host (see `src/lib/mf/mfHost.ts`).
+ * Do **not** add webpack `ModuleFederationPlugin` remotes here: sharing React/react-dom on the host
+ * conflicts with the App Router (`React.use`) and can break hydration.
  *
- * A client `ModuleFederationPlugin` with `shared: { react, react-dom }` breaks the App Router:
- * Next expects a single React instance with `React.use`; federated sharing can replace resolution
- * and cause `(0, _react.use) is not a function` and hydration failures.
- *
- * Remotes load via `@module-federation/runtime` (`loadRemote` in `src/lib/mf/mfHost.ts`).
- * Analytics URLs live under `src/pages/analytics/*` (Pages Router) + `src/pages/_app.tsx`.
+ * Equivalent classic webpack `remotes` map:
+ * ```js
+ * remotes: {
+ *   analytics: 'analytics@<ANALYTICS_ORIGIN>/_next/static/chunks/remoteEntry.js',
+ *   reports: 'reports@http://localhost:3002/_next/static/chunks/remoteEntry.js',
+ * }
+ * ```
+ * Override origins with `NEXT_PUBLIC_ANALYTICS_APP_URL`, `NEXT_PUBLIC_REPORTS_APP_URL`, or full entry URLs.
  */
 const path = require('path')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    optimizePackageImports: ['@mui/material', '@mui/icons-material', '@mui/lab'],
+  },
   env: {
     NEXT_PUBLIC_ANALYTICS_MF_BUILD_BUST:
       process.env.NEXT_PUBLIC_ANALYTICS_MF_CACHE_BUST ||
+      String(Date.now()),
+    NEXT_PUBLIC_REPORTS_MF_BUILD_BUST:
+      process.env.NEXT_PUBLIC_REPORTS_MF_CACHE_BUST ||
       String(Date.now()),
   },
   webpack: (config, { dev, isServer }) => {
@@ -74,6 +84,28 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/listing',
+        destination: '/reports',
+        permanent: false,
+      },
+      /** Legacy reports-app paths → CRM canonical route (keep in sync with `REPORTS_DETAIL_HREF_PREFIX` in `src/lib/reports/reportRoutes.ts`). */
+      {
+        source: '/details/:name',
+        destination: '/reports/details/:name',
+        permanent: false,
+      },
+      /** Standalone reports-app edit path → CRM canonical edit route. */
+      {
+        source: '/edit/:code',
+        destination: '/reports/edit/:code',
+        permanent: false,
+      },
+      {
+        source: '/analytics/analytics/:path*',
+        destination: '/analytics/:path*',
+        permanent: false,
+      },
+      {
         source: '/dashboard',
         destination: '/analytics/dashboard',
         permanent: false,
@@ -82,6 +114,30 @@ const nextConfig = {
         source: '/dashboard/create',
         destination: '/analytics/dashboard/create',
         permanent: false,
+      },
+    ]
+  },
+
+  /**
+   * Remote MF chunks and API routes are sometimes resolved against the CRM origin
+   * (`/reports/_next/…`, `/reports/api/…`). Proxy those to the reports app
+   * (`NEXT_PUBLIC_REPORTS_APP_URL`, default dev `http://localhost:3014/reports`).
+   */
+  async rewrites() {
+    const reportsBase = (
+      process.env.NEXT_PUBLIC_REPORTS_APP_URL ||
+      (process.env.NODE_ENV === 'production'
+        ? 'https://devtest.socialdnalabs.com/reports'
+        : 'http://localhost:3014/reports')
+    ).replace(/\/$/, '')
+    return [
+      {
+        source: '/reports/_next/:path*',
+        destination: `${reportsBase}/_next/:path*`,
+      },
+      {
+        source: '/reports/api/:path*',
+        destination: `${reportsBase}/api/:path*`,
       },
     ]
   },

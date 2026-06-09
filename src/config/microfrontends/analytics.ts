@@ -1,7 +1,10 @@
 /**
- * Default remote entry **path** (after origin). With dev on :3001 as
- * `http://localhost:3001` the full URL is
- * `http://localhost:3001/_next/static/chunks/remoteEntry.js` (overridable via `NEXT_PUBLIC_ANALYTICS_MF_ENTRY`).
+ * Default remote entry **path** (after `ANALYTICS_APP_URL` base, which may include a path prefix).
+ * Example base `https://host/analytics` → `https://host/analytics/_next/static/chunks/remoteEntry.js`.
+ * Override the full entry with `NEXT_PUBLIC_ANALYTICS_MF_ENTRY` if needed.
+ * The analytics dev server may run on another port (e.g. 3012); if the remote was built with a
+ * different `assetPrefix`, the host rewrites stale chunk `script`/`link` URLs in development (see
+ * `mfHost.ts`) or set `NEXT_PUBLIC_ANALYTICS_MF_STALE_CHUNK_ORIGIN`.
  *
  * **Host-only layout:** The CRM **VerticalLayout** provides navbar + sidebar. The analytics remote
  * should expose **routed page content only** (no second `AppBar` / shell). Use `AnalyticsRemoteViewport`
@@ -21,6 +24,13 @@ export const ANALYTICS_REMOTE_DEFAULT_ENTRY_PATH =
  * `init({ remotes: [{ name, entry }] } )` name — must match the **remote** MF `name: 'analytics'`.
  */
 export const ANALYTICS_MF_REMOTE_NAME = 'analytics' as const
+
+/**
+ * Public analytics MF base when the CRM tab is not on `localhost` (`mfHost` coercion + chunk rewrite).
+ * Override with `NEXT_PUBLIC_ANALYTICS_APP_URL`.
+ */
+export const ANALYTICS_APP_URL_PUBLIC_HOST_DEFAULT =
+  'https://devtest.socialdnalabs.com/analytics' as const
 
 /**
  * Analytics remote (Module Federation) — exposed module ids and fallbacks.

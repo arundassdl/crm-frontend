@@ -33,8 +33,8 @@ function SettingsBrandIcon({ iconClass }: { iconClass?: string }) {
       aria-hidden
       sx={{
         display: 'flex',
-        height: 44,
-        width: 44,
+        height: 36,
+        width: 36,
         flexShrink: 0,
         alignItems: 'center',
         justifyContent: 'center',
@@ -107,6 +107,7 @@ export default function Sidebar({ menu, activeTab, onSelectTab }: SidebarProps) 
   const matchUsersListingHeader =
     activeTab.trim().toLowerCase() === 'user-users' ||
     activeTab.trim().toLowerCase() === 'setup-customization-modules' ||
+    activeTab.trim().toLowerCase() === 'setup-customization-home-page' ||
     activeTab.trim().toLowerCase() === 'user-permission' ||
     activeTab.trim().toLowerCase() === 'user-roles'
 
@@ -115,8 +116,8 @@ export default function Sidebar({ menu, activeTab, onSelectTab }: SidebarProps) 
       component="aside"
       sx={{
         display: 'flex',
-        width: { xs: '100%', sm: 384 },
-        maxWidth: 420,
+        width: { xs: '100%', sm: 280 },
+        maxWidth: 300,
         flexShrink: 0,
         flexDirection: 'column',
         alignSelf: 'stretch',
@@ -130,7 +131,7 @@ export default function Sidebar({ menu, activeTab, onSelectTab }: SidebarProps) 
         sx={{
           borderBottom: '5px solid',
           borderColor: 'divider',
-          px: 3,
+          px: 2,
           pb: '1.224rem',
           pt: '2.4rem',
           // Match Users toolbar stripe (pt + title/total stack + controls row + pb)
@@ -139,13 +140,13 @@ export default function Sidebar({ menu, activeTab, onSelectTab }: SidebarProps) 
           })
         }}
       >
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
           <SettingsBrandIcon iconClass={settingsRootIcon} />
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.25, color: 'text.primary' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.25, color: 'text.primary' }}>
               Settings
             </Typography>
-            <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
+            <Typography variant="caption" sx={{ mt: 0.5, display: 'block', color: 'text.secondary', lineHeight: 1.4 }}>
               Control and customise your workspace.
             </Typography>
           </Box>
@@ -180,8 +181,8 @@ export default function Sidebar({ menu, activeTab, onSelectTab }: SidebarProps) 
             <AccordionSummary
               expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.25rem', color: 'text.secondary' }} />}
               sx={{
-                px: 2,
-                minHeight: 44,
+                px: 1.5,
+                minHeight: 40,
                 border: 'none',
                 boxShadow: 'none',
                 filter: 'none',
@@ -241,9 +242,9 @@ export default function Sidebar({ menu, activeTab, onSelectTab }: SidebarProps) 
                         onClick={() => onSelectTab(item.key)}
                         alignItems="center"
                         sx={{
-                          py: 2,
-                          px: 2,
-                          gap: 1.5,
+                          py: 1.25,
+                          px: 1.5,
+                          gap: 1,
                           borderRadius: 0,
                           borderBottom: '1px solid',
                           borderColor: 'divider',
@@ -257,8 +258,8 @@ export default function Sidebar({ menu, activeTab, onSelectTab }: SidebarProps) 
                         <Box
                           sx={{
                             display: 'flex',
-                            height: 40,
-                            width: 40,
+                            height: 32,
+                            width: 32,
                             flexShrink: 0,
                             alignItems: 'center',
                             justifyContent: 'center',
