@@ -15,9 +15,19 @@ type AddComponentModalProps = {
   onSelect: (item: WidgetCatalogItem) => void
   onSelectChart?: () => void
   onSelectKpi?: () => void
+  onSelectGrowthIndexKpi?: () => void
+  onSelectComparator?: () => void
 }
 
-function AddComponentModalInner({ open, onClose, onSelect, onSelectChart, onSelectKpi }: AddComponentModalProps) {
+function AddComponentModalInner({
+  open,
+  onClose,
+  onSelect,
+  onSelectChart,
+  onSelectKpi,
+  onSelectGrowthIndexKpi,
+  onSelectComparator,
+}: AddComponentModalProps) {
   useEffect(() => {
     if (!open) return
     const onKeyDown = (e: KeyboardEvent) => {
@@ -35,9 +45,19 @@ function AddComponentModalInner({ open, onClose, onSelect, onSelectChart, onSele
       onSelectKpi()
       return
     }
+    if (option.kind === 'kpi-growth-index' && onSelectGrowthIndexKpi) {
+      onClose()
+      onSelectGrowthIndexKpi()
+      return
+    }
     if (option.kind === 'chart' && onSelectChart) {
       onClose()
       onSelectChart()
+      return
+    }
+    if (option.kind === 'comparator' && onSelectComparator) {
+      onClose()
+      onSelectComparator()
       return
     }
     onSelect(addComponentToCatalogItem(option))

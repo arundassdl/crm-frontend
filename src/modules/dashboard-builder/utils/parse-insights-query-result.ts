@@ -53,15 +53,12 @@ export type ParsedReportGrid = {
 function parseAddonInsightsResultsMatrix(matrix: unknown[]): ParsedReportGrid | null {
   const headerRow = matrix[0]
   if (!Array.isArray(headerRow) || headerRow.length === 0) return null
-  const firstMeta = headerRow[0]
-  if (
-    !firstMeta ||
-    typeof firstMeta !== 'object' ||
-    firstMeta === null ||
-    !('label' in firstMeta)
-  ) {
-    return null
-  }
+
+  const hasObjectMeta = headerRow.some(
+    col => Boolean(col) && typeof col === 'object' && !Array.isArray(col) && 'label' in (col as Record<string, unknown>)
+  )
+  const hasStringHeader = headerRow.every(col => typeof col === 'string' && col.trim() !== '')
+  if (!hasObjectMeta && !hasStringHeader) return null
 
   const columnFields: string[] = []
   const columnMeta: ReportColumnMeta[] = []
@@ -83,6 +80,13 @@ function parseAddonInsightsResultsMatrix(matrix: unknown[]): ParsedReportGrid | 
       if ('type' in meta) {
         type = String(meta.type).trim()
       }
+    } else if (typeof col === 'string') {
+      label = col.trim()
+      const slug = label
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_]/g, '')
+        .slice(0, 80)
+      key = slug || `col_${i}`
     }
     let final = key
     let n = 0

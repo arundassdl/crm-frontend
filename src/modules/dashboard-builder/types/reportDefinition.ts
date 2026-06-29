@@ -28,6 +28,8 @@ export type ReportDefinitionFilter = {
   fieldtype: string
   operator: string
   value: unknown
+  /** Duration unit, only present when operator is "Last". */
+  unit?: string
   condition: 'AND' | 'OR'
   filtertype: 'Quick' | 'Advanced'
 }
@@ -53,4 +55,11 @@ export type ReportDefinitionJson = {
   /** Quick chart visualization type (`bar`, `line`, `area`, `pie`, `donut`). */
   chart_type?: string
   table: ReportDefinitionTable
+  /** Comparison indicator settings, only present for Growth Index KPIs. */
+  comparison?: {
+    compare_to: 'Previous Period' | 'Previous Year' | 'Custom'
+    objective: 'increase_positive' | 'decrease_positive'
+    from?: string
+    to?: string
+  }
 }

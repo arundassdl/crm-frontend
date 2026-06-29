@@ -4,7 +4,9 @@ import { useMemo } from 'react'
 import type { EChartsOption } from 'echarts'
 
 import type { ChartKind, WidgetProperties } from '../types'
+import type { RuntimeFilterRow } from '../types/componentFilters'
 import { buildInsightsChartOption } from '../utils/buildInsightsChartOption'
+import { isTemporaryComponentId } from '../utils/resolveWidgetQueryName'
 import { useInsightsQueryResult } from './useInsightsQueryResult'
 
 /** @deprecated Use `insightsQueryResultKeys` from `useInsightsQueryResult`. */
@@ -19,6 +21,7 @@ type UseInsightsQueryChartDataOptions = {
   title?: string
   properties?: WidgetProperties
   enabled?: boolean
+  runtimeFilters?: RuntimeFilterRow[]
 }
 
 export function useInsightsQueryChartData({
@@ -27,10 +30,17 @@ export function useInsightsQueryChartData({
   title = '',
   properties,
   enabled = true,
+  runtimeFilters,
 }: UseInsightsQueryChartDataOptions) {
+  const propertiesQuery =
+    typeof properties?.query === 'string' && !isTemporaryComponentId(properties.query)
+      ? properties.query.trim()
+      : null
+
   const { parsed, isLoading, isFetching, error, refetch } = useInsightsQueryResult({
-    queryName: properties?.query ?? queryName,
+    queryName: queryName?.trim() || propertiesQuery,
     enabled,
+    runtimeFilters,
   })
 
   const option: EChartsOption = useMemo(

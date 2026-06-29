@@ -50,8 +50,10 @@ export function useDashboardQuery(dashboardId: string | null) {
 
 export function useSaveLayoutMutation() {
   const qc = useQueryClient()
+  const token = readAccessTokenString()
+
   return useMutation({
-    mutationFn: (payload: SaveLayoutPayload) => saveDashboardLayout(payload),
+    mutationFn: (payload: SaveLayoutPayload) => saveDashboardLayout(payload, { token }),
     onSuccess: data => {
       qc.setQueryData(dashboardKeys.detail(data.id), data)
     },

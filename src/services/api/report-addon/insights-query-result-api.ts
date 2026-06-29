@@ -1,10 +1,18 @@
 import { normalizeFrappeAuthorizationValue } from '@/utils/frappe-authorization'
 
+import type { RuntimeFilterRow } from '@/modules/dashboard-builder/types/componentFilters'
+
 export type FetchInsightsQueryResultParams = {
   /** Insights Query document name (e.g. `QRY-0006`). */
   name: string
   token?: string | null
   signal?: AbortSignal
+  /**
+   * Dashboard runtime "Display Component Filters" rows, e.g.
+   * `[{ fieldname: "stage", operator: "is", value: "Closed Won" }]`.
+   * Applied for this request only — never persisted into the Insights Query.
+   */
+  runtimeFilters?: RuntimeFilterRow[]
 }
 
 /**
@@ -25,7 +33,9 @@ export async function fetchInsightsQueryResult(
     },
     body: JSON.stringify({
       name: params.name,
-      ...(authorization ? { token: authorization } : {}),
+      ...(params.runtimeFilters && params.runtimeFilters.length > 0
+        ? { runtime_filters: params.runtimeFilters }
+        : {}),
     }),
     signal: params.signal,
   })

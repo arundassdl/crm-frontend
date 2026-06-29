@@ -12,6 +12,7 @@ export function quickChartFiltersToDefinition(
     fieldtype: f.fieldtype.trim(),
     operator: f.operator.trim(),
     value: f.value,
+    ...(f.unit ? { unit: f.unit } : {}),
     condition: f.condition,
     filtertype: 'Quick',
   }))

@@ -3,22 +3,17 @@
 import { memo, useMemo } from 'react'
 
 import type { DashboardWidget } from '../types'
+import type { RuntimeFilterRow } from '../types/componentFilters'
 import { useInsightsQueryResult } from '../hooks/useInsightsQueryResult'
 import { extractKpiValue } from '../utils/extractKpiValue'
 import { isBasicKpiStyle, resolveKpiStyle } from '../utils/resolveKpiStyle'
+import { resolveWidgetQueryName } from '../utils/resolveWidgetQueryName'
 import { findCatalogItem } from '../utils/widgetCatalog'
 
 type KpiWidgetProps = {
   widget: DashboardWidget
   loading?: boolean
-}
-
-function resolveQueryName(widget: DashboardWidget): string | null {
-  const fromConfig = widget.config?.queryName ?? widget.config?.savedReportName
-  if (typeof fromConfig === 'string' && fromConfig.trim()) return fromConfig.trim()
-  const fromProps = widget.properties?.query
-  if (typeof fromProps === 'string' && fromProps.trim()) return fromProps.trim()
-  return null
+  runtimeFilters?: RuntimeFilterRow[]
 }
 
 function BasicKpiContent({ value }: { value: string }) {
@@ -31,16 +26,17 @@ function BasicKpiContent({ value }: { value: string }) {
   )
 }
 
-function KpiWidgetInner({ widget, loading }: KpiWidgetProps) {
+function KpiWidgetInner({ widget, loading, runtimeFilters }: KpiWidgetProps) {
   const catalog = widget.catalogId ? findCatalogItem(widget.catalogId) : undefined
   const kpiStyle = resolveKpiStyle(widget, catalog)
   const isBasic = isBasicKpiStyle(kpiStyle)
   const label = widget.title || catalog?.kpiLabel || 'KPI'
-  const queryName = resolveQueryName(widget)
+  const queryName = resolveWidgetQueryName(widget)
 
   const { parsed, isLoading: queryLoading } = useInsightsQueryResult({
     queryName,
     enabled: Boolean(queryName),
+    runtimeFilters,
   })
 
   const liveValue = useMemo(() => extractKpiValue(parsed), [parsed])
@@ -74,25 +70,6 @@ function KpiWidgetInner({ widget, loading }: KpiWidgetProps) {
 
   const renderKPI = () => {
     switch (kpiStyle) {
-      case 'standard':
-      case 'growth_index':
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium text-slate-500">{label}</p>
-            <div className="flex items-center gap-2">
-              <p className="text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
-              <span
-                className={`flex items-center gap-0.5 text-xs font-semibold ${kpiStyle === 'standard' ? 'text-emerald-500' : 'text-red-500'}`}
-              >
-                {kpiStyle === 'standard' ? <i className="ri-arrow-up-s-fill" /> : null}
-                {kpiStyle === 'standard' ? '3.09%' : '13.11%'}
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">
-              Last Month: {kpiStyle === 'standard' ? '$291' : '$450'}
-            </p>
-          </div>
-        )
       case 'scorecard':
         return (
           <div className="flex flex-col gap-3">

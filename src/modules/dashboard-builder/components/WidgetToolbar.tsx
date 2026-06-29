@@ -21,20 +21,22 @@ function WidgetToolbarInner({
     'inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700'
 
   return (
-    <div className={`flex items-center gap-0.5 ${compact ? '' : 'ml-auto'}`}>
-      <button type="button" className={btn} title="Refresh" onClick={onRefresh}>
+    // `widget-no-drag` keeps these actions from starting a layout drag.
+    <div className={`widget-no-drag flex items-center gap-0.5 ${compact ? '' : 'ml-auto'}`}>
+      <button type="button" className={btn} title="Refresh" aria-label="Refresh" onClick={onRefresh}>
         <i className="ri-refresh-line text-sm" aria-hidden />
       </button>
-      <button type="button" className={btn} title="Fullscreen" onClick={onFullscreen}>
+      <button type="button" className={btn} title="Expand" aria-label="Expand" onClick={onFullscreen}>
         <i className="ri-fullscreen-line text-sm" aria-hidden />
       </button>
-      <button type="button" className={btn} title="Edit" onClick={onEdit}>
+      <button type="button" className={btn} title="Edit" aria-label="Edit" onClick={onEdit}>
         <i className="ri-edit-line text-sm" aria-hidden />
       </button>
       <button
         type="button"
         className={`${btn} hover:bg-red-50 hover:text-red-600`}
-        title="Remove"
+        title="Delete"
+        aria-label="Delete"
         onClick={onRemove}
       >
         <i className="ri-delete-bin-line text-sm" aria-hidden />

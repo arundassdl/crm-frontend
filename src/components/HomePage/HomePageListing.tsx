@@ -1,6 +1,6 @@
 "use client";
 
-import { readAccessTokenDataParsed } from "@/utils/accessTokenDataStorage";
+import { readAccessTokenDataParsed, readAccessTokenString } from "@/utils/accessTokenDataStorage";
 
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -8,6 +8,13 @@ import {
   Box,
   Button,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Menu,
+  MenuItem,
   Paper,
   Switch,
   Table,
@@ -16,19 +23,23 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from "@mui/material";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import { useRouter } from "next/navigation";
 
 import Link from "@/components/Link";
 import { showToast } from "@/components/ToastNotificationNew";
+import LayoutPermissionDialog from "@/components/layout-builder/LayoutPermissionDialog";
 import {
   dashboardCreatePath,
   dashboardEditPath,
 } from "@/app/settings/utils/moduleSettingsRoutes";
 import { fetchRawDataGridListing } from "@/services/api/common-erpnext-api/listing-api-get";
 import { updateResource } from "@/services/api/common-erpnext-api/create-edit-api";
+import { saveDashboardLayout } from "@/modules/dashboard-builder/api/dashboardApi";
 
 const DOCTYPE = "Insights Dashboard";
 
@@ -212,9 +223,165 @@ export default function HomePageListing({ embedInSettings = false }: HomePageLis
     load();
   }, [userToken?.access_token, userToken?.role_profile, userToken?.username, refreshKey]);
 
+  // --- More Actions menu state ---
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuRow, setMenuRow] = useState<any>(null);
+
+  // --- Rename dialog state ---
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameRow, setRenameRow] = useState<any>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameSubmitting, setRenameSubmitting] = useState(false);
+
+  // --- Permission dialog state ---
+  const [permissionOpen, setPermissionOpen] = useState(false);
+  const [permissionRow, setPermissionRow] = useState<any>(null);
+  const [permissionSharedTo, setPermissionSharedTo] = useState<string[]>([]);
+
   const handleCreate = () => {
     router.push(dashboardCreatePath());
   };
+
+  // --- Menu handlers ---
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, row: any) => {
+    setMenuAnchor(event.currentTarget);
+    setMenuRow(row);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setMenuRow(null);
+  };
+
+  const handleMenuEdit = () => {
+    const docName = getRowVal(menuRow, "name");
+    if (docName) router.push(dashboardEditPath(String(docName)));
+    handleMenuClose();
+  };
+
+  const handleMenuRename = () => {
+    const currentTitle = displayName(menuRow);
+    setRenameRow(menuRow);
+    setRenameValue(currentTitle === "—" ? "" : currentTitle);
+    setRenameOpen(true);
+    handleMenuClose();
+  };
+
+  const handleMenuClone = () => {
+    const docName = getRowVal(menuRow, "name");
+    if (docName) router.push(dashboardCreatePath(String(docName)));
+    handleMenuClose();
+  };
+
+  const handleMenuPermission = useCallback(async () => {
+    const row = menuRow;
+    const docName = getRowVal(row, "name");
+    if (!docName) {
+      handleMenuClose();
+      return;
+    }
+    try {
+      const token = readAccessTokenString();
+      const res = await fetch(`/api/dashboard/${encodeURIComponent(docName)}`, {
+        credentials: "same-origin",
+        headers: token ? { Authorization: token } : undefined,
+      });
+      if (!res.ok) {
+        showToast("Failed to load dashboard permissions", "error");
+        handleMenuClose();
+        return;
+      }
+      const data = await res.json();
+      const sharedTo = Array.isArray(data.shared_to) ? data.shared_to : [];
+      setPermissionRow(row);
+      setPermissionSharedTo(sharedTo);
+      setPermissionOpen(true);
+    } catch {
+      showToast("Failed to load dashboard permissions", "error");
+    }
+    handleMenuClose();
+  }, [menuRow]);
+
+  // --- Rename handlers ---
+  const handleRenameClose = useCallback(() => {
+    setRenameOpen(false);
+    setRenameRow(null);
+    setRenameValue("");
+  }, []);
+
+  const handleRenameSubmit = useCallback(async () => {
+    if (!renameRow || !userToken?.access_token) return;
+    const docName = getRowVal(renameRow, "name");
+    if (!docName) return;
+    const newValue = renameValue.trim();
+    if (!newValue) {
+      showToast("Dashboard name is required", "warning");
+      return;
+    }
+    setRenameSubmitting(true);
+    try {
+      const result = await updateResource(
+        DOCTYPE,
+        docName,
+        { title: newValue },
+        userToken.access_token
+      );
+      if ((result as any)?.success) {
+        showToast("Dashboard renamed successfully", "success");
+        setRefreshKey((k) => k + 1);
+        handleRenameClose();
+      } else {
+        showToast((result as any)?.message || "Failed to rename dashboard", "error");
+      }
+    } catch {
+      showToast("Failed to rename dashboard", "error");
+    } finally {
+      setRenameSubmitting(false);
+    }
+  }, [renameRow, renameValue, userToken?.access_token, handleRenameClose]);
+
+  // --- Permission handlers ---
+  const handlePermissionClose = useCallback(() => {
+    setPermissionOpen(false);
+    setPermissionRow(null);
+    setPermissionSharedTo([]);
+  }, []);
+
+  const handlePermissionSave = useCallback(
+    async (sharedToIds: string[]) => {
+      const docName = getRowVal(permissionRow, "name");
+      if (!docName) return;
+      const token = readAccessTokenString();
+      try {
+        const res = await fetch(`/api/dashboard/${encodeURIComponent(docName)}`, {
+          credentials: "same-origin",
+          headers: token ? { Authorization: token } : undefined,
+        });
+        if (!res.ok) {
+          showToast("Failed to load dashboard for permission update", "error");
+          return;
+        }
+        const dashboardData = await res.json();
+        await saveDashboardLayout(
+          {
+            dashboardId: docName,
+            title: dashboardData.title ?? "",
+            description: dashboardData.description ?? "",
+            layouts: dashboardData.layouts ?? { lg: [] },
+            widgets: dashboardData.widgets,
+            shared_to: sharedToIds,
+          },
+          { token: token || undefined }
+        );
+        showToast("Dashboard permissions updated", "success");
+        setRefreshKey((k) => k + 1);
+        handlePermissionClose();
+      } catch {
+        showToast("Failed to update dashboard permissions", "error");
+      }
+    },
+    [permissionRow, handlePermissionClose]
+  );
 
   const headerSx = embedInSettings
     ? {
@@ -370,23 +537,53 @@ export default function HomePageListing({ embedInSettings = false }: HomePageLis
                   <TableRow
                     key={docName ?? nameLabel}
                     hover
-                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                    sx={{
+                      "&:last-child td, &:last-child th": { border: 0 },
+                      "&:hover .row-more-icon": { opacity: 1 },
+                    }}
                   >
                     <TableCell>
-                      <Link
-                        href={
-                          docName
-                            ? dashboardEditPath(String(docName))
-                            : dashboardCreatePath()
-                        }
-                        style={{
-                          color: "var(--mui-palette-primary-main)",
-                          fontWeight: 500,
-                          textDecoration: "none",
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
                         }}
                       >
-                        {nameLabel}
-                      </Link>
+                        <Link
+                          href={
+                            docName
+                              ? dashboardEditPath(String(docName))
+                              : dashboardCreatePath()
+                          }
+                          style={{
+                            color: "var(--mui-palette-primary-main)",
+                            fontWeight: 500,
+                            textDecoration: "none",
+                          }}
+                        >
+                          {nameLabel}
+                        </Link>
+                        <IconButton
+                          size="small"
+                          className="row-more-icon"
+                          sx={{
+                            p: 0,
+                            ml: 2,
+                            opacity: 0,
+                            transition: "opacity 0.2s ease-in-out",
+                            "&:hover": {
+                              bgcolor: "action.hover",
+                              "& svg": { color: "text.primary" },
+                            },
+                          }}
+                          onClick={(e) => handleMenuOpen(e, row)}
+                        >
+                          <MoreHorizIcon
+                            sx={{ fontSize: 22, color: "action.disabled" }}
+                          />
+                        </IconButton>
+                      </Box>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="text.primary">
@@ -433,6 +630,55 @@ export default function HomePageListing({ embedInSettings = false }: HomePageLis
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleMenuEdit}>Edit Dashboard</MenuItem>
+        <MenuItem onClick={handleMenuRename}>Rename Dashboard</MenuItem>
+        <MenuItem onClick={handleMenuClone}>Clone Dashboard</MenuItem>
+        <MenuItem onClick={handleMenuPermission}>Dashboard Permission</MenuItem>
+      </Menu>
+
+      <Dialog open={renameOpen} onClose={handleRenameClose} fullWidth maxWidth="sm">
+        <DialogTitle>Rename Dashboard</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Dashboard Name"
+            fullWidth
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            error={!renameValue.trim()}
+            helperText={!renameValue.trim() ? "Dashboard Name is required" : " "}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleRenameClose} color="inherit" disabled={renameSubmitting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRenameSubmit}
+            variant="contained"
+            color="primary"
+            disabled={renameSubmitting}
+          >
+            Done
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <LayoutPermissionDialog
+        open={permissionOpen}
+        onClose={handlePermissionClose}
+        layoutName={displayName(permissionRow)}
+        initialSharedTo={permissionSharedTo}
+        onSave={handlePermissionSave}
+        title="Dashboard Permission"
+      />
     </Box>
   );
 }

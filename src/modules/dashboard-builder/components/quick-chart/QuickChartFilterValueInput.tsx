@@ -25,9 +25,15 @@ import {
 import { fetchLinkSearch } from '@/services/api/report-addon/filter-link-search-api'
 import type { ReportFormFieldCatalogEntry } from '@/services/api/report-addon/report-fields-api'
 
-import type { QuickChartFilterValue } from '../../types/quickChartFilter'
+import type {
+  QuickChartFilterDurationUnit,
+  QuickChartFilterValue,
+} from '../../types/quickChartFilter'
 import { getFieldFilterCategory } from '../../utils/report-filters/field-category'
-import { operatorRequiresRange } from '../../utils/report-filters/operators'
+import {
+  operatorRequiresDuration,
+  operatorRequiresRange,
+} from '../../utils/report-filters/operators'
 import {
   coercePicklistValueToArray,
   isDynamicMultiSelectField,
@@ -66,6 +72,8 @@ export type QuickChartFilterValueInputProps = {
   operator: string
   value: QuickChartFilterValue
   onChange: (value: QuickChartFilterValue) => void
+  unit?: QuickChartFilterDurationUnit
+  onUnitChange?: (unit: QuickChartFilterDurationUnit) => void
   disabled?: boolean
   userToken?: string
 }
@@ -79,6 +87,8 @@ export function QuickChartFilterValueInput({
   operator,
   value,
   onChange,
+  unit,
+  onUnitChange,
   disabled = false,
   userToken,
 }: QuickChartFilterValueInputProps) {
@@ -97,6 +107,43 @@ export function QuickChartFilterValueInput({
         placeholder="Select a field"
         sx={filterControlSx}
       />
+    )
+  }
+
+  if (operatorRequiresDuration(operator)) {
+    const durationValue =
+      typeof value === 'number' ? value : Number(value) || ''
+    return (
+      <Stack direction="row" spacing={1} sx={{ flex: 1, minWidth: 0 }}>
+        <TextField
+          size="small"
+          fullWidth
+          type="number"
+          label="Value"
+          disabled={disabled}
+          value={durationValue}
+          inputProps={{ min: 1 }}
+          onChange={e => {
+            const next = e.target.value
+            onChange(next === '' ? '' : Number(next))
+          }}
+          sx={filterControlSx}
+        />
+        <FormControl size="small" fullWidth disabled={disabled} sx={filterControlSx}>
+          <InputLabel>Unit</InputLabel>
+          <Select
+            label="Unit"
+            value={unit ?? 'day'}
+            onChange={(e: SelectChangeEvent) =>
+              onUnitChange?.(e.target.value as QuickChartFilterDurationUnit)
+            }
+          >
+            <MenuItem value="day">day(s)</MenuItem>
+            <MenuItem value="week">week(s)</MenuItem>
+            <MenuItem value="month">month(s)</MenuItem>
+          </Select>
+        </FormControl>
+      </Stack>
     )
   }
 

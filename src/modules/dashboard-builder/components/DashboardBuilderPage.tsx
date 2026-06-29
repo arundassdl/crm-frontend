@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Box, CircularProgress } from '@mui/material'
 
@@ -12,10 +12,12 @@ import {
 } from '@/app/settings/utils/moduleSettingsRoutes'
 
 import { useDashboardQuery, useSaveLayoutMutation } from '../hooks/useDashboard'
+import { useDashboardComponents } from '../hooks/useDashboardComponents'
 import { useDebouncedCallback } from '../hooks/useDebouncedLayoutSave'
 import { selectSelectedWidget, useDashboardStore } from '../store/dashboardStore'
 import type { DashboardWidget, GridLayoutItem, WidgetCatalogItem } from '../types'
 import { inferKpiStyleFromCatalogItem } from '../utils/resolveKpiStyle'
+import { isTemporaryComponentId } from '../utils/resolveWidgetQueryName'
 import { DASHBOARD_SIDEBAR_WIDTH_PX } from '../styles/classes'
 import {
   createWidgetId,
@@ -25,7 +27,9 @@ import {
 } from '../utils/layoutHelpers'
 import { isTableChartType } from '../utils/isTableChartType'
 import { getPlacedCatalogIds } from '../utils/placedCatalogItems'
+import { uniqueWidgetTitle } from '../utils/uniqueWidgetTitle'
 import { findCatalogItem } from '../utils/widgetCatalog'
+import LayoutPermissionDialog from '@/components/layout-builder/LayoutPermissionDialog'
 import { DashboardBuilderShell } from './DashboardBuilderShell'
 import { DashboardCanvas } from './DashboardCanvas'
 import { DashboardSidebar } from './DashboardSidebar'
@@ -47,32 +51,58 @@ function homePageListingPath(embedInSettings: boolean): string {
   return '/setup/layouts'
 }
 
-function catalogToWidget(item: WidgetCatalogItem, widgetId: string): DashboardWidget {
+function catalogToWidget(
+  item: WidgetCatalogItem,
+  widgetId: string,
+  existingWidgets: DashboardWidget[] = []
+): DashboardWidget {
   const asTable =
     item.type === 'table' ||
     isTableChartType(item.config?.chartType) ||
     Boolean(item.config?.isReport)
 
   const kpiStyle = item.config?.kpiStyle ?? inferKpiStyleFromCatalogItem(item)
+  const queryName =
+    item.config?.savedReportName ??
+    item.config?.queryName ??
+    (isTemporaryComponentId(item.id) ? undefined : item.id)
+
+  const isGrowthIndexKpi =
+    kpiStyle === 'growth_index' || item.config?.chartType === 'Growth Index KPI'
+  const title = isGrowthIndexKpi
+    ? uniqueWidgetTitle(item.title, existingWidgets)
+    : item.title
 
   return {
     id: widgetId,
     type: asTable ? 'table' : item.type,
-    title: item.title,
+    title,
     description: item.description,
     chartKind: asTable ? undefined : item.chartKind,
     catalogId: item.id,
     config: {
       ...item.config,
-      queryName: item.config?.savedReportName ?? item.config?.queryName ?? item.id,
+      queryName: queryName ?? item.id,
+      savedReportName: item.config?.savedReportName ?? queryName,
       chartType: asTable ? 'table' : item.config?.chartType,
       kpiStyle,
       value: item.kpiValue,
       componentKind: item.config?.componentKind ?? (item.id.startsWith('component-') ? 'kpi' : undefined),
+      ...(isGrowthIndexKpi
+        ? {
+            component_type: 'growth_index_kpi',
+            component_name: title,
+            chart_type: 'Growth Index KPI',
+            compare_to:
+              item.config?.compare_to ?? item.config?.compareTo ?? 'Previous Period',
+            objective: item.config?.objective ?? 'increase_positive',
+            ...(queryName ? { query_id: queryName } : {}),
+          }
+        : {}),
     },
     properties: {
-      query: item.config?.queryName ?? item.id,
-      title: item.title,
+      query: queryName,
+      title,
       colors: item.type === 'chart' ? ['#318AD8', '#F683AE', '#48BB74', '#F56B6B', '#FACF7A', '#44427B', '#5FD8C4', '#F8814F', '#15CCEF', '#A6B1B9'] : undefined,
       columns: asTable ? undefined : undefined, // Will be populated by default if empty in Widget
     },
@@ -91,6 +121,8 @@ export default function DashboardBuilderPage({
   const { data: cloneSource, isLoading: cloneLoading } = useDashboardQuery(
     isNew && cloneFrom ? cloneFrom : null
   )
+  // Subscribe to component catalog so KPI widgets re-resolve query names after load.
+  useDashboardComponents({ enabled: true })
   const saveMutation = useSaveLayoutMutation()
 
   const hydrate = useDashboardStore(s => s.hydrate)
@@ -125,6 +157,10 @@ export default function DashboardBuilderPage({
     s.widgets.find(w => w.id === s.settingsWidgetId)
   )
 
+  const [permissionsOpen, setPermissionsOpen] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'save' | 'saveAndClose' | null>(null)
+  const [sharedTo, setSharedTo] = useState<string[]>([])
+
   const hydratedDashboardKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -141,6 +177,7 @@ export default function DashboardBuilderPage({
         id: dashboardId,
         title: cloneSource.title ? `${cloneSource.title}_Cloned` : 'Untitled Home Page',
       })
+      setSharedTo(cloneSource.shared_to ?? [])
       return
     }
     if (isNew && !cloneFrom) {
@@ -155,6 +192,7 @@ export default function DashboardBuilderPage({
         layouts: emptyLayouts(),
         filters: {},
       })
+      setSharedTo([])
       return
     }
     if (!data) return
@@ -162,18 +200,20 @@ export default function DashboardBuilderPage({
     if (hydratedDashboardKeyRef.current === key) return
     hydratedDashboardKeyRef.current = key
     hydrate(data)
+    setSharedTo(data.shared_to ?? [])
   }, [cloneFrom, cloneSource, dashboardId, data, hydrate, isNew])
 
   useEffect(() => () => reset(), [reset])
 
-  const persist = useCallback(async () => {
+  const persist = useCallback(async (sharedToOverride?: string[]) => {
     if (!title.trim()) return null
 
-    // For new dashboards, pass null/empty to trigger creation. 
+    // For new dashboards, pass null/empty to trigger creation.
     // If it's a temp ID (e.g. "dash_..."), treat as new.
     // Use the reactive ID from the store if it's been updated by a previous save.
     const workingId = dashboardIdFromStore || dashboardId
     const effectiveId = (isNew && workingId.startsWith('dash_')) ? null : workingId
+    const sharedToPayload = sharedToOverride ?? sharedTo ?? []
 
     try {
       const result = await saveMutation.mutateAsync({
@@ -182,6 +222,7 @@ export default function DashboardBuilderPage({
         description,
         layouts,
         widgets,
+        shared_to: sharedToPayload,
       })
 
       if (result?.id) {
@@ -195,7 +236,7 @@ export default function DashboardBuilderPage({
       console.error('Failed to save dashboard', err)
       return null
     }
-  }, [dashboardIdFromStore, dashboardId, title, isNew, description, layouts, widgets, saveMutation, setDashboardIdStore])
+  }, [dashboardIdFromStore, dashboardId, title, isNew, description, layouts, widgets, sharedTo, saveMutation, setDashboardIdStore, hydrate])
 
   const layoutRef = useRef(layouts.lg)
   layoutRef.current = layouts.lg
@@ -243,9 +284,9 @@ export default function DashboardBuilderPage({
         minH: 2,
       }
 
-      addWidget(catalogToWidget(catalog, widgetId), layoutItem)
+      addWidget(catalogToWidget(catalog, widgetId, widgets), layoutItem)
     },
-    [addWidget, layouts.lg, placedCatalogIds]
+    [addWidget, layouts.lg, placedCatalogIds, widgets]
   )
 
   const handleAddCatalogItem = useCallback(
@@ -260,14 +301,44 @@ export default function DashboardBuilderPage({
     router.push(homePageListingPath(embedInSettings), { scroll: false })
   }, [embedInSettings, router])
 
+  const openPermissions = (action: 'save' | 'saveAndClose') => {
+    setPendingAction(action)
+    setPermissionsOpen(true)
+  }
+
   const handleSave = async () => {
-    await persist()
+    if (!title.trim()) return
+    if (sharedTo.length > 0) {
+      await persist()
+      return
+    }
+    openPermissions('save')
   }
 
   const handleSaveAndClose = async () => {
     if (!title.trim()) return
-    const saved = await persist()
-    if (saved) goToListing()
+    if (sharedTo.length > 0) {
+      const saved = await persist()
+      if (saved) goToListing()
+      return
+    }
+    openPermissions('saveAndClose')
+  }
+
+  const handlePermissionsCancel = () => {
+    setPermissionsOpen(false)
+    setPendingAction(null)
+  }
+
+  const handlePermissionsSave = async (sharedToIds: string[]) => {
+    setSharedTo(sharedToIds)
+    if (pendingAction === 'save') {
+      await persist(sharedToIds)
+    } else if (pendingAction === 'saveAndClose') {
+      const saved = await persist(sharedToIds)
+      if (saved) goToListing()
+    }
+    setPendingAction(null)
   }
 
   const hasChanges = useMemo(
@@ -361,8 +432,36 @@ export default function DashboardBuilderPage({
         widget={settingsWidget ?? null}
         onClose={() => setSettingsWidget(null)}
         onSave={(id, patch) => {
+          const target = widgets.find(w => w.id === id)
+          if (
+            target?.config?.component_type === 'growth_index_kpi' &&
+            typeof patch.title === 'string' &&
+            patch.title.trim() &&
+            patch.title.trim() !== target.title
+          ) {
+            const title = uniqueWidgetTitle(
+              patch.title,
+              widgets.filter(w => w.id !== id)
+            )
+            updateWidget(id, {
+              ...patch,
+              title,
+              config: { ...target.config, component_name: title },
+              properties: { ...target.properties, title },
+            })
+            return
+          }
           updateWidget(id, patch)
         }}
+      />
+
+      <LayoutPermissionDialog
+        open={permissionsOpen}
+        onClose={handlePermissionsCancel}
+        layoutName={title || 'Untitled'}
+        initialSharedTo={sharedTo}
+        onSave={handlePermissionsSave}
+        title="Dashboard Permission"
       />
 
       {fullscreenWidget ? (

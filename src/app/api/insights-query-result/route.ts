@@ -10,18 +10,20 @@ const INSIGHTS_QUERY_RESULT_PATH =
 
 /**
  * Proxies `report_addon.api.insights_query.get_insights_query_result`.
- * POST body: `{ name: string, token?: string, filters?: unknown[] }`
+ * POST body: `{ name: string, filters?: unknown[], runtime_filters?: Array<{ fieldname, operator, value, valueTo? }> }`
+ * Auth: `Authorization: token <api_key>:<api_secret>` header.
+ *
+ * `runtime_filters` are dashboard runtime filters (from the widget's "Display Component
+ * Filters" configuration). They are forwarded to the backend for this request only and are
+ * never persisted into the Insights Query itself.
  */
 export async function POST(req: Request) {
   try {
     const body = await req.json()
     const authFromHeader = req.headers.get('authorization')?.trim() ?? ''
-    const { name, filters, token: tokenFromBody } = body ?? {}
+    const { name, filters, runtime_filters } = body ?? {}
 
-    const frappeAuthRaw =
-      authFromHeader ||
-      (typeof tokenFromBody === 'string' ? tokenFromBody.trim() : '')
-    const frappeAuth = frappeAuthRaw ? normalizeFrappeAuthorizationValue(frappeAuthRaw) : ''
+    const frappeAuth = authFromHeader ? normalizeFrappeAuthorizationValue(authFromHeader) : ''
 
     if (!name || typeof name !== 'string') {
       return NextResponse.json(
@@ -49,6 +51,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         name,
         ...(Array.isArray(filters) && filters.length > 0 ? { filters } : {}),
+        ...(Array.isArray(runtime_filters) && runtime_filters.length > 0 ? { runtime_filters } : {}),
       }),
     })
 
