@@ -96,77 +96,23 @@ const Logo = ({
   return (
     <div className="flex items-center min-bs-[24px]">
       {from == "login" ? (
-        <Box display="flex" alignItems="center" gap={1} minHeight={24}>
-        <SDLLogo
-          width={isBreakpointReached ? 65 : 68}
-          height={isBreakpointReached ? 65 : 68}
-        />
-        <LogoText
-          color={color}
-          style={{
-            fontFamily: themeConfig.fontFamily,
-            fontSize: isBreakpointReached ? 20 : 22,
-            marginInlineStart: "5px !important",
-            letterSpacing: "0.005px",
-          }}
-        >
-          {themeConfig.templateName}
-        </LogoText>
-      </Box>
+        <img src="/logo.png" alt="EVOQ CRM" style={{ height: 28, width: "auto" }} />
       ) : (
         <>
           {companyData?.company_logo != undefined &&
           companyData?.company_logo != "" ? (
-            // <Image src={companyData?.company_logo} alt="logo" layout="intrinsic" width={200} height={50}/>
-            <div
-              style={{
-                maxWidth: "185px",
-                maxHeight: "40px",
-                overflow: "hidden",
-              }}
-            >
+            <div style={{ maxWidth: "185px", maxHeight: "40px", overflow: "hidden" }}>
               <img
                 src={companyData?.company_logo}
                 alt={companyData?.company_name}
-                style={{
-                  width: "100%",
-                  height: "40px",
-                  objectFit: "contain", // Ensures the aspect ratio is maintained
-                }}
+                style={{ width: "100%", height: "40px", objectFit: "contain" }}
               />
             </div>
           ) : (
-            //   <Image
-            //   src={companyData?.company_logo}
-            //   alt={companyData?.company_name}
-            //   width={185} // Restrict width to 185px
-            //   height={40} // Restrict height to 40px
-            //   style={{ objectFit: 'contain' }} // Ensures the aspect ratio is preserved
-            // />
-            // <Image src="/assets/images/logo.png" alt="logo" width={200} height={-1}/>
-            <Box display="flex" alignItems="center" gap={1} minHeight={24}>
-              <SDLLogo
-                width={isBreakpointReached ? 65 : 68}
-                height={isBreakpointReached ? 65 : 68}
-              />
-              <LogoText
-                color={color}
-                style={{
-                  fontFamily: themeConfig.fontFamily,
-                  fontSize: isBreakpointReached ? 20 : 22,
-                  marginInlineStart: "5px !important",
-                  letterSpacing: "0.005px",
-                }}
-              >
-                {themeConfig.templateName}
-              </LogoText>
-            </Box>
+            <img src="/logo.png" alt="EVOQ CRM" style={{ height: 28, width: "auto" }} />
           )}
         </>
       )}
-
-      {/* <MaterioLogo className='text-[22px] text-primary'/>                
-      <LogoText color={color}>{themeConfig.templateName}</LogoText> */}
     </div>
   );
 };

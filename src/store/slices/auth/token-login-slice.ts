@@ -6,6 +6,7 @@ import { UpdatePartyName } from '../general_slices/profile-page-slice';
 import { ProfileDataFetch } from '@/services/api/general_apis/ProfilePageApi/profile-page-api';
 import { persistUserProfileData } from '@/utils/userProfileDataStorage';
 import { persistAccessTokenData } from '@/utils/accessTokenDataStorage';
+import { get_array_from_roledoctype } from '@/services/api/roles/roles-api';
 // import { companyProfilePage } from '@/services/api/my-company/my-comapny-api';
 
 
@@ -48,8 +49,10 @@ export const getAccessToken: any = createAsyncThunk(
       const fullName = Array.isArray(profileMessage) ? profileMessage[0]?.full_name : profileMessage?.full_name;
       dispatch(UpdatePartyName(fullName));
       showToast('logged in successfully', 'success');
-        // console.log("userProfileData=========>2", JSON.stringify(ProfileOrderData?.data?.message));
-        
+
+      // Populate menuListData before redirect so the sidebar renders immediately on landing
+      await get_array_from_roledoctype().catch(() => {});
+
       setTimeout(() => {
         window.location.href ="/"
       }, 1200);
