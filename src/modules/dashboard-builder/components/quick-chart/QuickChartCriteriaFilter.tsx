@@ -30,6 +30,7 @@ import { getFieldFilterCategory } from '../../utils/report-filters/field-categor
 import {
   getOperatorsForCategory,
   getOperatorsForDocSelectPicklist,
+  operatorRequiresDuration,
   operatorUsesMultiValue,
 } from '../../utils/report-filters/operators'
 import {
@@ -150,6 +151,7 @@ function CriteriaFilterRow({
 
   const handleOperatorChange = (operator: string) => {
     let nextValue = filter.value
+    let nextUnit = filter.unit
     if (operator === 'between' && !isBetweenValue(nextValue)) {
       nextValue = { from: '', to: '' }
     } else if (operator !== 'between' && isBetweenValue(nextValue)) {
@@ -160,7 +162,13 @@ function CriteriaFilterRow({
     } else if (!operatorUsesMultiValue(operator) && isFilterValueArray(nextValue)) {
       nextValue = nextValue[0] ?? ''
     }
-    onChange({ ...filter, operator, value: nextValue })
+    if (operatorRequiresDuration(operator)) {
+      if (typeof nextValue !== 'number') nextValue = 7
+      nextUnit = nextUnit ?? 'day'
+    } else {
+      nextUnit = undefined
+    }
+    onChange({ ...filter, operator, value: nextValue, unit: nextUnit })
   }
 
   return (
@@ -241,6 +249,8 @@ function CriteriaFilterRow({
           operator={filter.operator}
           value={filter.value}
           onChange={value => onChange({ ...filter, value })}
+          unit={filter.unit}
+          onUnitChange={unit => onChange({ ...filter, unit })}
           disabled={disabled || !filter.fieldname}
           userToken={userToken}
         />

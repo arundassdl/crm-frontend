@@ -1,5 +1,9 @@
 import type { QuickChartCriteriaFilter } from '../../types/quickChartFilter'
-import { operatorRequiresRange, operatorUsesMultiValue } from './operators'
+import {
+  operatorRequiresDuration,
+  operatorRequiresRange,
+  operatorUsesMultiValue,
+} from './operators'
 import { isBetweenValue, isFilterValueArray } from './serialize-filter-value'
 
 export function quickChartFilterRowIsComplete(row: QuickChartCriteriaFilter): boolean {
@@ -8,6 +12,9 @@ export function quickChartFilterRowIsComplete(row: QuickChartCriteriaFilter): bo
     const v = row.value
     if (!isBetweenValue(v)) return false
     return Boolean(v.from.trim() && v.to.trim())
+  }
+  if (operatorRequiresDuration(row.operator)) {
+    return typeof row.value === 'number' && row.value > 0 && Boolean(row.unit)
   }
   if (row.operator === 'is' && row.fieldtype.toLowerCase() === 'check') {
     return typeof row.value === 'boolean'

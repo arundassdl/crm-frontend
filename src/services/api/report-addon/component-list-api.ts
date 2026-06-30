@@ -6,6 +6,36 @@ export type ComponentListRow = {
   name: string
   title: string
   chart_type?: string | null
+  /** Growth Index KPI comparison settings (present when chart_type is `Growth Index KPI`). */
+  compare_to?: string | null
+  objective?: string | null
+  /** Ranking KPI settings (present when chart_type is `Rankings KPI`). */
+  rank_field?: string | null
+  show?: string | null
+  display_record_count?: boolean | null
+  shortened?: boolean | null
+  format?: string | null
+  decimal_places?: number | null
+  measures_to_format?: string[] | null
+  /** Comparator settings (present when chart_type identifies a Comparator report). */
+  comparator_style?: string | null
+  compare_among?: string | null
+  compare_among_label?: string | null
+  user_type?: string | null
+  selected_users?: string[] | null
+  selected_user_labels?: string[] | null
+  selected_roles?: string[] | null
+  selected_role_labels?: string[] | null
+  period_type?: string | null
+  period_last_value?: number | null
+  period_last_unit?: string | null
+  period_from_date?: string | null
+  period_to_date?: string | null
+  picklist_module?: string | null
+  picklist_module_label?: string | null
+  picklist_field?: string | null
+  picklist_field_label?: string | null
+  comparison_parameters?: unknown[] | null
 }
 
 export type ComponentListResult = {
@@ -108,11 +138,63 @@ export async function fetchComponentList(
   const data = Array.isArray(message.data) ? message.data : []
 
   return {
-    data: data.map((row: { name?: string; title?: string; chart_type?: string }) => ({
-      name: String(row?.name ?? ''),
-      title: String(row?.title ?? row?.name ?? ''),
-      chart_type: row?.chart_type != null ? String(row.chart_type) : undefined,
-    })),
+    data: data.map(
+      (row: {
+        name?: string
+        title?: string
+        chart_type?: string
+        compare_to?: string
+        objective?: string
+        rank_field?: string
+        show?: string
+        display_record_count?: boolean
+        shortened?: boolean
+        format?: string
+        decimal_places?: number
+        measures_to_format?: string[]
+        comparator_style?: string
+        compare_among?: string
+        compare_among_label?: string
+        user_type?: string
+        selected_users?: string[]
+        selected_user_labels?: string[]
+        selected_roles?: string[]
+        selected_role_labels?: string[]
+        period_type?: string
+        picklist_module?: string
+        picklist_module_label?: string
+        picklist_field?: string
+        picklist_field_label?: string
+        comparison_parameters?: unknown[]
+      }) => ({
+        name: String(row?.name ?? ''),
+        title: String(row?.title ?? row?.name ?? ''),
+        chart_type: row?.chart_type != null ? String(row.chart_type) : undefined,
+        compare_to: row?.compare_to != null ? String(row.compare_to) : undefined,
+        objective: row?.objective != null ? String(row.objective) : undefined,
+        rank_field: row?.rank_field != null ? String(row.rank_field) : undefined,
+        show: row?.show != null ? String(row.show) : undefined,
+        display_record_count: row?.display_record_count != null ? Boolean(row.display_record_count) : undefined,
+        shortened: row?.shortened != null ? Boolean(row.shortened) : undefined,
+        format: row?.format != null ? String(row.format) : undefined,
+        decimal_places: row?.decimal_places != null ? Number(row.decimal_places) : undefined,
+        measures_to_format: Array.isArray(row?.measures_to_format) ? row.measures_to_format : undefined,
+        comparator_style: row?.comparator_style != null ? String(row.comparator_style) : undefined,
+        compare_among: row?.compare_among != null ? String(row.compare_among) : undefined,
+        compare_among_label: row?.compare_among_label != null ? String(row.compare_among_label) : undefined,
+        user_type: row?.user_type != null ? String(row.user_type) : undefined,
+        selected_users: Array.isArray(row?.selected_users) ? row.selected_users : undefined,
+        selected_user_labels: Array.isArray(row?.selected_user_labels) ? row.selected_user_labels : undefined,
+        selected_roles: Array.isArray(row?.selected_roles) ? row.selected_roles : undefined,
+        selected_role_labels: Array.isArray(row?.selected_role_labels) ? row.selected_role_labels : undefined,
+        period_type: row?.period_type != null ? String(row.period_type) : undefined,
+        picklist_module: row?.picklist_module != null ? String(row.picklist_module) : undefined,
+        picklist_module_label: row?.picklist_module_label != null ? String(row.picklist_module_label) : undefined,
+        picklist_field: row?.picklist_field != null ? String(row.picklist_field) : undefined,
+        picklist_field_label: row?.picklist_field_label != null ? String(row.picklist_field_label) : undefined,
+        comparison_parameters: Array.isArray(row?.comparison_parameters) ? row.comparison_parameters : undefined,
+      })
+    ),
     total: Number(message.total ?? data.length),
     start: Number(message.start ?? body.start),
     page_length: Number(message.page_length ?? body.page_length),

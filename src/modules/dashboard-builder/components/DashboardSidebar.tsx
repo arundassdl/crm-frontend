@@ -7,15 +7,9 @@ import { filterAvailableCatalogItems } from '../utils/placedCatalogItems'
 import { DASHBOARD_SIDEBAR_WIDTH_PX } from '../styles/classes'
 import { CATEGORY_LABELS } from '../utils/widgetCatalog'
 import { useDashboardComponents } from '../hooks/useDashboardComponents'
-import { AddComponentModal } from './AddComponentModal'
-import { AddChartModal } from './AddChartModal'
-import { QuickChartModal } from './QuickChartModal'
+import { AddComponentScreen } from './add-component'
 import { DashboardComponentsList } from './DashboardComponentsList'
 import { ReportComponentsPanel } from './ReportComponentsPanel'
-import { KPIStyleSelectionModal } from './KPIStyleSelectionModal'
-import {
-  addChartCatalogItem,
-} from '../utils/addComponentCatalog'
 
 type DashboardSidebarProps = {
   open: boolean
@@ -58,10 +52,7 @@ function DashboardSidebarInner({
   onCloseMobile,
 }: DashboardSidebarProps) {
   const [dashboardSearch, setDashboardSearch] = useState('')
-  const [addModalOpen, setAddModalOpen] = useState(false)
-  const [addChartModalOpen, setAddChartModalOpen] = useState(false)
-  const [quickChartModalOpen, setQuickChartModalOpen] = useState(false)
-  const [kpiStyleModalOpen, setKpiStyleModalOpen] = useState(false)
+  const [addComponentScreenOpen, setAddComponentScreenOpen] = useState(false)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     dashboard: true,
     reports: true,
@@ -90,37 +81,13 @@ function DashboardSidebarInner({
 
   return (
     <>
-      <AddComponentModal
-        open={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSelect={onAddWidget}
-        onSelectChart={() => setAddChartModalOpen(true)}
-        onSelectKpi={() => setKpiStyleModalOpen(true)}
-      />
-      <KPIStyleSelectionModal
-        open={kpiStyleModalOpen}
-        onClose={() => setKpiStyleModalOpen(false)}
+      <AddComponentScreen
+        open={addComponentScreenOpen}
+        onClose={() => setAddComponentScreenOpen(false)}
         onDone={item => {
-          setKpiStyleModalOpen(false)
+          setAddComponentScreenOpen(false)
           onAddWidget(item)
         }}
-      />
-      <AddChartModal
-        open={addChartModalOpen}
-        onClose={() => setAddChartModalOpen(false)}
-        onSelect={source => {
-          setAddChartModalOpen(false)
-          if (source === 'quick') {
-            setQuickChartModalOpen(true)
-            return
-          }
-          onAddWidget(addChartCatalogItem(source))
-        }}
-      />
-      <QuickChartModal
-        open={quickChartModalOpen}
-        onClose={() => setQuickChartModalOpen(false)}
-        onDone={onAddWidget}
       />
 
       <div
@@ -155,7 +122,7 @@ function DashboardSidebarInner({
                   aria-hidden
                 />
               </button>
-              <DashboardAddButton onOpen={() => setAddModalOpen(true)} />
+              <DashboardAddButton onOpen={() => setAddComponentScreenOpen(true)} />
             </div>
             {dashboardExpanded ? (
               <div className="flex flex-col gap-2 px-1 pb-2 pt-1">

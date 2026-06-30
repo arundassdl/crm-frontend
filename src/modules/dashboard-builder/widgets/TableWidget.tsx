@@ -8,6 +8,7 @@ import { DashboardAgGrid } from '../components/DashboardAgGrid'
 import type { DashboardWidget } from '../types'
 import { useInsightsQueryResult } from '../hooks/useInsightsQueryResult'
 import { buildTableGridFromParsed } from '../utils/buildTableGridFromParsed'
+import { resolveWidgetQueryName } from '../utils/resolveWidgetQueryName'
 
 type TableWidgetProps = {
   widget: DashboardWidget
@@ -34,19 +35,8 @@ const SAMPLE_COLUMN_DEFS: ColDef[] = [
   },
 ]
 
-function resolveQueryName(widget: DashboardWidget): string | null {
-  const fromProps = widget.properties?.query
-  if (typeof fromProps === 'string' && fromProps.trim()) return fromProps.trim()
-  const fromConfig = widget.config?.queryName
-  if (typeof fromConfig === 'string' && fromConfig.trim()) return fromConfig.trim()
-  const fromReport = widget.config?.reportName
-  if (typeof fromReport === 'string' && fromReport.trim()) return fromReport.trim()
-  if (widget.catalogId?.trim()) return widget.catalogId.trim()
-  return null
-}
-
 function TableWidgetInner({ widget, loading: loadingProp }: TableWidgetProps) {
-  const queryName = resolveQueryName(widget)
+  const queryName = resolveWidgetQueryName(widget)
   const useLiveData = Boolean(queryName)
 
   const { parsed, isLoading, isSuccess, error } = useInsightsQueryResult({

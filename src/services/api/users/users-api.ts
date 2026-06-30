@@ -5,6 +5,30 @@ import { API_CONFIG } from '../../config/api-config';
 // import { URLSearchParams } from "url"
 import { useSearchParams } from 'next/navigation'
 
+/** Raw `User` doctype row used to build "Compare Among → Custom Users" options. */
+export interface CrmUserRow {
+  name: string;
+  full_name?: string;
+  email?: string;
+}
+
+/** Active users (`/api/resource/User`), used for dropdown/multi-select pickers. */
+export const fetchCrmUsers = async (token: string): Promise<CrmUserRow[]> => {
+  const url = `${CONSTANTS.API_BASE_URL}/api/resource/User`;
+
+  const res = await axios.get(url, {
+    headers: { Authorization: token },
+    params: {
+      fields: JSON.stringify(['name', 'full_name', 'email']),
+      filters: JSON.stringify([['enabled', '=', 1]]),
+      limit_page_length: 0,
+    },
+    timeout: 10000,
+  });
+
+  return Array.isArray(res?.data?.data) ? res.data.data : [];
+};
+
 export const getUsersListDatagrid = async (query: any, token: any) => {
   let response: any;
   const version = CONSTANTS.VERSION;

@@ -1,6 +1,7 @@
 import type { ComponentListRow } from '@/services/api/report-addon/component-list-api'
 
 import type { WidgetCatalogItem } from '../types'
+import type { ComparatorParameter } from '../types/comparatorParameter'
 import { isTableChartType } from './isTableChartType'
 import { mapApiChartTypeToChartKind } from './mapChartType'
 import { chartTypeToKpiStyle } from './resolveKpiStyle'
@@ -14,6 +15,10 @@ export function registerApiCatalogItems(items: WidgetCatalogItem[]): void {
   }
 }
 
+export function getApiCatalogItems(): WidgetCatalogItem[] {
+  return Array.from(apiCatalogRegistry.values())
+}
+
 function chartIconForKind(kind: WidgetCatalogItem['chartKind']): string {
   switch (kind) {
     case 'pie':
@@ -24,12 +29,68 @@ function chartIconForKind(kind: WidgetCatalogItem['chartKind']): string {
       return 'ri-line-chart-line'
     case 'funnel':
       return 'ri-filter-3-line'
+    case 'scatter':
+      return 'ri-bubble-chart-line'
+    case 'progress':
+      return 'ri-progress-3-line'
     default:
       return 'ri-bar-chart-grouped-line'
   }
 }
 
 export function apiComponentToCatalogItem(row: ComponentListRow): WidgetCatalogItem {
+  const chartTypeLower = (row.chart_type ?? '').toLowerCase()
+  const isComparator =
+    Boolean(row.comparator_style) ||
+    chartTypeLower === 'comparator' ||
+    chartTypeLower.startsWith('comparator_')
+
+  console.log('[Comparator] reload component', {
+    name: row.name,
+    chart_type: row.chart_type,
+    comparator_style: row.comparator_style,
+    compare_among: row.compare_among,
+    isComparator,
+  })
+
+  if (isComparator) {
+    const comparatorStyle = row.comparator_style || 'elegant'
+    return {
+      id: row.name,
+      title: row.title,
+      description: `${comparatorStyle} comparator`,
+      type: 'comparator',
+      category: 'dashboard',
+      defaultSize: { w: 6, h: 5 },
+      icon: 'ri-group-line',
+      config: {
+        componentKind: 'comparator',
+        chartType: 'comparator',
+        comparator_style: comparatorStyle,
+        component_name: row.title,
+        compare_among: row.compare_among ?? '',
+        compare_among_label: row.compare_among_label ?? undefined,
+        user_type: row.user_type ?? undefined,
+        selected_users: row.selected_users ?? undefined,
+        selected_user_labels: row.selected_user_labels ?? undefined,
+        selected_roles: row.selected_roles ?? undefined,
+        selected_role_labels: row.selected_role_labels ?? undefined,
+        period_type: row.period_type ?? undefined,
+        period_last_value: row.period_last_value ?? undefined,
+        period_last_unit: row.period_last_unit ?? undefined,
+        period_from_date: row.period_from_date ?? undefined,
+        period_to_date: row.period_to_date ?? undefined,
+        picklist_module: row.picklist_module ?? undefined,
+        picklist_module_label: row.picklist_module_label ?? undefined,
+        picklist_field: row.picklist_field ?? undefined,
+        picklist_field_label: row.picklist_field_label ?? undefined,
+        comparison_parameters: (row.comparison_parameters as ComparatorParameter[] | undefined) ?? [],
+        queryName: row.name,
+        savedReportName: row.name,
+      },
+    }
+  }
+
   if (isTableChartType(row.chart_type)) {
     return {
       id: row.name,
@@ -59,6 +120,34 @@ export function apiComponentToCatalogItem(row: ComponentListRow): WidgetCatalogI
         chartType,
         kpiStyle,
         savedReportName: row.name,
+        ...(kpiStyle === 'growth_index'
+          ? {
+              component_type: 'growth_index_kpi',
+              component_name: row.title,
+              compare_to: row.compare_to ?? 'Previous Period',
+              objective: row.objective ?? 'increase_positive',
+              query_id: row.name,
+            }
+          : {}),
+        ...(kpiStyle === 'standard' && (row.compare_to || row.objective)
+          ? {
+              compare_to: row.compare_to ?? 'Previous Period',
+              objective: row.objective ?? 'increase_positive',
+            }
+          : {}),
+        ...(kpiStyle === 'rankings'
+          ? {
+              component_name: row.title,
+              query_id: row.name,
+              rank_field: row.rank_field ?? '',
+              show: row.show ?? 'Top 5',
+              display_record_count: Boolean(row.display_record_count),
+              shortened: Boolean(row.shortened),
+              format: row.format ?? 'K',
+              decimal_places: row.decimal_places ?? 0,
+              measures_to_format: row.measures_to_format ?? [],
+            }
+          : {}),
       },
     }
   }

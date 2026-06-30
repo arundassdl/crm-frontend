@@ -11,6 +11,7 @@ import {
   useDashboardListQuery,
   useDashboardQuery,
 } from '@/modules/dashboard-builder/hooks/useDashboard'
+import { useDashboardComponents } from '@/modules/dashboard-builder/hooks/useDashboardComponents'
 import { DashboardQueryProvider } from '@/modules/dashboard-builder/layouts/DashboardQueryProvider'
 import { readAccessTokenString } from '@/utils/accessTokenDataStorage'
 
@@ -44,6 +45,7 @@ function DashboardPageContent() {
     isLoading: dashboardLoading,
     isFetching: dashboardFetching,
   } = useDashboardQuery(selectedDashboardId)
+  useDashboardComponents({ enabled: hasToken })
 
   if (!hasToken || listLoading) {
     return (

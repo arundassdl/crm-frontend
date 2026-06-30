@@ -52,5 +52,6 @@ export function buildFieldChangeUpdate(
     fieldtype: field.fieldtype,
     operator: defaultOp,
     value: nextValue,
+    unit: undefined,
   }
 }

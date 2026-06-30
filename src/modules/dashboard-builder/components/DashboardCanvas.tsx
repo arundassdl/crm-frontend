@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback, useMemo, type RefObject } from 'react'
+import { memo, useCallback, useMemo, useState, type RefObject } from 'react'
 import {
   ResponsiveGridLayout,
   useContainerWidth,
@@ -42,6 +42,18 @@ function DashboardCanvasInner({
   const gridContainerRef = containerRef as RefObject<HTMLDivElement>
   const widgetMap = useMemo(() => new Map(widgets.map(w => [w.id, w])), [widgets])
 
+  /** Live size of the item currently being resized — drives the dimensions badge. */
+  const [resizing, setResizing] = useState<{ i: string; w: number; h: number } | null>(null)
+
+  const handleResizeStart = useCallback((_layout: Layout, oldItem: LayoutItem | null, newItem: LayoutItem | null) => {
+    const item = newItem ?? oldItem
+    if (item) setResizing({ i: item.i, w: item.w, h: item.h })
+  }, [])
+
+  const handleResize = useCallback((_layout: Layout, _oldItem: LayoutItem | null, newItem: LayoutItem | null) => {
+    if (newItem) setResizing({ i: newItem.i, w: newItem.w, h: newItem.h })
+  }, [])
+
   /** Persist layout only after user drag/resize — not on mount/width/compaction (avoids update loops). */
   const persistLayout = useCallback(
     (newLayout: Layout) => {
@@ -60,6 +72,7 @@ function DashboardCanvasInner({
   const handleResizeStop = useCallback(
     (newLayout: Layout) => {
       persistLayout(newLayout)
+      setResizing(null)
     },
     [persistLayout]
   )
@@ -129,10 +142,17 @@ function DashboardCanvasInner({
           margin={[12, 12]}
           containerPadding={[0, 0]}
           compactor={verticalCompactor}
-          dragConfig={{ enabled: true, handle: '.widget-drag-handle' }}
-          resizeConfig={{ enabled: true }}
+          dragConfig={{
+            enabled: true,
+            handle: '.widget-header-drag',
+            cancel: '.widget-no-drag',
+            threshold: 5,
+          }}
+          resizeConfig={{ enabled: true, handles: ['se', 's', 'e'] }}
           dropConfig={{ enabled: true }}
           onDragStop={handleDragStop}
+          onResizeStart={handleResizeStart}
+          onResize={handleResize}
           onResizeStop={handleResizeStop}
           onDrop={handleDrop}
           onDropDragOver={e => {
@@ -146,11 +166,10 @@ function DashboardCanvasInner({
             const widget = widgetMap.get(item.i)
             if (!widget) return null
 
+            const isResizing = resizing?.i === item.i
+
             return (
               <div key={item.i} data-grid={item} className="relative h-full">
-                <div className="widget-drag-handle absolute left-2 top-2 z-10 cursor-move rounded bg-white/80 p-0.5 opacity-0 shadow-sm transition group-hover:opacity-100">
-                  <i className="ri-drag-move-2-line text-slate-400" aria-hidden />
-                </div>
                 <WidgetCard
                   widget={widget}
                   selected={selectedWidgetId === widget.id}
@@ -159,6 +178,14 @@ function DashboardCanvasInner({
                   onEdit={() => onEditWidget(widget.id)}
                   onFullscreen={() => onFullscreenWidget(widget.id)}
                 />
+                {isResizing ? (
+                  <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-0.5 rounded-md bg-slate-900/85 px-3 py-1.5 text-center text-xs font-medium text-white shadow-lg">
+                      <span>Width: {resizing.w} columns</span>
+                      <span>Height: {resizing.h} rows</span>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )
           })}

@@ -4,8 +4,10 @@ import dynamic from 'next/dynamic'
 import { memo, useMemo } from 'react'
 
 import type { DashboardWidget } from '../types'
+import type { RuntimeFilterRow } from '../types/componentFilters'
 import { useInsightsQueryChartData } from '../hooks/useInsightsQueryChartData'
 import { buildInsightsChartOption } from '../utils/buildInsightsChartOption'
+import { resolveWidgetQueryName } from '../utils/resolveWidgetQueryName'
 
 const ReactECharts = dynamic(() => import('echarts-for-react'), {
   ssr: false,
@@ -19,17 +21,11 @@ const ReactECharts = dynamic(() => import('echarts-for-react'), {
 type ChartWidgetProps = {
   widget: DashboardWidget
   loading?: boolean
+  runtimeFilters?: RuntimeFilterRow[]
 }
 
-function resolveQueryName(widget: DashboardWidget): string | null {
-  const fromConfig = widget.config?.queryName
-  if (typeof fromConfig === 'string' && fromConfig.trim()) return fromConfig.trim()
-  if (widget.catalogId?.trim()) return widget.catalogId.trim()
-  return null
-}
-
-function ChartWidgetInner({ widget, loading: loadingProp }: ChartWidgetProps) {
-  const queryName = resolveQueryName(widget)
+function ChartWidgetInner({ widget, loading: loadingProp, runtimeFilters }: ChartWidgetProps) {
+  const queryName = resolveWidgetQueryName(widget)
   const useLiveData = Boolean(queryName)
 
   const {
@@ -42,6 +38,7 @@ function ChartWidgetInner({ widget, loading: loadingProp }: ChartWidgetProps) {
     title: widget.title,
     properties: widget.properties,
     enabled: useLiveData,
+    runtimeFilters,
   })
 
   const fallbackOption = useMemo(

@@ -35,13 +35,13 @@ export function expandLayoutRowsToFillWidth(
   const rows = groupLayoutByRow(layout)
   const optimized = new Map<string, GridLayoutItem>()
 
-  for (const [, items] of rows) {
+  rows.forEach(items => {
     const sorted = [...items].sort((a, b) => a.x - b.x)
     const totalW = sorted.reduce((sum, item) => sum + item.w, 0)
 
     if (totalW >= cols) {
       sorted.forEach(item => optimized.set(item.i, { ...item }))
-      continue
+      return
     }
 
     const allKpiRow =
@@ -57,7 +57,7 @@ export function expandLayoutRowsToFillWidth(
         optimized.set(item.i, { ...item, x, w })
         x += w
       })
-      continue
+      return
     }
 
     const scale = cols / totalW
@@ -68,7 +68,7 @@ export function expandLayoutRowsToFillWidth(
       optimized.set(item.i, { ...item, x, w })
       x += w
     })
-  }
+  })
 
   return layout.map(item => optimized.get(item.i) ?? item)
 }
@@ -123,30 +123,22 @@ export function createWidgetId(prefix = 'widget'): string {
 }
 
 /** Place new item below existing layout (compact vertical). */
+/**
+ * Returns a position for a newly added widget at the bottom of the dashboard,
+ * below all existing widgets, so existing widgets keep their positions and
+ * the new widget never overlaps them.
+ */
 export function nextAvailablePosition(
   layout: GridLayoutItem[],
-  w: number,
-  h: number,
-  cols = 12
+  _w: number,
+  _h: number,
+  _cols = 12
 ): Pick<GridLayoutItem, 'x' | 'y'> {
   if (layout.length === 0) return { x: 0, y: 0 }
 
   let maxY = 0
   for (const item of layout) {
     maxY = Math.max(maxY, item.y + item.h)
-  }
-
-  for (let y = 0; y <= maxY + h; y++) {
-    for (let x = 0; x <= cols - w; x++) {
-      const collision = layout.some(
-        item =>
-          x < item.x + item.w &&
-          x + w > item.x &&
-          y < item.y + item.h &&
-          y + h > item.y
-      )
-      if (!collision) return { x, y }
-    }
   }
 
   return { x: 0, y: maxY }

@@ -2,7 +2,6 @@ import type { ChartKind } from './index'
 import type { QuickChartCriteriaFilter } from './quickChartFilter'
 
 export type QuickChartFormState = {
-  dashboardTarget: string
   componentName: string
   primaryModule: string
   relatedModule: string
@@ -17,13 +16,12 @@ export type QuickChartFormState = {
 }
 
 export const DEFAULT_QUICK_CHART_FORM: QuickChartFormState = {
-  dashboardTarget: '',
   componentName: '',
   primaryModule: '',
   relatedModule: '',
   measures: [''],
   grouping: '',
-  chartKind: 'bar',
+  chartKind: 'column',
   showComponentFilters: false,
   filterField: '',
   showCriteriaFilter: false,

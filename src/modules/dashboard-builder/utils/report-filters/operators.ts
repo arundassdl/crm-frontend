@@ -29,6 +29,7 @@ const DATE_OPERATORS: FilterOperatorOption[] = [
   { value: 'before', label: 'before' },
   { value: 'after', label: 'after' },
   { value: 'between', label: 'between' },
+  { value: 'Last', label: 'Last' },
 ]
 
 const CHECK_OPERATORS: FilterOperatorOption[] = [{ value: 'is', label: 'is' }]
@@ -84,4 +85,9 @@ export function defaultOperatorForCategory(category: FieldFilterCategory): strin
 
 export function operatorRequiresRange(operator: string): boolean {
   return operator === 'between'
+}
+
+/** "Last" operator: relative date range expressed as a duration (value + unit). */
+export function operatorRequiresDuration(operator: string): boolean {
+  return operator === 'Last'
 }
