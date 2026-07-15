@@ -93,9 +93,9 @@ function KpiCardWidgetInner({ widget, loading, runtimeFilters }: KpiCardWidgetPr
   if (showLoading) {
     return (
       <div className="flex h-full animate-pulse flex-col justify-center gap-2 px-4 py-3">
-        <div className="h-4 w-32 rounded bg-slate-200" />
-        <div className="h-8 w-24 rounded bg-slate-200" />
-        <div className="h-3 w-28 rounded bg-slate-200" />
+        <div className="h-4 w-32 rounded bg-slate-200 dark:bg-zinc-800" />
+        <div className="h-8 w-24 rounded bg-slate-200 dark:bg-zinc-800" />
+        <div className="h-3 w-28 rounded bg-slate-200 dark:bg-zinc-800" />
       </div>
     )
   }
@@ -106,7 +106,7 @@ function KpiCardWidgetInner({ widget, loading, runtimeFilters }: KpiCardWidgetPr
   const isFavorable = objective === 'decrease_positive' ? isNegativeGrowth : isPositiveGrowth
   const growthColor =
     growth == null || growth === 0
-      ? 'text-slate-400'
+      ? 'text-slate-400 dark:text-zinc-500'
       : isFavorable
         ? 'text-emerald-500'
         : 'text-red-500'
@@ -117,7 +117,7 @@ function KpiCardWidgetInner({ widget, loading, runtimeFilters }: KpiCardWidgetPr
     <div className="flex h-full flex-col justify-center overflow-hidden px-4 py-3">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <p className="text-3xl font-semibold tracking-tight text-slate-900">
+          <p className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-zinc-50">
             {data ? formatValue(data.currentValue) : fallbackValue ?? '—'}
           </p>
           {growth != null ? (
@@ -129,7 +129,7 @@ function KpiCardWidgetInner({ widget, loading, runtimeFilters }: KpiCardWidgetPr
           ) : null}
         </div>
         {data?.comparisonValue != null ? (
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 dark:text-zinc-500">
             {comparisonLabel}: {formatValue(data.comparisonValue)}
           </p>
         ) : null}

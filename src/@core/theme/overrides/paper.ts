@@ -5,7 +5,8 @@ const paper: Theme['components'] = {
   MuiPaper: {
     styleOverrides: {
       root: {
-        backgroundImage: 'none'
+        backgroundImage: 'none',
+        backgroundColor: '#ebf3fe',
       }
     }
   }

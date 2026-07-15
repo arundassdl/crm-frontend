@@ -12,6 +12,7 @@ import MuiAppRouterCache from '@components/theme/MuiAppRouterCache'
 
 // Util Imports
 import { getMode, getSettingsFromCookie } from '@core/utils/serverHelpers'
+import { cookies } from 'next/headers'
 
 type Props = ChildrenType & {
   direction: Direction
@@ -24,9 +25,11 @@ const Providers = (props: Props) => {
   // Vars
   const mode = getMode()
   const settingsCookie = getSettingsFromCookie()
+  const cookieStore = cookies()
+  const isCollapsed = cookieStore.get('sidebar-collapsed')?.value === 'true'
 
   return (
-    <VerticalNavProvider>
+    <VerticalNavProvider initialToggled={isCollapsed}>
       <SettingsProvider settingsCookie={settingsCookie} mode={mode}>
         <MuiAppRouterCache>
           <ThemeProvider direction={direction}>

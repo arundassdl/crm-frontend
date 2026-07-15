@@ -176,7 +176,7 @@ const AccountRelatedList: React.FC<AccountRelatedListProps> = ({
                                             >
                                                 {id ? (
                                                     <Link
-                                                        href={`/organizations/detail/${encodeURIComponent(id)}`}
+                                                        href={`/accounts/detail/${encodeURIComponent(id)}`}
                                                         color="inherit"
                                                         underline="none"
                                                         rel="noopener noreferrer"

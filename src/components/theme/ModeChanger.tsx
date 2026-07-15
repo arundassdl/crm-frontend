@@ -15,6 +15,14 @@ const ModeChanger = () => {
   useEffect(() => {
     if (settings.mode) {
       setMode(settings.mode)
+      if (typeof window !== 'undefined') {
+        const root = document.documentElement
+        if (settings.mode === 'dark') {
+          root.classList.add('dark')
+        } else {
+          root.classList.remove('dark')
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.mode])

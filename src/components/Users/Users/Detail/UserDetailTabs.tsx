@@ -11,10 +11,11 @@ const UserDetailTabs = ({ userdetails }: { userdetails: unknown }) => {
     <StyledContainer
       maxWidth={false}
       sx={{
-        backgroundColor: "var(--mui-palette-background-paper)",
+        backgroundColor: theme =>
+          theme.palette.mode === "dark" ? "#0A0A0A" : "#EFF6FF",
       }}
     >
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ px: 6, py: 6 }}>
         <UserOverview detail={userdetails} />
       </Box>
     </StyledContainer>

@@ -28,6 +28,7 @@ interface RawDatgridParams {
   role_profile: string;
   username: string;
   related_list: string;
+  token?: string;
 };
 const constructLinkedDocs = (linkedDocs) => { };
 export async function fetchRawDataGridListing(
@@ -79,6 +80,12 @@ export async function fetchRawDataGridListing(
       operator: item.operator,
     }));
 
+    console.log("fetchRawDataGridListing inputs - filters:", filters, "filterArray:", filterArray, "queryParams:", queryParams);
+
+    // Now pass queryParams (array of { field, value }) to constructFilters
+    let filtersObj = constructFilters(queryParams, fields);
+    console.log("fetchRawDataGridListing - filtersObj:", filtersObj);
+
     // If quickFilterValues exists, add it to the queryParams array as a separate filter
     if (quickFilterValues) {
       const firstFieldName =
@@ -93,7 +100,7 @@ export async function fetchRawDataGridListing(
     }
 
     // Now pass queryParams (array of { field, value }) to constructFilters
-    const filtersObj = constructFilters(queryParams, fields);
+    filtersObj = constructFilters(queryParams, fields);
 
     if (linkedList.length > 0) {
       // Ensure filtersObj is an array before pushing data
@@ -138,6 +145,10 @@ export async function fetchRawDataGridListing(
       role_profile,
       username,
       related_list,
+      // Forward the auth token so /api/datalist can authenticate the ERPNext
+      // call. Without this the request goes out unauthenticated and the backend
+      // returns no rows ("No records found" despite data existing).
+      token,
     };
     console.log("requestBody_final", JSON.stringify(requestBody, null, 2));
     // Append related doctypes if they exist
@@ -145,7 +156,9 @@ export async function fetchRawDataGridListing(
       requestBody.related = relatedDocs;
     }
     console.log("requestBodyresponse000", requestBody);
-    const response = await axios.post("/api/datalist", requestBody);
+    const response = await axios.post("/api/datalist", requestBody, {
+      headers: token ? { Authorization: token } : undefined,
+    });
     console.log("response000", response);
 
     const payload = response?.data;

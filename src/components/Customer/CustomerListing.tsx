@@ -9,7 +9,9 @@ import { showToast } from "@/components/ToastNotificationNew";
 import { deleteClient } from "@/services/api/common-erpnext-api/create-edit-api";
 import { columnsConfig } from "@/components/Common/DataGrid/columnsConfig";
 import RawDynamicDataGrid from "@/components/Common/DataGrid/RawDynamicDataGrid";
+import AccountGridView from "@/components/Customer/AccountGridView";
 import { getFormFields } from "@/services/api/general_apis/layout-api";
+import { getVibrantAvatarColor } from "@/@core/utils/avatarColor";
 import { Box, Link, CircularProgress } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -153,6 +155,9 @@ const CustomerListing: React.FC = () => {
                                     valueGetter: (params: any, row: any) => row ? row[fieldKey] : "",
                                     renderCell: (params: any) => {
                                         const id = params.row?.name || params.id;
+                                        const accName = String(params.row?.[fieldKey] || params.row?.name || "");
+                                        const tileColor = getVibrantAvatarColor(accName);
+                                        const tileInitials = accName.trim().substring(0, 2).toUpperCase();
                                         return (
                                             <Box
                                                 sx={{
@@ -160,8 +165,26 @@ const CustomerListing: React.FC = () => {
                                                     alignItems: "center",
                                                     "&:hover": { color: "primary.main" },
                                                 }}
-                                                className="gap-2"
+                                                className="gap-2.5"
                                             >
+                                                <Box
+                                                    sx={{
+                                                        width: 28,
+                                                        height: 28,
+                                                        borderRadius: "8px",
+                                                        backgroundColor: tileColor,
+                                                        color: "#fff",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        fontSize: "11px",
+                                                        fontWeight: 800,
+                                                        flexShrink: 0,
+                                                        boxShadow: "0 1px 4px rgba(12,36,114,0.15)",
+                                                    }}
+                                                >
+                                                    {tileInitials}
+                                                </Box>
                                                 {id ? (
                                                     <Link
                                                         href={`/accounts/detail/${id}`}
@@ -279,7 +302,7 @@ const CustomerListing: React.FC = () => {
     };
 
     const handleRowDetail = (name: any) => {
-        router.push(`/customers/detail/${encodeURIComponent(name)}`);
+        router.push(`/accounts/detail/${encodeURIComponent(name)}`);
     };
 
     const fetchDataWrapper = (fetchFunction: any, params: any, token: any) => {
@@ -328,6 +351,9 @@ const CustomerListing: React.FC = () => {
                 refreshKey={refreshKey}
                 module_name={module_name}
                 btnnewtitle="Account"
+                multipleViews={true}
+                availableViews={["list", "grid"]}
+                gridViewComponent={AccountGridView}
             />
             {open && (
                 <AddEditCustomerDrawer

@@ -7,6 +7,9 @@ import { useRef, useState } from 'react'
 import Tooltip from '@mui/material/Tooltip'
 import IconButton from '@mui/material/IconButton'
 
+// Third-party Imports
+import { SunIcon, MoonIcon } from '@phosphor-icons/react'
+
 // Hook Imports
 import { useSettings } from '@core/hooks/useSettings'
 
@@ -30,25 +33,17 @@ const ModeDropdown = () => {
     }
   }
 
-  const getModeIcon = () => {
-    if (settings.mode === 'dark') {
-      return 'ri-moon-clear-line'
-    } else {
-      return 'ri-sun-line'
-    }
-  }
-
   return (
     <>
       <Tooltip
-        title={settings.mode + ' Mode'}
+        title={settings.mode == 'dark' ? 'Light Mode' : 'Dark Mode'}
         onOpen={() => setTooltipOpen(true)}
         onClose={() => setTooltipOpen(false)}
         open={tooltipOpen}
         PopperProps={{ className: 'capitalize' }}
       >
-        <IconButton ref={anchorRef} onClick={handleToggle} className='text-textPrimary'>
-          <i className={getModeIcon()} />
+        <IconButton ref={anchorRef} onClick={handleToggle} sx={{ color: 'inherit' }}>
+          {settings.mode === 'dark' ? <SunIcon size={20} weight='duotone' /> : <MoonIcon size={20} weight='duotone' />}
         </IconButton>
       </Tooltip>
     </>

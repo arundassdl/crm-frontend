@@ -15,45 +15,83 @@ import {
 } from '@mui/x-data-grid';
 
 const StyledDataGrid_relatedlist = styled(DataGrid)(({ theme }) => ({
-    '& .MuiDataGrid-cell:hover': {
-        color: 'primary.main',
+  border: 'none',
+  backgroundColor: 'var(--bg-card) !important',
+  fontFamily: 'inherit',
+  '& .MuiDataGrid-main': {
+    backgroundColor: 'var(--bg-card)'
+  },
+  '& .MuiDataGrid-virtualScroller': {
+    backgroundColor: 'var(--bg-card)'
+  },
+  '& .MuiDataGrid-virtualScrollerContent': {
+    backgroundColor: 'var(--bg-card)'
+  },
+  '& .MuiDataGrid-columnHeaders': {
+    backgroundColor: 'var(--bg-topbar) !important',
+    borderBottom: '1px solid var(--border)',
+  },
+  // Canonical DataGrid column-header typography — shared across the app.
+  '& .MuiDataGrid-columnHeader': {
+    outline: 'none !important',
+    color: 'var(--text-header)',
+  },
+  '& .MuiDataGrid-columnHeaderTitleContainer': {
+    fontSize: '14px',
+    fontWeight: 600,
+    lineHeight: '18px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.025em',
+  },
+  '& .MuiDataGrid-columnHeaderTitle': {
+    fontSize: '14px',
+    fontWeight: 600,
+    lineHeight: '18px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.025em',
+    color: 'var(--text-header)',
+  },
+  '& .MuiDataGrid-columnSeparator': { display: 'none' },
+  '& .MuiDataGrid-cell': {
+    borderBottom: '1px solid var(--border-soft)',
+    outline: 'none !important',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+    outline: 'none !important',
+  },
+  '& .MuiDataGrid-row': {
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: 'rgba(96, 165, 250, 0.04) !important',
     },
-    border: 0,
-    '& .MuiDataGrid-columnsContainer': {
-        backgroundColor: 'var(--border-color, currentColor)',
+    '&.Mui-selected': {
+      backgroundColor: 'var(--border-soft) !important',
+      '&:hover': { backgroundColor: 'var(--border-soft) !important' },
     },
-    "& .MuiDataGrid-columnHeaderRow": {
-        backgroundColor: 'var(--border-color, currentColor)',
-        color: "white",
-    },
-    '& .MuiDataGrid-columnHeader, .MuiDataGrid-filler': {
-        borderTop: `1px solid var(--border-color, currentColor)`,
-        color: 'var(--mui-palette-text-primary)',
-        backgroundColor: 'var(--mui-palette-background-paper)'
-    },
-    '& .MuiDataGrid-columnHeaderTitle': {
-        color: 'var(--mui-palette-text-primary)',
-        fontWeight: theme.typography.fontWeightBold,
-        fontSize: "14px"
-    },
-    "& .MuiDataGrid-footerContainer": {
-        position: "sticky",
-        bottom: 0,
-        zIndex: 1100,
-        boxShadow: "0px -1px 2px rgba(0, 0, 0, 0.1)", // Optional shadow
-    },
-    '& .MuiDataGrid-columnsContainer, .MuiDataGrid-cell': {
-        // border: `1px solid var(--border-color, currentColor)`,
-    },
-    '& .MuiDataGrid-filler': {
-        color: 'var(--mui-palette-text-primary)',
-    },
-    '& .MuiDataGrid-root .MuiDataGrid-columnHeader': {
-        BorderTop: '1px solid var(--DataGrid-rowBorderColor)',
-    },
-    '& .MuiDataGrid-root .MuiDataGrid-row--borderBottom .MuiDataGrid-columnHeader': {
-        BorderTop: '1px solid var(--DataGrid-rowBorderColor)',
-    },
+  },
+  '& .MuiDataGrid-footerContainer': {
+    borderTop: '1px solid var(--border-soft)',
+    backgroundColor: 'var(--bg-card)',
+  },
+  '& .MuiDataGrid-selectedRowCount': {
+    fontSize: '11px',
+    color: 'var(--text-muted)',
+  },
+  '& .MuiTablePagination-root': {
+    fontSize: '11px',
+    color: 'var(--text-body)',
+  },
+  '& .MuiCheckbox-root': {
+    color: '#E2E8F0',
+  },
+  '& .MuiCheckbox-root.Mui-checked, & .MuiCheckbox-root.MuiCheckbox-indeterminate': {
+    color: '#1D4ED8',
+  },
+  '& .MuiDataGrid-overlay': {
+    backgroundColor: 'transparent',
+  },
 }));
 
 export default StyledDataGrid_relatedlist;

@@ -17,10 +17,14 @@ const menu = (skin: Skin): Theme['components'] => ({
     },
     styleOverrides: {
       paper: ({ theme }) => ({
-        marginBlockStart: theme.spacing(0.5),
+        marginBlockStart: theme.spacing(0.75),
+        borderRadius: '10px',
         ...(skin !== 'bordered' && {
           boxShadow: 'var(--mui-customShadows-lg)'
         })
+      }),
+      list: ({ theme }) => ({
+        padding: theme.spacing(1)
       })
     }
   },
@@ -28,6 +32,8 @@ const menu = (skin: Skin): Theme['components'] => ({
     styleOverrides: {
       root: ({ theme }) => ({
         paddingBlock: theme.spacing(2),
+        borderRadius: '8px',
+        fontSize: '0.82rem',
         color: 'var(--mui-palette-text-primary)',
         '& i, & svg': {
           fontSize: '1.375rem'
@@ -35,14 +41,15 @@ const menu = (skin: Skin): Theme['components'] => ({
         '& .MuiListItemIcon-root': {
           minInlineSize: 0
         },
+        // Neutral (gray) highlight for the selected item to match the design.
         '&.Mui-selected': {
-          backgroundColor: 'var(--mui-palette-primary-lightOpacity)',
-          color: 'var(--mui-palette-primary-main)',
+          backgroundColor: 'var(--mui-palette-action-selected)',
+          color: 'var(--mui-palette-text-primary)',
           '& .MuiListItemIcon-root': {
-            color: 'var(--mui-palette-primary-main)'
+            color: 'var(--mui-palette-text-primary)'
           },
           '&:hover, &.Mui-focused, &.Mui-focusVisible': {
-            backgroundColor: 'var(--mui-palette-primary-mainOpacity)'
+            backgroundColor: 'var(--mui-palette-action-hover)'
           }
         },
         '&.Mui-disabled': {

@@ -70,15 +70,6 @@ function syntheticGeneralMenuItem(key: string): SettingsMenuChild | null {
   return null
 }
 
-function ContentBackdrop() {
-  return (
-    <div
-      className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 translate-x-1/4 translate-y-1/4 rounded-full bg-gradient-to-br from-violet-200/40 via-amber-200/30 to-cyan-200/40 blur-2xl"
-      aria-hidden
-    />
-  )
-}
-
 export default function SettingsContent({ activeTab, menu }: SettingsContentProps) {
   const normalized = activeTab.trim().toLowerCase()
   const activeItem = menu.find(m => m.key === activeTab)
@@ -97,8 +88,7 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
   if (!activeTab) {
     return (
       <div className="relative min-h-[320px] px-8 pb-8 pt-[2.4rem]">
-        <ContentBackdrop />
-        <p className="text-[var(--mui-palette-text-secondary)]">Loading...</p>
+        <p className="text-slate-400">Loading...</p>
       </div>
     )
   }
@@ -107,8 +97,7 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
   if (!displayItem && !Component) {
     return (
       <div className="relative min-h-[320px] px-8 pb-8 pt-[2.4rem]">
-        <ContentBackdrop />
-        <p className="text-[var(--mui-palette-text-secondary)]">Select a setting</p>
+        <p className="text-slate-400">Select a setting</p>
       </div>
     )
   }
@@ -119,7 +108,7 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
         <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
           <Suspense
             fallback={
-              <div className="relative flex min-h-[240px] flex-1 items-center justify-center bg-[var(--mui-palette-background-paper)] pt-[2.4rem] text-[var(--mui-palette-text-secondary)]">
+              <div className="relative flex min-h-[240px] flex-1 items-center justify-center bg-[#EFF6FF] pt-[2.4rem] text-slate-400 dark:bg-[#0A0A0A]">
                 Loading...
               </div>
             }
@@ -136,7 +125,7 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
       return (
         <Suspense
           fallback={
-            <div className="relative flex min-h-[240px] items-center justify-center bg-[var(--mui-palette-background-paper)] pt-[2.4rem] text-[var(--mui-palette-text-secondary)]">
+            <div className="relative flex min-h-[240px] items-center justify-center bg-[#EFF6FF] pt-[2.4rem] text-slate-400 dark:bg-[#0A0A0A]">
               Loading...
             </div>
           }
@@ -150,7 +139,7 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
         <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
           <Suspense
             fallback={
-              <div className="relative flex min-h-[240px] flex-1 items-center justify-center bg-[var(--mui-palette-background-paper)] pt-[2.4rem] text-[var(--mui-palette-text-secondary)]">
+              <div className="relative flex min-h-[240px] flex-1 items-center justify-center bg-[#EFF6FF] pt-[2.4rem] text-slate-400 dark:bg-[#0A0A0A]">
                 Loading...
               </div>
             }
@@ -161,9 +150,8 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
       )
     }
     return (
-      <div className="relative min-h-[320px] px-8 pb-8 pt-[2.4rem]">
-        <ContentBackdrop />
-        <div className="relative rounded-xl border border-[var(--mui-palette-divider)] bg-[var(--mui-palette-background-paper)] p-6 shadow-sm">
+      <div className="relative flex min-h-[320px] flex-col bg-[#EFF6FF] px-6 py-6 dark:bg-[#0A0A0A]">
+        <div className="relative flex flex-1 flex-col overflow-hidden rounded-2xl border border-[#E3ECFC] bg-[#f9fbff] shadow-sm dark:border-[#27272A] dark:bg-[#1C1C1E]">
           <Component />
         </div>
       </div>
@@ -175,7 +163,7 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
     return (
       <Suspense
         fallback={
-          <div className="relative flex min-h-[240px] items-center justify-center bg-[var(--mui-palette-background-paper)] pt-[2.4rem] text-[var(--mui-palette-text-secondary)]">
+          <div className="relative flex min-h-[240px] items-center justify-center bg-[#EFF6FF] pt-[2.4rem] text-slate-400 dark:bg-[#0A0A0A]">
             Loading...
           </div>
         }
@@ -190,7 +178,7 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
     return (
       <Suspense
         fallback={
-          <div className="relative flex min-h-[240px] items-center justify-center bg-[var(--mui-palette-background-paper)] pt-[2.4rem] text-[var(--mui-palette-text-secondary)]">
+          <div className="relative flex min-h-[240px] items-center justify-center bg-[#EFF6FF] pt-[2.4rem] text-slate-400 dark:bg-[#0A0A0A]">
             Loading...
           </div>
         }
@@ -203,8 +191,7 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
   if (!displayItem) {
     return (
       <div className="relative min-h-[320px] px-8 pb-8 pt-[2.4rem]">
-        <ContentBackdrop />
-        <p className="text-[var(--mui-palette-text-secondary)]">Select a setting</p>
+        <p className="text-slate-400">Select a setting</p>
       </div>
     )
   }
@@ -212,36 +199,35 @@ export default function SettingsContent({ activeTab, menu }: SettingsContentProp
   const leafIcon = displayItem.icon?.trim()
 
   return (
-    <div className="relative min-h-[420px] overflow-hidden px-8 pb-8 pt-[2.4rem] md:px-10 md:pb-10">
-      <ContentBackdrop />
-
-      <div className="relative max-w-xl">
-        {leafIcon ? (
-          <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--mui-palette-divider)] bg-[var(--mui-palette-background-paper)] shadow-sm">
-            <i className={`${leafIcon} text-2xl text-[var(--mui-palette-text-primary)]`} />
+    <div className="relative min-h-[420px] bg-[#EFF6FF] px-6 py-6 dark:bg-[#0A0A0A]">
+      <div className="overflow-hidden rounded-2xl border border-[#E3ECFC] bg-[#f9fbff] shadow-sm dark:border-[#27272A] dark:bg-[#1C1C1E]">
+        <div className="flex items-center gap-2.5 border-b border-[#EFF6FF] px-5 py-3.5 dark:border-[#27272A]">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#3B82F618] dark:bg-[#3B82F622]">
+            {leafIcon ? (
+              <i aria-hidden className={`${leafIcon} text-[13px] text-[#3B82F6]`} />
+            ) : null}
           </div>
-        ) : null}
-
-        <h2 className="text-2xl font-semibold tracking-tight text-[var(--mui-palette-text-primary)]">
-          {displayItem.label}
-        </h2>
-        <p className="mt-3 text-base leading-relaxed text-[var(--mui-palette-text-secondary)]">
-          {getSettingItemDescription(displayItem)}
-        </p>
-
-        <p className="mt-6 text-sm text-[var(--mui-palette-text-secondary)]">
-          This area opens as a full page in the app. Use the link below to continue in the main layout.
-        </p>
-
-        <Link
-          href={openHrefForSettingsLeaf(displayItem)}
-          className="mt-4 inline-flex items-center gap-1 text-base font-medium text-primary hover:underline"
-        >
-          Open {displayItem.label}
-          <span aria-hidden className="text-lg">
-            →
+          <span className="flex-1 font-heading text-[12px] font-bold uppercase tracking-wider text-slate-500">
+            {displayItem.label}
           </span>
-        </Link>
+        </div>
+
+        <div className="px-5 py-5">
+          <div className="text-[14px] font-bold leading-snug text-slate-700 dark:text-[#D4D4D8]">
+            {getSettingItemDescription(displayItem)}
+          </div>
+          <div className="mt-1 text-[12px] text-slate-400">
+            This area opens as a full page in the app.
+          </div>
+
+          <Link
+            href={openHrefForSettingsLeaf(displayItem)}
+            className="mt-4 inline-flex items-center gap-1 rounded-lg bg-[#1D4ED8] px-3 py-1.5 text-[12px] font-bold text-white transition-colors hover:bg-[#2563EB]"
+          >
+            Open {displayItem.label}
+            <span aria-hidden>→</span>
+          </Link>
+        </div>
       </div>
     </div>
   )

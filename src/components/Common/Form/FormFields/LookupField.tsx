@@ -10,8 +10,10 @@ import {
     debounce,
 } from "@mui/material";
 import { Autocomplete } from "@mui/lab";
+import { useTheme } from "@mui/material/styles";
 import { fetchDataBySearch } from "@/services/api/common-erpnext-api/lookup-api";
 import QuickCreatePopup from "@/components/Common/QuickCreate/QuickCreatePopup";
+import { getFormFieldSx } from "@/@core/styles/formFieldStyles";
 
 const moduleToDoctypeMap: Record<string, string> = {
     Accounts: "CRM Organization",
@@ -71,6 +73,8 @@ const LookupField: React.FC<LookupFieldProps> = ({
     searchFields,
     displayFields,
 }) => {
+    const theme = useTheme();
+    const fieldSx = getFormFieldSx(theme.palette.mode === "dark");
     const [open, setOpen] = useState(false);
     const [options, setOptions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -276,6 +280,7 @@ const LookupField: React.FC<LookupFieldProps> = ({
                     placeholder={placeholder}
                     error={error}
                     helperText={helperText}
+                    sx={fieldSx}
                     InputProps={{
                         ...params.InputProps,
                         endAdornment: (

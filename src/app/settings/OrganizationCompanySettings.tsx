@@ -4,25 +4,20 @@ import { readAccessTokenDataJsonString } from '@/utils/accessTokenDataStorage'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import Card from '@mui/material/Card'
-import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
-import Divider from '@mui/material/Divider'
-import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
-import MuiLink from '@mui/material/Link'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
-import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined'
-import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined'
-import PhotoCameraOutlined from '@mui/icons-material/PhotoCameraOutlined'
+import {
+  Buildings,
+  Camera,
+  Envelope,
+  Globe,
+  IdentificationCard,
+  Phone
+} from '@phosphor-icons/react'
 import axios from 'axios'
 
-import StyledContainer from '@/@core/theme/overrides/container'
 import CustomAvatar from '@/@core/components/mui/Avatar'
+import { KVGrid, ProfileHero, SettingCard } from '@/components/Users/Users/Detail/ProfileCards'
 import EditableField, { type EditOption } from '@/components/Common/EditableField'
 import { showToast } from '@/components/ToastNotificationNew'
 import { get_access_token } from '@/store/slices/auth/token-login-slice'
@@ -409,407 +404,276 @@ export default function OrganizationCompanySettings() {
 
   if (loading) {
     return (
-      <StyledContainer maxWidth={false} sx={{ backgroundColor: 'var(--mui-palette-background-paper)' }}>
-        <Box sx={{ p: 3 }} className="flex min-h-[280px] items-center justify-center text-[var(--mui-palette-text-secondary)]">
-          <CircularProgress size={28} sx={{ mr: 2 }} />
-          Loading organization…
-        </Box>
-      </StyledContainer>
+      <div className="flex min-h-[280px] items-center justify-center bg-[#EFF6FF] text-slate-500 dark:bg-[#0A0A0A]">
+        <CircularProgress size={28} sx={{ mr: 2 }} />
+        Loading organization…
+      </div>
     )
   }
 
-  const hasHeaderContacts =
-    Boolean(form.email.trim()) || Boolean(form.phone_no.trim()) || Boolean(form.website.trim())
-
   return (
-    <StyledContainer maxWidth={false} sx={{ backgroundColor: 'var(--mui-palette-background-paper)' }}>
-      <Box sx={{ p: 3 }}>
-        <Grid container spacing={5} sx={{ pl: 0 }}>
-          <Grid item xs={12} sx={{ pt: '0 !important' }}>
-            <Box>
-              <Card sx={{ boxShadow: 'none', p: 8 }} className="border">
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        gap: 3,
-                        mb: 0,
-                        pb: 2,
-                        borderBottom: 1,
-                        borderColor: 'divider'
-                      }}
-                    >
-                      <Box sx={{ position: 'relative', width: 96, height: 96, flexShrink: 0 }}>
-                        <CustomAvatar variant="circular" alt={displayName} src={logoSrc} size={96} sx={{ flexShrink: 0 }}>
-                          {!logoSrc ? (displayName[0] ?? '?').toUpperCase() : null}
-                        </CustomAvatar>
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/gif,image/webp,image/*"
-                          id="org-settings-logo-file"
-                          hidden
-                          disabled={!docName || uploadingLogo}
-                          onChange={onLogoSelected}
-                        />
-                        <label htmlFor="org-settings-logo-file">
-                          <IconButton
-                            component="span"
-                            disabled={!docName || uploadingLogo}
-                            size="small"
-                            aria-label="Upload company logo"
-                            sx={{
-                              position: 'absolute',
-                              right: 0,
-                              bottom: 0,
-                              bgcolor: 'background.paper',
-                              boxShadow: 1,
-                              border: 1,
-                              borderColor: 'divider',
-                              '&:hover': { bgcolor: 'action.hover' },
-                              width: 32,
-                              height: 32
-                            }}
-                          >
-                            {uploadingLogo ? (
-                              <CircularProgress size={18} thickness={4} />
-                            ) : (
-                              <PhotoCameraOutlined sx={{ fontSize: 18 }} />
-                            )}
-                          </IconButton>
-                        </label>
-                      </Box>
+    <div className="flex-1 overflow-y-auto bg-[#EFF6FF] px-6 py-6 dark:bg-[#0A0A0A]">
+      <ProfileHero
+        name={displayName}
+        role={form.abbr.trim() || undefined}
+        subtitle={headerSubtitle}
+        contacts={[
+          ...(form.email.trim()
+            ? [{ icon: Envelope, value: form.email.trim(), link: true }]
+            : []),
+          ...(form.phone_no.trim() ? [{ icon: Phone, value: form.phone_no.trim() }] : []),
+          ...(form.website.trim()
+            ? [{ icon: Globe, value: form.website.trim(), link: true }]
+            : [])
+        ]}
+        avatar={
+          <div className="relative">
+            <CustomAvatar
+              variant="circular"
+              alt={displayName}
+              src={logoSrc}
+              size={64}
+              sx={{
+                border: '3px solid',
+                borderColor: theme => (theme.palette.mode === 'dark' ? '#1C1C1E' : '#f9fbff'),
+                boxShadow: 2,
+                bgcolor: '#F1F5F9',
+                color: '#475569',
+                fontSize: 20,
+                fontWeight: 800
+              }}
+            >
+              {!logoSrc ? (displayName[0] ?? '?').toUpperCase() : null}
+            </CustomAvatar>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp,image/*"
+              id="org-settings-logo-file"
+              hidden
+              disabled={!docName || uploadingLogo}
+              onChange={onLogoSelected}
+            />
+            <label htmlFor="org-settings-logo-file">
+              <IconButton
+                component="span"
+                disabled={!docName || uploadingLogo}
+                size="small"
+                aria-label="Upload company logo"
+                sx={{
+                  position: 'absolute',
+                  right: 0,
+                  bottom: 0,
+                  width: 20,
+                  height: 20,
+                  border: '1px solid',
+                  borderColor: theme => (theme.palette.mode === 'dark' ? '#3F3F46' : '#E3ECFC'),
+                  bgcolor: theme => (theme.palette.mode === 'dark' ? '#27272A' : '#fff'),
+                  boxShadow: 1,
+                  '&:hover': {
+                    bgcolor: theme => (theme.palette.mode === 'dark' ? '#3F3F46' : '#EFF6FF')
+                  }
+                }}
+              >
+                {uploadingLogo ? (
+                  <CircularProgress size={10} thickness={5} />
+                ) : (
+                  <Camera size={10} weight="duotone" />
+                )}
+              </IconButton>
+            </label>
+          </div>
+        }
+      />
 
-                      <Box sx={{ minWidth: 0, flex: 1, width: '100%' }}>
-                        <Stack
-                          direction="row"
-                          alignItems="center"
-                          flexWrap="wrap"
-                          gap={1.5}
-                          sx={{ rowGap: 0.75 }}
-                        >
-                          <Typography
-                            component="h2"
-                            variant="h5"
-                            sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.3 }}
-                          >
-                            {displayName}
-                          </Typography>
-                          {form.abbr.trim() ? (
-                            <Chip
-                              label={form.abbr.trim()}
-                              size="small"
-                              variant="outlined"
-                              sx={{
-                                fontWeight: 600,
-                                borderColor: 'rgba(245, 166, 35, 0.85)',
-                                color: 'rgb(217, 119, 6)',
-                                bgcolor: 'rgba(245, 166, 35, 0.12)',
-                                '& .MuiChip-label': { px: 1.25 }
-                              }}
-                            />
-                          ) : null}
-                        </Stack>
-                        {headerSubtitle ? (
-                          <Typography variant="body2" sx={{ mt: 0.75, color: 'text.secondary' }}>
-                            {headerSubtitle}
-                          </Typography>
-                        ) : null}
-                        {hasHeaderContacts ? (
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            flexWrap="wrap"
-                            columnGap={3}
-                            rowGap={1}
-                            sx={{ mt: 1.25 }}
-                          >
-                            {form.email.trim() ? (
-                              <Stack direction="row" alignItems="center" spacing={0.75}>
-                                <EmailOutlinedIcon sx={{ fontSize: 20, color: 'primary.main', opacity: 0.9 }} />
-                                <MuiLink
-                                  href={`mailto:${form.email.trim()}`}
-                                  underline="hover"
-                                  sx={{
-                                    fontSize: '0.875rem',
-                                    minWidth: 0,
-                                    maxWidth: '100%',
-                                    wordBreak: 'break-word',
-                                    overflowWrap: 'anywhere'
-                                  }}
-                                >
-                                  {form.email.trim()}
-                                </MuiLink>
-                              </Stack>
-                            ) : null}
-                            {form.phone_no.trim() ? (
-                              <Stack direction="row" alignItems="center" spacing={0.75}>
-                                <PhoneOutlinedIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                                <Typography variant="body2" color="text.primary">
-                                  {form.phone_no.trim()}
-                                </Typography>
-                              </Stack>
-                            ) : null}
-                            {form.website.trim() ? (
-                              <Stack direction="row" alignItems="center" spacing={0.75}>
-                                <LanguageOutlinedIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                                <MuiLink
-                                  href={
-                                    form.website.trim().startsWith('http')
-                                      ? form.website.trim()
-                                      : `https://${form.website.trim()}`
-                                  }
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  underline="hover"
-                                  sx={{
-                                    fontSize: '0.875rem',
-                                    minWidth: 0,
-                                    maxWidth: '100%',
-                                    wordBreak: 'break-word',
-                                    overflowWrap: 'anywhere'
-                                  }}
-                                >
-                                  {form.website.trim()}
-                                </MuiLink>
-                              </Stack>
-                            ) : null}
-                          </Stack>
-                        ) : null}
-                        {form.company_logo && canEdit ? (
-                          <Button
-                            type="button"
-                            variant="text"
-                            color="secondary"
-                            size="small"
-                            sx={{ mt: 0.5, p: 0, minWidth: 0, alignSelf: 'flex-start' }}
-                            onClick={() => void handleFieldSave('company_logo', '')}
-                          >
-                            Remove logo
-                          </Button>
-                        ) : null}
-                      </Box>
-                    </Box>
-                  </Grid>
+      {form.company_logo && canEdit ? (
+        <div className="-mt-2 mb-4 flex justify-end">
+          <button
+            type="button"
+            onClick={() => void handleFieldSave('company_logo', '')}
+            className="rounded border border-[#E3ECFC] px-2 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-slate-50 dark:border-[#3F3F46] dark:hover:bg-[#27272A]"
+          >
+            Remove logo
+          </button>
+        </div>
+      ) : null}
 
-                  {loadError ? (
-                    <Grid item xs={12}>
-                      <Typography color="error" sx={{ py: 0 }}>
-                        {loadError}
-                      </Typography>
-                    </Grid>
-                  ) : null}
+      {loadError ? (
+        <div className="mb-4 rounded-2xl border border-[#FECACA] bg-[#FEF2F2] px-5 py-3 text-[13px] font-semibold text-[#DC2626]">
+          {loadError}
+        </div>
+      ) : null}
 
-                  <Grid item xs={12}>
-                    <Grid container spacing={2} direction="row" rowSpacing={2}>
-                      <Grid item xs={12}>
-                        <Typography variant="h6" sx={{ mt: 0, mb: 2 }}>
-                          General information
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Company Name"
-                          field="company_name"
-                          value={form.company_name}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Abbreviation"
-                          field="abbr"
-                          value={form.abbr}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Default Currency"
-                          field="default_currency"
-                          type="select"
-                          options={currencySelectOptions}
-                          value={form.default_currency}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Country"
-                          field="country"
-                          type="select"
-                          options={countrySelectOptions}
-                          value={form.country}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Tax ID"
-                          field="tax_id"
-                          value={form.tax_id}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Domain"
-                          field="domain"
-                          value={form.domain}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Date Of Establishment"
-                          field="date_of_establishment"
-                          type="date"
-                          value={form.date_of_establishment}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Date Of Incorporation"
-                          field="date_of_incorporation"
-                          type="date"
-                          value={form.date_of_incorporation}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Date Of Commencement"
-                          field="date_of_commencement"
-                          type="date"
-                          value={form.date_of_commencement}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Time Zone"
-                          field="time_zone"
-                          type="select"
-                          options={timeZoneSelectOptions}
-                          value={form.time_zone}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                    </Grid>
-                  </Grid>
+      <div className="space-y-4">
+        <SettingCard icon={Buildings} title="General Information">
+          <KVGrid>
+            <EditableField
+              kvLayout
+              label="Company Name"
+              field="company_name"
+              value={form.company_name}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+            />
+            <EditableField
+              kvLayout
+              label="Abbreviation"
+              field="abbr"
+              value={form.abbr}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              label="Default Currency"
+              field="default_currency"
+              type="select"
+              options={currencySelectOptions}
+              value={form.default_currency}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              label="Country"
+              field="country"
+              type="select"
+              options={countrySelectOptions}
+              value={form.country}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              label="Tax ID"
+              field="tax_id"
+              value={form.tax_id}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              label="Domain"
+              field="domain"
+              value={form.domain}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              label="Date Of Establishment"
+              field="date_of_establishment"
+              type="date"
+              value={form.date_of_establishment}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              label="Date Of Incorporation"
+              field="date_of_incorporation"
+              type="date"
+              value={form.date_of_incorporation}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              label="Date Of Commencement"
+              field="date_of_commencement"
+              type="date"
+              value={form.date_of_commencement}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              label="Time Zone"
+              field="time_zone"
+              type="select"
+              options={timeZoneSelectOptions}
+              value={form.time_zone}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+          </KVGrid>
+        </SettingCard>
 
-                  <Grid item xs={12}>
-                    <Grid container spacing={2} direction="row" rowSpacing={2}>
-                      <Grid item xs={12}>
-                        <Divider sx={{ borderBottomWidth: '2px', mb: 4 }} />
-                        <Typography variant="h6" sx={{ mb: 4 }}>
-                          Contact information
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Phone No"
-                          field="phone_no"
-                          value={form.phone_no}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Email"
-                          field="email"
-                          type="email"
-                          value={form.email}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Fax"
-                          field="fax"
-                          value={form.fax}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Website"
-                          field="website"
-                          value={form.website}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                    </Grid>
-                  </Grid>
+        <SettingCard icon={Phone} title="Contact Information" color="#10B981">
+          <KVGrid>
+            <EditableField
+              kvLayout
+              label="Phone No"
+              field="phone_no"
+              value={form.phone_no}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              kvLink
+              label="Email"
+              field="email"
+              type="email"
+              value={form.email}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              label="Fax"
+              field="fax"
+              value={form.fax}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+            <EditableField
+              kvLayout
+              kvLink
+              label="Website"
+              field="website"
+              value={form.website}
+              onSave={handleFieldSave}
+              isEditpermission={canEdit}
+              allowEmptySave
+            />
+          </KVGrid>
+        </SettingCard>
 
-                  <Grid item xs={12}>
-                    <Grid container spacing={2} direction="row" rowSpacing={2}>
-                      <Grid item xs={12}>
-                        <Divider sx={{ borderBottomWidth: '2px', mb: 4 }} />
-                        <Typography variant="h6" sx={{ mb: 4 }}>
-                          Other information
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Company Description"
-                          field="company_description"
-                          type="multiline"
-                          value={form.company_description}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <EditableField
-                          label="Registration Details"
-                          field="registration_details"
-                          type="multiline"
-                          value={form.registration_details}
-                          onSave={handleFieldSave}
-                          isEditpermission={canEdit}
-                          allowEmptySave
-                        />
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                </Grid>
-              </Card>
-            </Box>
-          </Grid>
-        </Grid>
-      </Box>
-    </StyledContainer>
+        <SettingCard icon={IdentificationCard} title="Other Information" color="#F59E0B">
+          <EditableField
+            kvLayout
+            label="Company Description"
+            field="company_description"
+            type="multiline"
+            value={form.company_description}
+            onSave={handleFieldSave}
+            isEditpermission={canEdit}
+            allowEmptySave
+          />
+          <EditableField
+            kvLayout
+            label="Registration Details"
+            field="registration_details"
+            type="multiline"
+            value={form.registration_details}
+            onSave={handleFieldSave}
+            isEditpermission={canEdit}
+            allowEmptySave
+          />
+        </SettingCard>
+      </div>
+    </div>
   )
 }

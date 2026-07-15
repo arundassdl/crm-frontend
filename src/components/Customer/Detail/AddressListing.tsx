@@ -100,7 +100,7 @@ const AddressListing: React.FC<AddressListingProps> = ({ doctype,link_name }) =>
     setOpen(true);
   };
   const handleDetails: any = async (name: any, type: any) => {
-    router.push(`customers/detail/${name}`);
+    router.push(`/accounts/detail/${name}`);
   };
    const handleDeleteRow = (id: GridRowId) => () => {   
       setSelectedRowId(id);

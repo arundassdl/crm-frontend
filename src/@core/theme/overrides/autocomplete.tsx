@@ -3,6 +3,7 @@ import React from 'react'
 
 // MUI Imports
 import type { Theme } from '@mui/material/styles'
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 
 // Type Imports
 import type { Skin } from '@core/types'
@@ -20,7 +21,7 @@ const autocomplete = (skin: Skin): Theme['components'] => ({
       ChipProps: {
         size: 'small'
       },
-      popupIcon: <i className='ri-arrow-down-s-line' />
+      popupIcon: <ArrowDropDownIcon />
     },
     styleOverrides: {
       root: {
@@ -49,23 +50,29 @@ const autocomplete = (skin: Skin): Theme['components'] => ({
         }
       },
       paper: {
+        borderRadius: '10px',
         ...(skin !== 'bordered' && {
           boxShadow: 'var(--mui-customShadows-lg)',
-          marginBlockStart: '0.125rem'
+          marginBlockStart: '0.25rem'
         })
       },
       listbox: ({ theme }) => ({
+        padding: theme.spacing(1),
         '& .MuiAutocomplete-option': {
-          padding: theme.spacing(2, 5),
+          padding: theme.spacing(2, 3),
+          borderRadius: '8px',
+          fontSize: '0.82rem',
+          color: 'var(--mui-palette-text-primary)',
+          // Neutral (gray) highlight for the active/selected option to match the design.
           '&[aria-selected="true"]': {
-            backgroundColor: 'var(--mui-palette-primary-lightOpacity)',
-            color: 'var(--mui-palette-primary-main)',
+            backgroundColor: 'var(--mui-palette-action-selected)',
+            color: 'var(--mui-palette-text-primary)',
             '&.Mui-focused, &.Mui-focusVisible': {
-              backgroundColor: 'var(--mui-palette-primary-mainOpacity)'
+              backgroundColor: 'var(--mui-palette-action-hover)'
             }
           }
         },
-        '& .MuiAutocomplete-option.Mui-focusVisible': {
+        '& .MuiAutocomplete-option.Mui-focused, & .MuiAutocomplete-option.Mui-focusVisible': {
           backgroundColor: 'var(--mui-palette-action-hover)'
         }
       })

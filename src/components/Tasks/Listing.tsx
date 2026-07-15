@@ -6,10 +6,12 @@ import { showToast } from "../ToastNotificationNew";
 import { deleteClient } from "@/services/api/common-erpnext-api/create-edit-api";
 import { columnsConfig } from "@/components/Common/DataGrid/columnsConfig";
 import RawDynamicDataGrid from "../Common/DataGrid/RawDynamicDataGrid";
+import TaskGridView from "@/components/Tasks/TaskGridView";
+import TaskKanbanView from "@/components/Tasks/TaskKanbanView";
+import { getTaskStatusToken } from "@/components/Tasks/taskTokens";
 import { Box, CircularProgress, Link } from "@mui/material";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import KanbanBoard from "../Common/KanbanBoard";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import DonutLargeIcon from "@mui/icons-material/DonutLarge";
 import { HourglassBottom, CheckCircle, Cancel } from "@mui/icons-material";
@@ -133,6 +135,70 @@ const TasksListing: React.FC<DealProps> = ({ link_name }) => {
   ];
   const view_mode = useSelector((state: RootState) => state.viewMode.viewMode);
 
+  /** Status tabs + Kanban columns, coloured with the shared task tokens. */
+  const taskStages = statusOptions.map((o, index) => ({
+    label: o.value,
+    index,
+    bgColor: getTaskStatusToken(o.value).dot,
+    color: "var(--mui-palette-grey-700)",
+  }));
+
+  /**
+   * Per-status record counts for the filter tabs. Without these,
+   * RawDynamicDataGrid falls back to `active ? rowCount : 0`, which renders every
+   * inactive tab as 0. One count query per status (pageSize 1 — we only read
+   * totalCount), mirroring the Deals/Leads listings.
+   */
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchAllCounts = async () => {
+      if (!userToken?.access_token || !isFieldsLoaded || colFields.length <= 1) return;
+
+      const statuses = ["All", ...statusOptions.map((o) => o.value)];
+      const countsObj: Record<string, number> = {};
+
+      try {
+        // Filter on the status column as it exists in colFields, so the key is
+        // qualified the same way the backend expects (e.g. "CRM Task.status").
+        const statusCol = colFields.find(
+          (f: any) => String(f.field).toLowerCase() === "status"
+        );
+        const statusKey = `${statusCol?.doctype || module}.status`;
+
+        await Promise.all(
+          statuses.map(async (statusVal) => {
+            const params = {
+              page: 0,
+              pageSize: 1,
+              filters: {
+                items:
+                  statusVal === "All"
+                    ? []
+                    : [{ field: statusKey, operator: "equals", value: statusVal }],
+                quickFilterValues: [],
+              },
+              sort: [],
+            };
+            const res = await fetchDataWrapper(
+              fetchRawDataGridListing,
+              params,
+              userToken?.access_token
+            );
+            countsObj[statusVal] = res?.totalCount || 0;
+          })
+        );
+
+        setStatusCounts(countsObj);
+      } catch (err) {
+        console.error("Error fetching task status counts:", err);
+      }
+    };
+
+    fetchAllCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userToken?.access_token, colFields, isFieldsLoaded, refreshKey]);
+
   useEffect(() => {
     const fetchFields = async () => {
       if (userToken?.access_token) {
@@ -183,6 +249,15 @@ const TasksListing: React.FC<DealProps> = ({ link_name }) => {
             const additionalFields = [
               { doctype: module, field: "creation", hidden: "False", flex: 1, minWidth: 200, type: "date" },
               { doctype: module, field: "modified", hidden: "False", flex: 1, minWidth: 200, type: "date" },
+              // Fields the Grid/Kanban cards render. The SELECT is driven by colFields,
+              // so if the layout omits these the rows come back without them (blank
+              // cards). Fetched hidden — they add no columns to the List view.
+              { doctype: module, field: "title", hidden: "True" },
+              { doctype: module, field: "status", hidden: "True" },
+              { doctype: module, field: "priority", hidden: "True" },
+              { doctype: module, field: "due_date", hidden: "True" },
+              { doctype: module, field: "description", hidden: "True" },
+              { doctype: module, field: "assigned_to", hidden: "True" },
             ].filter((f) => !finalKeys.has(f.field));
 
             return [...updatedFields, ...additionalFields];
@@ -298,40 +373,42 @@ const TasksListing: React.FC<DealProps> = ({ link_name }) => {
   return (
     <div>
       <Box>
-        {view_mode === "list" ? (
-          !isFieldsLoaded ? (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: "400px",
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          ) : (
-            <RawDynamicDataGrid
-              module={module}
-              heading={"Tasks"}
-              onAddNew={handleAddNew}
-              handleRowDetail={handleRowDetail}
-              handleRowDelete={handleDelete}
-              colFields={colFields}
-              columnDefinitions={columnDefs}
-              relatedDocs={relatedDocs}
-              fetchDataFunction={(p, t, q) =>
-                fetchDataWrapper(fetchRawDataGridListing, p, t)
-              }
-              refreshKey={refreshKey}
-              multipleViews={true}
-              multiviewList={"Kanban"}
-              module_name={module_name}
-              btnnewtitle={"Task"}
-            />
-          )
+        {!isFieldsLoaded ? (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "400px",
+            }}
+          >
+            <CircularProgress />
+          </Box>
         ) : (
-          <KanbanBoard stages={statusOptions} listfields={listfields} module={module} title={"Tasks"} fieldname={"status"} onAddNew={handleAddNew} refreshKey={refreshKey} multiviewList={"Kanban"} />
+          /* RawDynamicDataGrid owns all three views (List / Grid / Kanban). */
+          <RawDynamicDataGrid
+            module={module}
+            heading={"Tasks"}
+            onAddNew={handleAddNew}
+            handleRowDetail={handleRowDetail}
+            handleRowDelete={handleDelete}
+            colFields={colFields}
+            columnDefinitions={columnDefs}
+            relatedDocs={relatedDocs}
+            fetchDataFunction={(p, t, q) =>
+              fetchDataWrapper(fetchRawDataGridListing, p, t)
+            }
+            refreshKey={refreshKey}
+            multipleViews={true}
+            availableViews={["list", "grid", "kanban"]}
+            gridViewComponent={TaskGridView}
+            kanbanViewComponent={TaskKanbanView}
+            stages={taskStages}
+            statusCounts={statusCounts}
+            statusField="status"
+            module_name={module_name}
+            btnnewtitle={"Task"}
+          />
         )}
 
         {open && (

@@ -43,7 +43,7 @@ export default function GeneralSettingsPanel() {
 
   if (isOrganization) {
     return (
-      <div className='relative flex min-h-[320px] w-full min-w-0 flex-1 flex-col overflow-y-auto bg-[var(--mui-palette-background-paper)] pt-[2.4rem] px-4 pb-8 sm:px-6 md:px-8'>
+      <div className='relative flex min-h-[320px] w-full min-w-0 flex-1 flex-col overflow-y-auto bg-[#EFF6FF] dark:bg-[#0A0A0A]'>
         <OrganizationCompanySettings />
       </div>
     )
@@ -51,14 +51,14 @@ export default function GeneralSettingsPanel() {
 
   if (!currentUserName) {
     return (
-      <div className='relative flex min-h-[240px] items-center justify-center px-8 pb-8 pt-[2.4rem] text-[var(--mui-palette-text-secondary)]'>
+      <div className='relative flex min-h-[240px] items-center justify-center bg-[#EFF6FF] px-8 pb-8 pt-[2.4rem] text-slate-500 dark:bg-[#0A0A0A]'>
         Loading profile…
       </div>
     )
   }
 
   return (
-    <div className='relative flex min-h-[320px] w-full min-w-0 flex-1 flex-col overflow-y-auto bg-[var(--mui-palette-background-paper)] pt-[2.4rem] px-4 pb-8 sm:px-6 md:px-8'>
+    <div className='relative flex min-h-[320px] w-full min-w-0 flex-1 flex-col overflow-y-auto bg-[#EFF6FF] dark:bg-[#0A0A0A]'>
       <UserDetails name={currentUserName} />
     </div>
   )

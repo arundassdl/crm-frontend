@@ -34,6 +34,24 @@ const LogoText = styled.span<LogoTextProps>`
   margin-inline-start: 5px;
 `;
 
+/**
+ * Theme-aware EVOQ CRM logo. Renders the icon + "EVOQ CRM" text and swaps
+ * between the black-text (light) and white-text (dark) variants purely via
+ * CSS so it stays legible in light, dark and system colour schemes without
+ * any client-side JS/hydration flicker.
+ */
+const ThemedLogo = styled.img`
+  height: 28px;
+  width: auto;
+  display: block;
+  content: url("/logo.png");
+
+  [data-mui-color-scheme="dark"] &,
+  html.dark & {
+    content: url("/logo-dark.png");
+  }
+`;
+
 const Logo = ({
   color,
   from,
@@ -96,7 +114,7 @@ const Logo = ({
   return (
     <div className="flex items-center min-bs-[24px]">
       {from == "login" ? (
-        <img src="/logo.png" alt="EVOQ CRM" style={{ height: 28, width: "auto" }} />
+        <ThemedLogo alt="EVOQ CRM" />
       ) : (
         <>
           {companyData?.company_logo != undefined &&
@@ -109,7 +127,7 @@ const Logo = ({
               />
             </div>
           ) : (
-            <img src="/logo.png" alt="EVOQ CRM" style={{ height: 28, width: "auto" }} />
+            <ThemedLogo alt="EVOQ CRM" />
           )}
         </>
       )}

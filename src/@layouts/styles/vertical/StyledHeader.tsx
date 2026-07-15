@@ -22,7 +22,8 @@ const StyledHeader = styled.header<StyledHeaderProps>`
   width: 100%;
   z-index: 1201;
   flex-direction: column;
-  background-color: var(--mui-palette-background-default);
+  background-color: var(--nav-chrome-bg);
+  border-bottom: 1px solid var(--nav-chrome-border);
   position: fixed;
   top: 0;
   left: auto;

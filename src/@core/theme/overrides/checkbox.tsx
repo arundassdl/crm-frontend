@@ -9,7 +9,7 @@ const Icon = () => {
     <svg width='1em' height='1em' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
       <path
         d='M8 4h8a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4Z'
-        stroke='var(--mui-palette-text-secondary)'
+        stroke='currentcolor'
         strokeWidth='2'
       />
     </svg>
@@ -59,16 +59,13 @@ const checkbox: Theme['components'] = {
                 fontSize: '1.5rem'
               }
             }),
-            color: "gray !important", // Default color
-            "& .MuiDataGrid-checkboxInput": {
-      color: "gray", // Default checkbox color
-      "&.Mui-checked": {
-        color: "green", // Checked color
-      },
-      "&.MuiCheckbox-indeterminate": {
-        color: "orange", // Indeterminate color
-      },
-    },
+            color: 'var(--mui-palette-text-secondary)',
+            '&.Mui-checked': {
+              color: 'var(--mui-palette-primary-main) !important'
+            },
+            '&.MuiCheckbox-indeterminate': {
+              color: 'var(--mui-palette-primary-main) !important'
+            },
          
         '&.Mui-checked:not(.Mui-disabled) svg': {
           filter: 'drop-shadow(var(--mui-customShadows-xs))'

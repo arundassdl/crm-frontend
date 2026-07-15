@@ -1,10 +1,7 @@
 'use client'
 
+import PlaceholderPanel from './PlaceholderPanel'
+
 export default function Email() {
-  return (
-    <div>
-      <h2 className="text-xl font-semibold">Email</h2>
-      <p className="mt-2 text-gray-600">Configure outbound email and signatures.</p>
-    </div>
-  )
+  return <PlaceholderPanel label="Email" description="Configure outbound email and signatures." />
 }

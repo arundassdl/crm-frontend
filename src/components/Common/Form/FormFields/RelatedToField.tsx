@@ -2,7 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, FormControl, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import LookupField from "./LookupField";
+import { getFormFieldSx } from "@/@core/styles/formFieldStyles";
 
 type RelatedToType = "CRM Organization" | "CRM Deal";
 
@@ -84,9 +86,12 @@ const RelatedTo: React.FC<RelatedToFieldProps> = ({
         onChange(null);
     };
 
+    const theme = useTheme();
+    const fieldSx = getFormFieldSx(theme.palette.mode === "dark");
+
     return (
         <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
-            <FormControl sx={{ minWidth: 180 }} disabled={disabled}>
+            <FormControl sx={{ minWidth: 180, ...fieldSx }} disabled={disabled}>
                 <Select
                     labelId={typeLabelId}
                     value={selectedType}

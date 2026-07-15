@@ -16,11 +16,14 @@ import useVerticalNav from '@/@menu/hooks/useVerticalNav'
 import { Box, Card } from '@mui/material'
 import { useMainColumnFullWidth } from '@/contexts/MainColumnFullWidthContext'
 import { useResolvedPathname } from '@/hooks/useResolvedPathname'
+import { useTheme } from '@mui/material/styles'
 
 const LayoutContent = ({ children }: ChildrenType) => {
   const { isBreakpointReached, isToggled, toggleVerticalNav } = useVerticalNav()
   const pathname = useResolvedPathname()
   const mainColumnFullWidth = useMainColumnFullWidth()
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
 
   /** Module Federation — `src/pages/analytics/*` (Pages Router) must use the “light” main branch, not the Card layout. */
   const isAnalyticsRoute =
@@ -58,11 +61,12 @@ const LayoutContent = ({ children }: ChildrenType) => {
         verticalLayoutClasses.content,
         verticalLayoutClasses.contentCompact,
         isWideAddonMainChrome && 'analytics-layout-content',
-        'flex-auto is-full min-h-0'
+        'flex-auto is-full min-h-0',
+        `${isDark ? "bg-[#121212] text-[#F4F4F5]" : "bg-[#EBF3FE] text-slate-800"}`
       )}
     >
       {isNotProtectedRoute || pathname == "/" || isWideAddonMainChrome ? (
-        <Box sx={{ width: '100%', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ width: '100%', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', bgcolor: isDark ? "bg-[#121212] text-[#F4F4F5]" : "bg-[#EBF3FE] text-slate-800" }}>
           {!hideBreadcrumb && (
             <NextBreadcrumb
               homeElement={'Home'}
@@ -77,17 +81,18 @@ const LayoutContent = ({ children }: ChildrenType) => {
         </Box>
       ) : (
         <Box
+          // className={`${isDark ? "bg-[#121212] text-[#F4F4F5]" : "bg-[#EBF3FE] text-slate-800"}`}
           sx={{
             maxHeight: 'none',
             minHeight: 'calc(100vh - 120px)',
-            bgcolor: (pathname.includes("detail") || pathname.includes("details")) ? "none" : "background.paper",
+            bgcolor: isDark ? "bg-[#121212] text-[#F4F4F5]" : "bg-[#EBF3FE] text-slate-800",
             maxInlineSize: '100%',
             borderRadius: 3,
             width: '100%',
             overflow: 'visible',
           }}
         >
-          {!hideBreadcrumb && (
+          {/* {!hideBreadcrumb && (
             <NextBreadcrumb
               homeElement={'Home'}
               activeClasses='text-stone-900'
@@ -96,21 +101,22 @@ const LayoutContent = ({ children }: ChildrenType) => {
               listClasses='hover:underline font-bold flex flex-row gap-4'
               capitalizeLinks
             />
-          )}
+          )} */}
           <Card
             style={{ border: "none", boxShadow: "none" }}
             sx={{
               width: '100%',
-              padding: isSettingsRoute ? 0 : '1.25rem 0',
+              padding: isSettingsRoute ? 0 : '0',
               maxHeight: 'none',
               height: '100%',
-              overflow: 'auto',
+              overflow: (pathname.includes("detail") || pathname.includes("details")) ? 'visible' : 'auto',
               marginRight: 3,
-              backgroundColor: isSettingsRoute
-                ? 'var(--mui-palette-background-paper)'
-                : (pathname.includes("detail") || pathname.includes("details"))
-                  ? 'var(--mui-palette-background-default)'
-                  : 'none'
+              // backgroundColor: isSettingsRoute
+              //   ? 'var(--mui-palette-background-paper)'
+              //   : (pathname.includes("detail") || pathname.includes("details"))
+              //     ? 'var(--mui-palette-background-default)'
+              //     : 'none'
+              bgcolor: (pathname.includes("detail") || pathname.includes("details")) ? "none" : isDark ? "#121212" : "#EBF3FE",
             }}
           >
             {children}

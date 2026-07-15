@@ -4,6 +4,7 @@
 import "react-perfect-scrollbar/dist/css/styles.css";
 import "@assets/iconify-icons/generated-icons.css";
 import '@/app/globals.css'
+import '@configs/inter-fonts'
 
 // Type Imports
 import type { ChildrenType } from "@core/types";
@@ -18,7 +19,23 @@ import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 // UI Imports
-import { Backdrop, CircularProgress } from "@mui/material";
+import { Backdrop, Box, CircularProgress } from "@mui/material";
+
+// Full-page loading indicator that uses the themed page background
+const PageLoader = () => (
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minBlockSize: "100vh",
+      inlineSize: "100%",
+      backgroundColor: "var(--bg-page)",
+    }}
+  >
+    <CircularProgress />
+  </Box>
+);
 
 // TimeAgo Imports
 import TimeAgo from "javascript-time-ago";
@@ -45,20 +62,19 @@ const RootLayout = ({ children }: ChildrenType) => {
       <StoreProvider>
         <body className="flex is-full min-bs-full flex-auto flex-col">
           {/* Global Page Loader */}
-          {/* <Backdrop
-              open={loading}
-              sx={{
-                color: "#000", // Set text color to black
-                zIndex: 9999,
-                backgroundColor: 'var(--mui-palette-secondary-lightOpacity) !important', // Light white overlay
-              }}
-            >
-              <CircularProgress color="inherit" />
-            </Backdrop> */}
+          <Backdrop
+            open={loading}
+            sx={{
+              zIndex: 9999,
+              backgroundColor: "var(--bg-page)",
+            }}
+          >
+            <CircularProgress />
+          </Backdrop>
 
 
           <main>
-            <Suspense fallback={<CircularProgress sx={{ display: "block", mx: "auto", mt: 5 }} />}>
+            <Suspense fallback={<PageLoader />}>
               <ToastProvider>
                 <ClickProvider>{children}</ClickProvider>
               </ToastProvider>

@@ -72,17 +72,25 @@ const VerticalNav = (props: VerticalNavProps) => {
 
   // UseEffect, update verticalNav state to set initial values and update values on change
   useEffect(() => {
+    let nextToggled = isToggledContext
+
+    if (breakpointReached) {
+      nextToggled = false
+    } else if (typeof window !== 'undefined') {
+      const match = document.cookie.match(/(?:^|; )sidebar-collapsed=([^;]*)/)
+      if (match) {
+        nextToggled = match[1] === 'true'
+      }
+    }
+
     updateVerticalNavState({
       width,
       transitionDuration,
-      isBreakpointReached: breakpointReached
+      isBreakpointReached: breakpointReached,
+      isToggled: nextToggled
     })
-
-    if (!breakpointReached) {
-      updateVerticalNavState({ isToggled: false })
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, breakpointReached, updateVerticalNavState])
+  }, [width, breakpointReached, isToggledContext, updateVerticalNavState])
 
   // Handle Backdrop(Content Overlay) Click
   const handleBackdropClick = () => {

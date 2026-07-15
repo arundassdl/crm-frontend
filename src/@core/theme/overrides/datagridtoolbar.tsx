@@ -46,7 +46,13 @@ function DataGridCustomToolbar(props) {
 
 
   return (
-    <GridToolbarContainer sx={{ paddingBottom: 5, alignItems: "center" }} className='px-5'>
+    <GridToolbarContainer sx={{
+      paddingBottom: 5,
+      alignItems: "center",
+      bgcolor: 'var(--bg-card)',
+      color: 'var(--text-primary)',
+      borderBottom: '1px solid var(--border)',
+    }} className='px-5'>
       {/* <GridToolbarFilterButton slotProps={{ button: { color: 'inherit' },}} /> */}
 
       <div className="flex flex-col gap-3">

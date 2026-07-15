@@ -96,7 +96,9 @@ const MenuItem: ForwardRefRenderFunction<HTMLLIElement, MenuItemProps> = (props,
 
   // Handle the click event.
   const handleClick = () => {
-    if (isToggled) {
+    // `isToggled` means "collapsed" on desktop and "overlay open" on mobile — only auto-close
+    // the mobile overlay here; don't re-expand the desktop rail on every navigation.
+    if (isToggled && isBreakpointReached) {
       toggleVerticalNav()
     }
   }

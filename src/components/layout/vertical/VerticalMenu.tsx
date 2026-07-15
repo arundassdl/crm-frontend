@@ -1,55 +1,39 @@
 import { readAccessTokenDataJsonString } from '@/utils/accessTokenDataStorage'
+// Next Imports
+import { usePathname } from 'next/navigation'
+
 // MUI Imports
-import Chip from '@mui/material/Chip'
 import { useTheme } from '@mui/material/styles'
+import Box from '@mui/material/Box'
+import Tooltip from '@mui/material/Tooltip'
 
 // Third-party Imports
 import PerfectScrollbar from 'react-perfect-scrollbar'
 
-// Type Imports
-import type { VerticalMenuContextProps } from '@menu/components/vertical-menu/Menu'
-
 // Component Imports
-import { Menu, SubMenu, MenuItem, MenuSection } from '@menu/vertical-menu'
+import { Menu, MenuItem, MenuSection } from '@menu/vertical-menu'
+import RailSubMenuFlyout from './RailSubMenuFlyout'
 
 // Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav'
-
-// Styled Component Imports
-import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNavExpandIcon'
-
 
 // Style Imports
 import menuItemStyles from '@core/styles/vertical/menuItemStyles'
 import menuSectionStyles from '@core/styles/vertical/menuSectionStyles'
 import useMultilangHook from '@/hooks/LanguageHook/Multilanguages-hook'
 import { useEffect, useState, type ReactNode } from 'react'
- import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
-import ArticleIcon from '@mui/icons-material/Article';
-// import CorporateFareIcon from '@mui/icons-material/CorporateFare';
-// import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
-// import PortraitIcon from '@mui/icons-material/Portrait';
-// import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
-// import EventNoteIcon from '@mui/icons-material/EventNote';
-// import TaskAltIcon from '@mui/icons-material/TaskAlt';
-import { verticalMenuItems } from '@/components/layout/vertical/vertical-menu-config';
-import { renderMenuIcon } from '@/utils/muiIconByName';
+import { renderMenuIcon } from '@/utils/phosphorMenuIcon';
 
-type RenderExpandIconProps = {
-  open?: boolean
-  transitionDuration?: VerticalMenuContextProps['transitionDuration']
+type VerticalMenuProps = {
+  scrollMenu: (container: any, isPerfectScrollbar: boolean) => void
+  collapsed: boolean
 }
 
-const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) => (
-  <StyledVerticalNavExpandIcon open={open} transitionDuration={transitionDuration}>
-    <i className='ri-arrow-right-s-line' />
-  </StyledVerticalNavExpandIcon>
-)
-
-const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectScrollbar: boolean) => void }) => {
+const VerticalMenu = ({ scrollMenu, collapsed }: VerticalMenuProps) => {
   // Hooks
   const theme = useTheme()
-  const { isBreakpointReached, transitionDuration } = useVerticalNav()
+  const { isBreakpointReached } = useVerticalNav()
+  const pathname = usePathname()
 
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
 
@@ -163,8 +147,6 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
   const filterMenuItems = (roleProfile: unknown) => {
     const roles = normalizeRoles(roleProfile)
 
-    console.log('verticalMenuItems', verticalMenuItems, menuList);
-
     const filtered = menuList
       .map((section: any) => {
         const items = (section.items || [])
@@ -177,7 +159,6 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
     const withManagementFirstFlattened = stripManagementFirstItemChildren(filtered)
 
     setFilteredMenu(withManagementFirstFlattened)
-    console.log(withManagementFirstFlattened, 'filteredMenu', filteredMenu);
   };
 
   /** Re-run when menu or auth loads; `role_profile` may arrive after `menuList`. */
@@ -197,9 +178,34 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
    * `{ label: "Settings", submenu: true, path: "/settings", icon: "ri-settings-2-line", ... }`.
    * Those render as `<i className="ri-…">`; other strings fall back to `@mui/icons-material` by name.
    */
-  const getIcon = (iconName?: string) => renderMenuIcon(iconName)
+  const getIcon = (iconName?: string, path?: string) => renderMenuIcon(iconName, path)
 
-  /** Recursively render a menu item: SubMenu for items with children, MenuItem for leaves. */
+  /** Collapsed rail: label is hidden, so it's shown as a hover tooltip on the icon instead. */
+  const getIconWithTooltip = (iconName: string | undefined, label: ReactNode, path?: string) => {
+    const icon = <span style={{ display: 'inline-flex' }}>{getIcon(iconName, path)}</span>
+    return collapsed ? (
+      <Tooltip title={label} placement='right'>
+        {icon}
+      </Tooltip>
+    ) : (
+      getIcon(iconName, path)
+    )
+  }
+
+  /** Small dot shown after the active item's label (expanded mode only — reference: `Sidebar.tsx`). */
+  const ActiveDot = (
+    <Box
+      component='span'
+      sx={{ inlineSize: 6, blockSize: 6, borderRadius: '50%', backgroundColor: 'var(--nav-chrome-active-text)' }}
+    />
+  )
+
+  /**
+   * Render a menu item. Leaves render as `MenuItem`; items with children render as a
+   * `RailSubMenuFlyout` (a popover listing the children) instead of `@menu`'s `SubMenu`,
+   * since `SubMenu` only supports inline accordion expansion, which doesn't fit the
+   * collapsed 68px icon-only rail.
+   */
   const renderMenuItem = (item: any, keyPrefix = '', depth = 0): ReactNode => {
     const pathPart = item.path != null && String(item.path).length > 0 ? String(item.path) : 'nopath'
     const key = keyPrefix || `${pathPart}-${item.label}-${depth}`
@@ -207,17 +213,24 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
     const hasSubmenu = Array.isArray(item.children) && item.children.length > 0
 
     if (hasSubmenu) {
-      /** Do not pass href on group rows — RouterLink + /settings breaks expand / sibling items. */
       return (
-        <SubMenu key={key} label={item.label} href={item.path ?? '#'} icon={getIcon(item.icon)}>
-          {(item.children || []).map((child: any, idx: number) =>
-            renderMenuItem(child, `${key}-c${idx}-${child.path ?? child.label}`, depth + 1)
-          )}
-        </SubMenu>
-      );
+        <RailSubMenuFlyout
+          key={key}
+          label={item.label}
+          icon={getIcon(item.icon, item.path)}
+          collapsed={collapsed}
+          children={(item.children || []).map((child: any) => ({ label: child.label, path: child.path }))}
+        />
+      )
     }
+    const isActive = item.path != null && pathname === item.path
     return (
-      <MenuItem key={key} href={item.path ?? '#'} icon={getIcon(item.icon)}>
+      <MenuItem
+        key={key}
+        href={item.path ?? '#'}
+        icon={getIconWithTooltip(item.icon, item.label, item.path)}
+        suffix={isActive ? ActiveDot : undefined}
+      >
         {item.label}
       </MenuItem>
     );
@@ -239,13 +252,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
     >
       {/* Incase you also want to scroll NavHeader to scroll with Vertical Menu, remove NavHeader from above and paste it below this comment */}
       {/* Vertical Menu */}
-      <Menu
-        subMenuOpenBehavior='collapse'
-        menuItemStyles={menuItemStyles(theme)}
-        renderExpandIcon={({ open }) => <RenderExpandIcon open={open} transitionDuration={transitionDuration} />}
-        renderExpandedMenuItemIcon={{ icon: <i className='ri-circle-line' /> }}
-        menuSectionStyles={menuSectionStyles(theme)}
-      >
+      <Menu menuItemStyles={menuItemStyles(theme)} menuSectionStyles={menuSectionStyles(theme)}>
        {filteredMenu.map((section, secIdx) => (
         <MenuSection label='' key={`${section.section}-${secIdx}`}>
           {section.items.map((item: any, idx: number) =>
@@ -258,127 +265,5 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
     </ScrollWrapper>
   )
 }
-
-// const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectScrollbar: boolean) => void }) => {
-//   // Hooks
-//   const theme = useTheme()
-//   const { isBreakpointReached, transitionDuration } = useVerticalNav()
-
-//   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
-
-//   const { handleLanguageChange, multiLanguagesData }: any = useMultilangHook();
-//   const [multiLang, setMultiLang] = useState<any>([])
-//   const [userData, setuserData] = useState<any>([]);
-
-//   useEffect(() => {
-//     if (multiLanguagesData[0]?.value != undefined) {
-//       console.log("multi_lang?.multi_lang", multiLanguagesData[0]?.value);
-//       setMultiLang(multiLanguagesData[0]?.value);
-//     }
-
-//   });
-
-//   useEffect(() => {
-
-
-//     if (typeof window !== 'undefined') {
-//       if (localStorage.getItem('userProfileData') != 'undefined') {
-//         // alert(localStorage.getItem('userData'))
-//         setuserData(JSON.parse(localStorage.getItem('userProfileData') || '[]'))
-//       }
-//     }
-//   }, []);
-//   return (
-//     // eslint-disable-next-line lines-around-comment
-//     /* Custom scrollbar instead of browser scroll, remove if you want browser scroll only */
-//     <ScrollWrapper
-//       {...(isBreakpointReached
-//         ? {
-//           className: 'bs-full overflow-y-auto overflow-x-hidden',
-//           onScroll: container => scrollMenu(container, false)
-//         }
-//         : {
-//           options: { wheelPropagation: false, suppressScrollX: true },
-//           onScrollY: container => scrollMenu(container, true)
-//         })}
-//     >
-//       {/* Incase you also want to scroll NavHeader to scroll with Vertical Menu, remove NavHeader from above and paste it below this comment */}
-//       {/* Vertical Menu */}
-//       <Menu
-//         menuItemStyles={menuItemStyles(theme)}
-//         renderExpandIcon={({ open }) => <RenderExpandIcon open={open} transitionDuration={transitionDuration} />}
-//         renderExpandedMenuItemIcon={{ icon: <i className='ri-circle-line' /> }}
-//         menuSectionStyles={menuSectionStyles(theme)}
-//       >
-       
-//         <MenuItem
-//           href={`/`}
-//           icon={<i className='ri-home-smile-line' />}
-//         // suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-//         // target='_blank'
-//         >
-//           {(multiLang?.menu_dashboard) ? multiLang?.menu_dashboard : "Dashboard"}
-//         </MenuItem>
- 
-//               <MenuItem href='/leads' icon={<PeopleOutlineIcon />} >
-//                 {(multiLang?.menu_leads) ? multiLang?.menu_leads : "Leads"}
-//               </MenuItem>
-//                <MenuItem href='/deals' icon={<ElectricBoltIcon />} >
-//                 {(multiLang?.menu_deals) ? multiLang?.menu_deals : "Deals"}
-//               </MenuItem>
-         
-
-          
-//                <MenuItem href='/contacts' icon={<PortraitIcon />} >
-//                 {(multiLang?.menu_contacts) ? multiLang?.menu_contacts : "Contacts"}
-//               </MenuItem>
-//               <MenuItem href='/accounts' icon={<CorporateFareIcon />}>
-//                 {(multiLang?.menu_accounts) ? multiLang?.menu_accounts : "Accounts"}
-//               </MenuItem>
- 
-//               {/* <MenuItem href='#' icon={<EventNoteIcon />}>
-//                 {(multiLang?.menu_notes) ? multiLang?.menu_notes : "Notes"}
-//               </MenuItem> */}
-//               <MenuItem href='/tasks' icon={<TaskAltIcon />}>
-//                 {(multiLang?.menu_tasks) ? multiLang?.menu_tasks : "Tasks"}
-//               </MenuItem>
-           
-
-//             <SubMenu label='Customer Communications' icon={<i className='ri-service-line' />}>
-              
-//               <MenuItem href='#'>
-//               {(multiLang?.menu_chatbot) ? multiLang?.menu_chatbot : "Chatbot"}
-//               </MenuItem>  
-                
-//             </SubMenu>   
- 
-
-          
-        
-        
-//           <MenuSection label=''>
-//           <MenuItem  icon={<i className='ri-admin-line' />}>
-//               {"ADMIN OPTIONS"}
-//             </MenuItem>
-          
-//             <SubMenu label='User' icon={<i className='ri-user-2-fill' />}>
-//               <MenuItem href='/user/users'>
-//                 {(multiLang?.menu_users) ? multiLang?.menu_users : "Users"}
-//               </MenuItem>
-            
-//               <MenuItem href='/user/roles'>
-//               {(multiLang?.menu_roles) ? multiLang?.menu_roles : "Roles"}
-//               </MenuItem>  
-//             </SubMenu>           
-//             <SubMenu label='Settings' icon={<i className='ri-settings-2-line' />}>
-//               <MenuItem href='/my-company'>
-//                 {(multiLang?.menu_my_company) ? multiLang?.menu_my_company : "Organization"}
-//               </MenuItem>
-//             </SubMenu>
-//           </MenuSection>
-//       </Menu>
-//     </ScrollWrapper>
-//   )
-// }
 
 export default VerticalMenu

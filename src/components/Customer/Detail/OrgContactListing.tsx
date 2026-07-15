@@ -132,7 +132,7 @@ const OrgContactListing: React.FC<OrgContactListingProps> = ({ link_name }) => {
     setOpen(true);
   };
   const handleDetails: any = async (name: any, type: any) => {
-    router.push(`deals/detail/${name}`);
+    router.push(`/deals/detail/${name}`);
   };
   const handleDeleteRow = (id: GridRowId) => () => {
     setSelectedRowId(id);

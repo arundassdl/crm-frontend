@@ -4,6 +4,14 @@ import type { Theme } from '@mui/material/styles'
 // Config Imports
 import themeConfig from '@configs/themeConfig'
 
+// Design-system primary button color (blue). Kept button-scoped so the theme
+// `primary` palette can stay independent while every primary button matches the
+// reference design: solid blue, white text, rounded, title-case.
+const BTN_PRIMARY = '#1D4ED8'
+const BTN_PRIMARY_HOVER = '#2563EB'
+const BTN_PRIMARY_ACTIVE = '#0C2472'
+const BTN_PRIMARY_TINT = 'rgb(29 78 216 / 0.08)'
+
 const iconStyles = (size?: string) => ({
   '& > *:nth-of-type(1)': {
     ...(size === 'small'
@@ -127,13 +135,16 @@ const button: Theme['components'] = {
       {
         props: { variant: 'text', color: 'primary' },
         style: {
+          color: BTN_PRIMARY,
+          textTransform: 'none',
+          fontWeight: 600,
           '&:not(.Mui-disabled):hover, &:not(.Mui-disabled):active, &.Mui-focusVisible:not(:has(span.MuiTouchRipple-root))':
             {
-              backgroundColor: 'var(--mui-palette-primary-lighterOpacity)'
+              backgroundColor: BTN_PRIMARY_TINT
             },
           '&.Mui-disabled': {
             opacity: 0.45,
-            color: 'var(--mui-palette-primary-main)'
+            color: BTN_PRIMARY
           }
         }
       },
@@ -205,15 +216,20 @@ const button: Theme['components'] = {
       {
         props: { variant: 'outlined', color: 'primary' },
         style: {
-          borderColor: 'var(--mui-palette-primary-main)',
+          borderColor: BTN_PRIMARY,
+          color: BTN_PRIMARY,
+          textTransform: 'none',
+          fontWeight: 600,
+          borderRadius: '9px',
           '&:not(.Mui-disabled):hover, &:not(.Mui-disabled):active, &.Mui-focusVisible:not(:has(span.MuiTouchRipple-root))':
             {
-              backgroundColor: 'var(--mui-palette-primary-lighterOpacity)'
+              backgroundColor: BTN_PRIMARY_TINT,
+              borderColor: BTN_PRIMARY
             },
           '&.Mui-disabled': {
             opacity: 0.45,
-            color: 'var(--mui-palette-primary-main)',
-            borderColor: 'var(--mui-palette-primary-main)'
+            color: BTN_PRIMARY,
+            borderColor: BTN_PRIMARY
           }
         }
       },
@@ -295,13 +311,21 @@ const button: Theme['components'] = {
       {
         props: { variant: 'contained', color: 'primary' },
         style: {
+          backgroundColor: BTN_PRIMARY,
+          color: '#fff',
+          textTransform: 'none',
+          fontWeight: 600,
+          borderRadius: '9px',
+          '&:hover': {
+            backgroundColor: BTN_PRIMARY_HOVER
+          },
           '&:not(.Mui-disabled):active, &.Mui-focusVisible:not(:has(span.MuiTouchRipple-root))': {
-            backgroundColor: 'var(--mui-palette-primary-dark)'
+            backgroundColor: BTN_PRIMARY_ACTIVE
           },
           '&.Mui-disabled': {
             opacity: 0.45,
-            color: 'var(--mui-palette-primary-contrastText)',
-            backgroundColor: 'var(--mui-palette-primary-main)'
+            color: '#fff',
+            backgroundColor: BTN_PRIMARY
           }
         }
       },

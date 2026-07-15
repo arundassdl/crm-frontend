@@ -69,7 +69,14 @@ console.log("response",response);
     return NextResponse.json(response.data.message);
     
   } catch (error: any) {
-    console.error('[CreateDocumentError]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('[CreateDocumentError]', error?.response?.data || error);
+    // Forward ERPNext's failure details (e.g. `_server_messages`, exception message)
+    // so the client can show why the document was not created instead of a blank 500.
+    const upstream = error?.response?.data;
+    const status = error?.response?.status || 500;
+    return NextResponse.json(
+      upstream || { error: 'Internal Server Error' },
+      { status }
+    );
   }
 }

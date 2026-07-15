@@ -7,7 +7,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useField, useFormikContext } from 'formik';
 import { convertDate, formatCalDate } from "@/services/api/common-erpnext-api/libs/utils";
 
-export default function DatePickerField({ name, label }: any) {
+export default function DatePickerField({ name, label, sx }: any) {
   const { setFieldValue } = useFormikContext();
   const [field, meta] = useField(name);
 
@@ -29,6 +29,7 @@ export default function DatePickerField({ name, label }: any) {
             error: Boolean(meta.touched && meta.error),
             helperText: meta.touched && meta.error,
             fullWidth: true,
+            sx: sx,
           },
         }}
       />

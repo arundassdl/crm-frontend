@@ -3,9 +3,11 @@ import React from 'react'
 
 // MUI Imports
 import type { Theme } from '@mui/material/styles'
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 
-const SelectIcon = () => {
-  return <i className='ri-arrow-down-s-line' />
+// Filled-triangle caret to match the form field design.
+const SelectIcon = (props: any) => {
+  return <ArrowDropDownIcon {...props} />
 }
 
 const iconStyles = (theme: Theme) => ({
@@ -13,12 +15,13 @@ const iconStyles = (theme: Theme) => ({
   display: 'inline-block',
   fill: 'currentColor',
   flexShrink: 0,
-  transition: theme.transitions.create('fill', {
+  transition: theme.transitions.create(['fill', 'transform'], {
     duration: theme.transitions.duration.shorter
   }),
-  fontSize: '1.25rem',
+  fontSize: '1.5rem',
+  color: 'var(--mui-palette-text-primary)',
   position: 'absolute',
-  right: '1rem',
+  right: '0.75rem',
   top: 'calc(50% - 0.5em)',
   pointerEvents: 'none'
 })

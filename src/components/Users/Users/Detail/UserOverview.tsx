@@ -17,14 +17,21 @@ import {
   IconButton,
   CircularProgress,
 } from "@mui/material";
-import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
-import MuiLink from "@mui/material/Link";
-import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
-import WorkIcon from "@mui/icons-material/Work";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import BuildIcon from "@mui/icons-material/Build";
+import {
+  Camera,
+  Envelope,
+  IdentificationCard,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  User as PhosphorUser,
+} from "@phosphor-icons/react";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import {
+  KVGrid,
+  ProfileHero,
+  SettingCard,
+} from "@/components/Users/Users/Detail/ProfileCards";
 import { showToast } from "@/components/ToastNotificationNew";
 import CustomAvatar from "@/@core/components/mui/Avatar";
 import { CONSTANTS } from "@/services/config/app-config";
@@ -676,377 +683,198 @@ const UserOverview = (slug) => {
 
   const displayAvatarSrc = localAvatarPreview ?? avatarSrc;
 
-  return (
-    <Grid
-        container
-        spacing={5}
-        // className="px-5"
-        sx={{ paddingLeft: "0px" }}
-      >
-    <Grid item xs={24} sm={12} sx={{ paddingTop: "0px !important" }}>
-      <Box sx={{}}>
-        <Card sx={{ boxShadow: "none", p: 8 }} className="border">
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-start",
-                  gap: 3,
-                  mb: 0,
-                  pb: 2,
-                  borderBottom: 1,
-                  borderColor: "divider",
-                }}
-              >
-                <Box
-                  sx={{
-                    position: "relative",
-                    width: 96,
-                    height: 96,
-                    flexShrink: 0,
-                  }}
-                >
-                  <CustomAvatar
-                    alt={displayName || customerData?.name}
-                    src={displayAvatarSrc}
-                    size={96}
-                    variant="circular"
-                    sx={{ flexShrink: 0 }}
-                  />
-                  {isEditPermission ? (
-                    <>
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/gif,image/webp"
-                        id="user-overview-avatar-file"
-                        hidden
-                        disabled={uploadingImage}
-                        onChange={handleUserImageSelected}
-                      />
-                      <label htmlFor="user-overview-avatar-file">
-                        <IconButton
-                          component="span"
-                          disabled={uploadingImage}
-                          size="small"
-                          aria-label="Upload profile photo"
-                          sx={{
-                            position: "absolute",
-                            right: 0,
-                            bottom: 0,
-                            bgcolor: "background.paper",
-                            boxShadow: 1,
-                            border: 1,
-                            borderColor: "divider",
-                            "&:hover": {
-                              bgcolor: "action.hover",
-                            },
-                            width: 32,
-                            height: 32,
-                          }}
-                        >
-                          {uploadingImage ? (
-                            <CircularProgress size={18} thickness={4} />
-                          ) : (
-                            <PhotoCameraOutlined sx={{ fontSize: 18 }} />
-                          )}
-                        </IconButton>
-                      </label>
-                    </>
-                  ) : null}
-                </Box>
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    flexWrap="wrap"
-                    gap={1.5}
-                    sx={{ rowGap: 0.75 }}
-                  >
-                    <Typography
-                      component="h2"
-                      variant="h5"
-                      sx={{
-                        fontWeight: 600,
-                        color: "text.primary",
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {displayName || "—"}
-                    </Typography>
-                    {roleLabel ? (
-                      <Chip
-                        label={roleLabel}
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          fontWeight: 600,
-                          borderColor: "rgba(245, 166, 35, 0.85)",
-                          color: "rgb(217, 119, 6)",
-                          bgcolor: "rgba(245, 166, 35, 0.12)",
-                          "& .MuiChip-label": { px: 1.25 },
-                        }}
-                      />
-                    ) : null}
-                  </Stack>
-                  {headerSubtitle ? (
-                    <Typography
-                      variant="body2"
-                      sx={{ mt: 0.75, color: "text.secondary" }}
-                    >
-                      {headerSubtitle}
-                    </Typography>
-                  ) : null}
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    flexWrap="wrap"
-                    columnGap={3}
-                    rowGap={1}
-                    sx={{ mt: 1.25 }}
-                  >
-                    {headerEmail ? (
-                      <Stack direction="row" alignItems="center" spacing={0.75}>
-                        <EmailOutlinedIcon
-                          sx={{
-                            fontSize: 20,
-                            color: "primary.main",
-                            opacity: 0.9,
-                          }}
-                        />
-                        <MuiLink
-                          href={`mailto:${headerEmail}`}
-                          underline="hover"
-                          sx={{
-                            fontSize: "0.875rem",
-                            minWidth: 0,
-                            maxWidth: "100%",
-                            wordBreak: "break-word",
-                            overflowWrap: "anywhere",
-                          }}
-                        >
-                          {headerEmail}
-                        </MuiLink>
-                      </Stack>
-                    ) : null}
-                    {phoneStr ? (
-                      <Stack direction="row" alignItems="center" spacing={0.75}>
-                        <PhoneOutlinedIcon
-                          sx={{ fontSize: 20, color: "text.secondary" }}
-                        />
-                        <Typography variant="body2" color="text.primary">
-                          {phoneStr}
-                        </Typography>
-                      </Stack>
-                    ) : null}
-                  </Stack>
-                </Box>
-              </Box>
-            </Grid>
-            <Grid item spacing={2} xs={12}>
-              <Grid container spacing={2} direction="row" rowSpacing={2}>
-                    <Grid item xs={12}>
-                      <Typography variant="h6" sx={{ mt: 0, mb: 2 }}>
-                        User information
-                      </Typography>
-                    </Grid>
+  const initials = useMemo(() => {
+    const parts = displayName.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "—";
+    return parts
+      .slice(0, 2)
+      .map(p => p[0]?.toUpperCase() ?? "")
+      .join("");
+  }, [displayName]);
 
-                    <Grid item xs={12}>
-                      <EditableField
-                        label="First Name"
-                        field="first_name"
-                        value={profile?.first_name}
-                        onSave={handleSave}
-                        isEditpermission= {isEditPermission}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <EditableField
-                        label="Last Name"
-                        field="last_name"
-                        value={profile?.last_name}
-                        onSave={handleSave}
-                        isEditpermission= {isEditPermission}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <EditableField
-                        label="Email"
-                        field="email"
-                        type="email"
-                        value={profile?.email}
-                        onSave={handleSave}
-                        isEditpermission={false}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <EditableField
-                        label="Mobile No"
-                        field="mobile_no"
-                        value={profile?.mobile_no}
-                        onSave={handleSave}
-                        isEditpermission= {isEditPermission}
-                      />
-                    </Grid>
-                    {/* <Grid item xs={12}>
-                      <EditableField
-                        label="Employee Number"
-                        field="employee_number"
-                        value={profile?.employee_number}
-                        onSave={handleSave}
-                        isEditpermission= {isEditPermission}
-                      />
-                    </Grid> */}
-              </Grid>
-              <Grid container spacing={2} direction="row" rowSpacing={2}>
-                  <Grid item xs={12}>
-                      <Divider sx={{borderBottomWidth:"2px", mb: 4}} />
-                      <Typography variant="h6" sx={{ mb: 4 }}>
-                        Role information
-                      </Typography>
-                    </Grid>
-                 {/* <Grid item xs={12} sm={6}>
-                  <Box
-                    display="flex"
-                    alignItems="flex-start"
-                    gap={5}
-                    flexDirection="row"
-                    sx={{ mb: 4 }}
-                  >
-                    <Typography
-                      className="font-normal text-1xl"
-                      color={"GrayText"}
-                    >
-                      Role:
-                    </Typography>
-                    <Typography color={"var(--mui-palette-secondary-dark)"} sx={{ pl: 8 }}>{profile?.role_name}</Typography>
-                  </Box>
-                  </Grid>*/}
-                   <Grid item xs={12}>
-                      <EditableField
-                        key={`user-role-${String((customerData as Record<string, unknown>)?.name ?? slug?.detail?.name ?? "")}`}
-                        label="Role"
-                        field="role_profile_name"
-                        type="select"
-                        options={roleOptions}
-                        value={profile?.role_name}
-                        onSave={handleSave}
-                        isEditpermission={roleFieldEditable}
-                      />
-                    </Grid>
-              </Grid>
-              <Grid item xs={12}>
-                <Divider sx={{borderBottomWidth:"2px", mb: 4}} />
-                <Typography variant="h6" sx={{ mb: 4 }}>
-                  More Information
-                </Typography>
-              </Grid>
-              <Grid container spacing={2} direction="row" rowSpacing={2}>
-                <Grid item xs={12}>
-                  <EditableField
-                    label="Gender"
-                    field="gender"
-                    type="select"
-                    options={genderOptions}
-                    value={profile?.gender}
-                    onSave={handleSave}
-                    isEditpermission={isEditPermission}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <EditableField
-                    label="Date Of Birth"
-                    field="birth_date"
-                    type="date"
-                    value={profile?.birth_date}
-                    onSave={handleSave}
-                    isEditpermission={isEditPermission}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <EditableField
-                    label="Date Of Joining"
-                    field="date_of_joining"
-                    type="date"
-                    value={profile?.date_of_joining}
-                    onSave={handleSave}
-                    isEditpermission={isEditPermission}
-                  />
-                </Grid>
-              </Grid>
-              {/* <Grid item xs={12} sm={6} md={12}>
-                <Divider sx={{borderBottomWidth:"2px", mb: 4}} />
-                <Typography variant="h6" sx={{ mb: 4 }}>
-                  Company Details
-                </Typography>
-              </Grid>
-              <Grid container spacing={2} direction="row" rowSpacing={2}>
-                   <Grid item xs={12} sm={6}>
-                      <EditableField
-                        label="Designation"
-                        field="designation"
-                        type="select"
-                        options={designationOptions}
-                        value={profile?.designation}
-                        onSave={handleSave}
-                        isEditpermission= {isEditPermission}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <EditableField
-                        label="Department"
-                        field="department"
-                        type="select"
-                        options={departmentOptions}
-                        value={profile?.department}
-                        onSave={handleSave}
-                        isEditpermission= {isEditPermission}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <EditableField
-                        label="Branch"
-                        field="branch"
-                        type="select"
-                        options={branchOptions}
-                        value={profile?.branh}
-                        onSave={handleSave}
-                        isEditpermission= {isEditPermission}
-                      />
-                    </Grid>
-              </Grid> */}
-              <Grid item xs={12}>
-                <Divider sx={{ borderBottomWidth: "2px", mb: 4 }} />
-                <Typography variant="h6" sx={{ mb: 4 }}>
-                  Address
-                </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <EditableAddressField
-                  label="Address"
-                  field="addressid"
-                  docName={customerData?.name ?? slug?.detail?.name}
-                  value={profile?.addressid ?? ""}
-                  isEditPermission={isEditPermission}
-                  onSave={handleSave}
+  return (
+    <div className="w-full min-w-0">
+      <ProfileHero
+        name={displayName}
+        role={roleLabel}
+        subtitle={headerSubtitle}
+        contacts={[
+          ...(headerEmail
+            ? [{ icon: Envelope, value: headerEmail, link: true }]
+            : []),
+          ...(phoneStr ? [{ icon: Phone, value: phoneStr }] : []),
+        ]}
+        avatar={
+          <div className="relative">
+            <CustomAvatar
+              alt={displayName || customerData?.name}
+              src={displayAvatarSrc}
+              size={64}
+              variant="circular"
+              sx={{
+                border: "3px solid",
+                borderColor: theme =>
+                  theme.palette.mode === "dark" ? "#1C1C1E" : "#f9fbff",
+                boxShadow: 2,
+                bgcolor: "#FEF3C7",
+                color: "#B45309",
+                fontSize: 20,
+                fontWeight: 800,
+              }}
+            >
+              {initials}
+            </CustomAvatar>
+            {isEditPermission ? (
+              <>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
+                  id="user-overview-avatar-file"
+                  hidden
+                  disabled={uploadingImage}
+                  onChange={handleUserImageSelected}
                 />
-              </Grid>
-            </Grid>
-          </Grid>
-        </Card>
-      </Box>
-       {/* <Grid item xs={24} sm={12}>
-        <Box sx={{ flexGrow: 1, overflow: "auto"}}>
-          <Card sx={{ boxShadow: "none" }} className="border">
-            <CardContent sx={{ paddingLeft: 0, paddingRight: 0 , marginTop: 5 }}>
-              <UserAddressListing doc_name={slug?.detail?.employeeid} doc_type="SDL CRM Employee" onSubmit={handleFormSubmit} parentmodule_name="Users" />
-            </CardContent>
-          </Card>
-        </Box>
-      </Grid> */}
-    </Grid>
-  </Grid>
+                <label htmlFor="user-overview-avatar-file">
+                  <IconButton
+                    component="span"
+                    disabled={uploadingImage}
+                    size="small"
+                    aria-label="Upload profile photo"
+                    sx={{
+                      position: "absolute",
+                      right: 0,
+                      bottom: 0,
+                      width: 20,
+                      height: 20,
+                      border: "1px solid",
+                      borderColor: theme =>
+                        theme.palette.mode === "dark" ? "#3F3F46" : "#E3ECFC",
+                      bgcolor: theme =>
+                        theme.palette.mode === "dark" ? "#27272A" : "#fff",
+                      boxShadow: 1,
+                      "&:hover": {
+                        bgcolor: theme =>
+                          theme.palette.mode === "dark" ? "#3F3F46" : "#EFF6FF",
+                      },
+                    }}
+                  >
+                    {uploadingImage ? (
+                      <CircularProgress size={10} thickness={5} />
+                    ) : (
+                      <Camera size={10} weight="duotone" />
+                    )}
+                  </IconButton>
+                </label>
+              </>
+            ) : null}
+          </div>
+        }
+      />
+
+      <div className="space-y-4">
+        <SettingCard icon={PhosphorUser} title="User Information">
+          <KVGrid>
+            <EditableField
+              kvLayout
+              label="First Name"
+              field="first_name"
+              value={profile?.first_name}
+              onSave={handleSave}
+              isEditpermission={isEditPermission}
+            />
+            <EditableField
+              kvLayout
+              label="Last Name"
+              field="last_name"
+              value={profile?.last_name}
+              onSave={handleSave}
+              isEditpermission={isEditPermission}
+            />
+            <EditableField
+              kvLayout
+              kvLink
+              label="Email"
+              field="email"
+              type="email"
+              value={profile?.email}
+              onSave={handleSave}
+              isEditpermission={false}
+            />
+            <EditableField
+              kvLayout
+              label="Mobile No"
+              field="mobile_no"
+              value={profile?.mobile_no}
+              onSave={handleSave}
+              isEditpermission={isEditPermission}
+            />
+          </KVGrid>
+        </SettingCard>
+
+        <SettingCard icon={ShieldCheck} title="Role Information" color="#8B5CF6">
+          <EditableField
+            key={`user-role-${String((customerData as Record<string, unknown>)?.name ?? slug?.detail?.name ?? "")}`}
+            kvLayout
+            label="Role"
+            field="role_profile_name"
+            type="select"
+            options={roleOptions}
+            value={profile?.role_name}
+            onSave={handleSave}
+            isEditpermission={roleFieldEditable}
+          />
+        </SettingCard>
+
+        <SettingCard
+          icon={IdentificationCard}
+          title="More Information"
+          color="#F59E0B"
+        >
+          <KVGrid>
+            <EditableField
+              kvLayout
+              label="Gender"
+              field="gender"
+              type="select"
+              options={genderOptions}
+              value={profile?.gender}
+              onSave={handleSave}
+              isEditpermission={isEditPermission}
+            />
+            <EditableField
+              kvLayout
+              label="Date Of Birth"
+              field="birth_date"
+              type="date"
+              value={profile?.birth_date}
+              onSave={handleSave}
+              isEditpermission={isEditPermission}
+            />
+            <EditableField
+              kvLayout
+              label="Date Of Joining"
+              field="date_of_joining"
+              type="date"
+              value={profile?.date_of_joining}
+              onSave={handleSave}
+              isEditpermission={isEditPermission}
+            />
+          </KVGrid>
+        </SettingCard>
+
+        <SettingCard icon={MapPin} title="Address" color="#10B981">
+          <EditableAddressField
+            kvLayout
+            label="Address"
+            field="addressid"
+            docName={customerData?.name ?? slug?.detail?.name}
+            value={profile?.addressid ?? ""}
+            isEditPermission={isEditPermission}
+            onSave={handleSave}
+          />
+        </SettingCard>
+      </div>
+    </div>
   );
 };
 

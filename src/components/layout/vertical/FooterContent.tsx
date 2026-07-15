@@ -12,22 +12,25 @@ import useVerticalNav from '@menu/hooks/useVerticalNav'
 // Util Imports
 import { verticalLayoutClasses } from '@layouts/utils/layoutClasses'
 import themeConfig from '@/configs/themeConfig'
+import { useTheme } from '@mui/material/styles'
 
 const FooterContent = () => {
   // Hooks
   const { isBreakpointReached } = useVerticalNav()
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
 
   return (
     <div
       className={classnames(
         verticalLayoutClasses.footerContent,
-        'flex items-center justify-end flex-wrap gap-4 py-1 pr-4'
+        'flex items-center justify-end flex-wrap gap-4 py-5 pr-4'
       )}
-      style={{ backgroundColor: 'var(--mui-palette-background-default)' }}
+      style={{ backgroundColor: isDark ? "#121212" : "#EFF6FF" }}
     >
       <p>
         <span>{`© ${new Date().getFullYear()}, ${themeConfig.footerText} - All rights reserved `}</span>
-         {/* <span>{`❤️`}</span>
+        {/* <span>{`❤️`}</span>
         <span>{` by `}</span>
        <Link href='https://socialdnalabs.com' target='_blank' className='text-primary'>
           SDL

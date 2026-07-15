@@ -59,11 +59,11 @@ const CustomToolbar = (props) => {
         position: "sticky",
         top: 0,
         zIndex: 1100,
-        bgcolor: 'background.paper',
-        color: 'text.primary',
+        bgcolor: 'var(--bg-card)',
+        color: 'var(--text-primary)',
         boxShadow: theme => (theme.palette.mode === 'dark' ? '0 1px 2px rgba(0,0,0,0.35)' : '0px 1px 2px rgba(0, 0, 0, 0.1)'),
         borderBottom: "1px solid",
-        borderColor: 'divider',
+        borderColor: 'var(--border)',
         paddingBottom: 2,
       }}
       className='px-5 pb-5'

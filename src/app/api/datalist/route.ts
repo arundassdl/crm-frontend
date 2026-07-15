@@ -6,6 +6,7 @@ import { CONSTANTS } from "@/services/config/app-config";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    console.log("POST /api/datalist body:", JSON.stringify(body, null, 2));
 
     const {
       module: doctype,
@@ -28,6 +29,10 @@ export async function POST(req: Request) {
     if (!doctype || !fields) {
       return NextResponse.json({ error: "Missing doctype or fields" }, { status: 400 });
     }
+
+    // Accept the auth token from either the Authorization header or the request
+    // body so the ERPNext call is always authenticated.
+    const authToken = req.headers.get("authorization") || token || "";
 
     // console.log("fields (raw):", fields);
 
@@ -62,7 +67,7 @@ export async function POST(req: Request) {
       },
       {
         headers: {
-          Authorization: token || "",
+          Authorization: authToken,
           "Content-Type": "application/json"
         }
       }

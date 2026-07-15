@@ -1,17 +1,9 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import Accordion from '@mui/material/Accordion'
-import AccordionDetails from '@mui/material/AccordionDetails'
-import AccordionSummary from '@mui/material/AccordionSummary'
-import Box from '@mui/material/Box'
-import List from '@mui/material/List'
-import ListItemButton from '@mui/material/ListItemButton'
-import ListItemText from '@mui/material/ListItemText'
-import Typography from '@mui/material/Typography'
+import { CaretDown, CaretUp, Gear } from '@phosphor-icons/react'
 
 import {
   canonicalGeneralSubtab,
@@ -25,53 +17,6 @@ type SidebarProps = {
   menu: SettingsMenuChild[]
   activeTab: string
   onSelectTab: (key: string) => void
-}
-
-function SettingsBrandIcon({ iconClass }: { iconClass?: string }) {
-  return (
-    <Box
-      aria-hidden
-      sx={{
-        display: 'flex',
-        height: 36,
-        width: 36,
-        flexShrink: 0,
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'transparent'
-      }}
-    >
-      {iconClass ? (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'text.primary',
-            fontSize: '1.35rem',
-            lineHeight: 1
-          }}
-        >
-          <i className={iconClass} />
-        </Box>
-      ) : (
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <Box
-            component="span"
-            sx={{ height: 16, width: 8, rotate: '12deg', borderRadius: 0.5, bgcolor: 'action.disabledBackground' }}
-          />
-          <Box
-            component="span"
-            sx={{ mt: -0.5, height: 20, width: 10, rotate: '-6deg', borderRadius: 0.5, bgcolor: 'action.disabledBackground' }}
-          />
-          <Box
-            component="span"
-            sx={{ height: 12, width: 8, rotate: '-12deg', borderRadius: 0.5, bgcolor: 'action.disabledBackground' }}
-          />
-        </Box>
-      )}
-    </Box>
-  )
 }
 
 function itemMatchesSettingsUrl(
@@ -104,199 +49,100 @@ export default function Sidebar({ menu, activeTab, onSelectTab }: SidebarProps) 
   const groups = groupMenuItems(menu)
   /** Settings root `icon` from `menuListData` (e.g. `ri-settings-2-line`); re-read when `menu` refreshes. */
   const settingsRootIcon = useMemo(() => getSettingsRootIcon(), [menu])
-  const matchUsersListingHeader =
-    activeTab.trim().toLowerCase() === 'user-users' ||
-    activeTab.trim().toLowerCase() === 'setup-customization-modules' ||
-    activeTab.trim().toLowerCase() === 'setup-customization-home-page' ||
-    activeTab.trim().toLowerCase() === 'user-permission' ||
-    activeTab.trim().toLowerCase() === 'user-roles'
+
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const toggle = (key: string) => setCollapsed(p => ({ ...p, [key]: !p[key] }))
 
   return (
-    <Box
-      component="aside"
-      sx={{
-        display: 'flex',
-        width: { xs: '100%', sm: 280 },
-        maxWidth: 300,
-        flexShrink: 0,
-        flexDirection: 'column',
-        alignSelf: 'stretch',
-        minHeight: 0,
-        borderRight: 1,
-        borderColor: 'divider',
-        bgcolor: 'background.paper'
-      }}
-    >
-      <Box
-        sx={{
-          borderBottom: '5px solid',
-          borderColor: 'divider',
-          px: 2,
-          pb: '1.224rem',
-          pt: '2.4rem',
-          // Match Users toolbar stripe (pt + title/total stack + controls row + pb)
-          ...(matchUsersListingHeader && {
-            minHeight: { xs: 'auto', sm: theme => theme.spacing(26) }
-          })
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <SettingsBrandIcon iconClass={settingsRootIcon} />
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.25, color: 'text.primary' }}>
+    <aside className="flex w-full flex-shrink-0 flex-col self-stretch overflow-y-auto border-b border-[#E3ECFC] bg-[#f9fbff] dark:border-[#27272A] dark:bg-[#0A0A0A] sm:w-[240px] sm:border-b-0 sm:border-r">
+      <div className="border-b border-[#E3ECFC] px-4 pb-4 pt-5 dark:border-[#27272A]">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8] shadow-sm">
+            {settingsRootIcon ? (
+              <i aria-hidden className={`${settingsRootIcon} text-[15px] text-white`} />
+            ) : (
+              <Gear size={15} color="#fff" weight="duotone" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <div className="font-heading text-[14px] font-bold leading-tight text-slate-900 dark:text-white">
               Settings
-            </Typography>
-            <Typography variant="caption" sx={{ mt: 0.5, display: 'block', color: 'text.secondary', lineHeight: 1.4 }}>
-              Control and customise your workspace.
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+            </div>
+            <div className="text-[12px] leading-tight text-slate-400">Manage workspace</div>
+          </div>
+        </div>
+      </div>
 
-      <Box component="nav" sx={{ flex: 1, overflowY: 'auto', px: 1, pt: 2, pb: 0 }}>
-        {groups.map(({ title, items, groupIcon }) => (
-          <Accordion
-            key={title}
-            defaultExpanded
-            disableGutters
-            elevation={0}
-            sx={{
-              mb: 2,
-              bgcolor: 'transparent',
-              border: 'none',
-              boxShadow: 'none',
-              filter: 'none',
-              '&:before': { display: 'none' },
-              '&.Mui-expanded': { margin: 0, boxShadow: 'none' },
-              '&:focus-within': { boxShadow: 'none' },
-              '&:last-of-type': { mb: 0 },
-              '& .MuiCollapse-root': { margin: 0, boxShadow: 'none' },
-              '& .MuiAccordion-region': { marginTop: 0 },
-              '& .MuiAccordionSummary-root': {
-                boxShadow: 'none',
-                '&:focus, &:focus-visible': { boxShadow: 'none' }
-              }
-            }}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.25rem', color: 'text.secondary' }} />}
-              sx={{
-                px: 1.5,
-                minHeight: 40,
-                border: 'none',
-                boxShadow: 'none',
-                filter: 'none',
-                '&:focus, &:focus-visible': { boxShadow: 'none' },
-                '& .MuiAccordionSummary-content': {
-                  my: 1,
-                  alignItems: 'center'
-                }
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.25,
-                  minWidth: 0
-                }}
+      <nav className="flex-1 space-y-1 px-2 py-3">
+        {groups.map(({ title, items, groupIcon }) => {
+          const isOpen = !collapsed[title]
+          return (
+            <div key={title}>
+              <button
+                type="button"
+                onClick={() => toggle(title)}
+                className="group flex min-h-[32px] w-full items-center justify-between rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-[#EFF6FF] dark:hover:bg-[#1D4ED8]/15"
               >
-                {groupIcon ? (
-                  <Box
-                    aria-hidden
-                    component="i"
-                    className={groupIcon}
-                    sx={{
-                      flexShrink: 0,
-                      fontSize: '1.35rem',
-                      lineHeight: 1,
-                      color: 'text.secondary'
-                    }}
-                  />
-                ) : null}
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontWeight: 600,
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    color: 'text.secondary'
-                  }}
-                >
-                  {title}
-                </Typography>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails sx={{ px: 0, py: 0, border: 'none', boxShadow: 'none' }}>
-              <Box sx={{ bgcolor: 'background.paper' }}>
-                <List disablePadding>
+                <span className="flex min-w-0 items-center gap-1.5">
+                  {groupIcon ? (
+                    <i
+                      aria-hidden
+                      className={`${groupIcon} flex-shrink-0 text-[13px] leading-none text-slate-400`}
+                    />
+                  ) : null}
+                  <span className="truncate font-heading text-[13px] font-bold uppercase tracking-widest text-slate-400 transition-colors group-hover:text-slate-500 dark:text-[#475569] dark:group-hover:text-[#64748B]">
+                    {title}
+                  </span>
+                </span>
+                {isOpen ? (
+                  <CaretUp size={10} weight="bold" className="text-[#E2E8F0] dark:text-[#475569]" />
+                ) : (
+                  <CaretDown size={10} weight="bold" className="text-[#E2E8F0] dark:text-[#475569]" />
+                )}
+              </button>
+
+              {isOpen && (
+                <div className="mb-1.5 space-y-0.5">
                   {items.map(item => {
                     const active =
                       activeTab === item.key ||
                       itemMatchesSettingsUrl(item, parsedUrl.tab, parsedUrl.subtab)
                     const leafIcon = item.icon?.trim()
                     return (
-                      <ListItemButton
+                      <button
                         key={item.key}
-                        selected={active}
-                        onClick={() => onSelectTab(item.key)}
-                        alignItems="center"
-                        sx={{
-                          py: 1.25,
-                          px: 1.5,
-                          gap: 1,
-                          borderRadius: 0,
-                          borderBottom: '1px solid',
-                          borderColor: 'divider',
-                          color: 'text.primary',
-                          '&.Mui-selected': {
-                            bgcolor: 'action.selected',
-                            '&:hover': { bgcolor: 'action.selected' }
-                          }
+                        type="button"
+                        onClick={e => {
+                          onSelectTab(item.key)
+                          e.currentTarget.blur()
                         }}
+                        className={`relative flex min-h-[36px] w-full items-center gap-2 rounded-xl px-3 py-2.5 text-[15px] font-medium outline-none transition-all focus-visible:ring-2 focus-visible:ring-[#1D4ED8] ${
+                          active
+                            ? 'bg-[#EFF6FF] font-semibold text-[#1D4ED8] dark:bg-[#27272A] dark:text-[#F4F4F5]'
+                            : 'text-slate-500 hover:bg-[#EFF6FF]/60 hover:text-slate-700 dark:text-[#9CA3AF] dark:hover:bg-[#27272A] dark:hover:text-white'
+                        }`}
                       >
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            height: 32,
-                            width: 32,
-                            flexShrink: 0,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: 'transparent',
-                            color: 'text.primary'
-                          }}
-                        >
-                          {leafIcon ? (
-                            <Box
-                              aria-hidden
-                              component="i"
-                              className={leafIcon}
-                              sx={{
-                                flexShrink: 0,
-                                fontSize: '0.875rem',
-                                lineHeight: 1
-                              }}
-                            />
-                          ) : null}
-                        </Box>
-                        <ListItemText
-                          primary={item.label}
-                          primaryTypographyProps={{
-                            variant: 'body2',
-                            fontWeight: 600,
-                            color: 'text.primary'
-                          }}
-                        />
-                      </ListItemButton>
+                        {active && (
+                          <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-[#1D4ED8] dark:bg-[#9CA3AF]" />
+                        )}
+                        {leafIcon ? (
+                          <i
+                            aria-hidden
+                            className={`${leafIcon} flex-shrink-0 text-[13px] leading-none ${
+                              active ? 'text-[#1D4ED8] dark:text-[#6B8BA3]' : 'text-[#94A3B8]'
+                            }`}
+                          />
+                        ) : null}
+                        <span className="truncate">{item.label}</span>
+                      </button>
                     )
                   })}
-                </List>
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-        ))}
-      </Box>
-    </Box>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </nav>
+    </aside>
   )
 }

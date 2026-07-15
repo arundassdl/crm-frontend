@@ -4,7 +4,7 @@ import type { Theme } from '@mui/material/styles'
 // Type Imports
 import type { Skin } from '@core/types'
 import { styled } from '@mui/material/styles';
- import {
+import {
   DataGrid, GridColDef, GridToolbar, GridPaginationMeta, useGridApiRef, GridActionsCellItem, GridRowModes, GridToolbarContainer,
   GridToolbarColumnsButton,
   GridToolbarFilterButton,
@@ -15,9 +15,9 @@ import { styled } from '@mui/material/styles';
 } from '@mui/x-data-grid';
 
 // export function DataGridCustomToolbar() {
-  
+
 //   return (
-  
+
 //     <GridToolbarContainer>
 //       <GridToolbarColumnsButton />
 //       <GridToolbarFilterButton />
@@ -27,66 +27,90 @@ import { styled } from '@mui/material/styles';
 //   )
 // }
 
-const StyledDataGrid  = styled(DataGrid)(({ theme }) => ({
-  backgroundColor: theme.palette.background.paper,
+const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
+  border: 'none',
+  backgroundColor: 'var(--bg-card) !important',
+  fontFamily: 'inherit',
   '& .MuiDataGrid-main': {
-    backgroundColor: theme.palette.background.paper
+    backgroundColor: 'var(--bg-card)'
   },
   '& .MuiDataGrid-virtualScroller': {
-    backgroundColor: theme.palette.background.paper
+    backgroundColor: 'var(--bg-card)'
   },
   '& .MuiDataGrid-virtualScrollerContent': {
-    backgroundColor: theme.palette.background.paper
+    backgroundColor: 'var(--bg-card)'
   },
-  '& .MuiDataGrid-cell:hover': {
-    color: 'primary.main',
+  '& .MuiDataGrid-columnHeaders': {
+    backgroundColor: 'var(--bg-topbar) !important',
+    borderBottom: '1px solid var(--border)',
   },
-  border: 0,
-  '& .MuiDataGrid-columnsContainer': {
-    backgroundColor: theme.palette.background.paper
+  // Canonical DataGrid column-header typography — shared across the app.
+  '& .MuiDataGrid-columnHeader': {
+    outline: 'none !important',
+    color: 'var(--text-header)',
   },
-  '& .MuiDataGrid-columnHeaderRow': {
-    backgroundColor: theme.palette.background.paper,
-    color: theme.palette.text.primary
+  '& .MuiDataGrid-columnHeaderTitleContainer': {
+    fontSize: '14px',
+    fontWeight: 600,
+    lineHeight: '18px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.025em',
   },
-  '& .MuiDataGrid-columnHeader, .MuiDataGrid-filler': {
-    borderTop: `1px solid var(--border-color, currentColor)`,
-    color: 'var(--mui-palette-text-primary)',
-    backgroundColor:'var(--mui-palette-background-paper)'
-
+  '& .MuiDataGrid-columnHeaderTitle': {
+    fontSize: '14px',
+    fontWeight: 600,
+    lineHeight: '18px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.025em',
+    color: 'var(--text-header)',
   },
-  '& .MuiDataGrid-columnHeaderTitle':{
-    // textTransform:"uppercase",
-    color: 'var(--mui-palette-text-primary)',
-    fontWeight:theme.typography.fontWeightBold,
-    // fontSize:theme.typography.fontSize
-    fontSize:"14px"
+  '& .MuiDataGrid-columnSeparator': { display: 'none' },
+  '& .MuiDataGrid-cell': {
+    borderBottom: 'none !important',
+    outline: 'none !important',
+    display: 'flex',
+    alignItems: 'center',
+    // Canonical DataGrid cell typography — consistent body text across all cells;
+    // individual renderers (status badges, email links, avatars) override as needed.
+    color: 'var(--text-body)',
+    fontSize: '15px',
+    lineHeight: '20px',
+  },
+  '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+    outline: 'none !important',
+  },
+  '& .MuiDataGrid-row': {
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: 'rgba(96, 165, 250, 0.04) !important',
+    },
+    '&.Mui-selected': {
+      backgroundColor: 'var(--border-soft) !important',
+      '&:hover': { backgroundColor: 'var(--border-soft) !important' },
+    },
+     '--rowBorderColor': 'none',
   },
   '& .MuiDataGrid-footerContainer': {
-    position: 'sticky',
-    bottom: 0,
-    zIndex: 1100,
-    backgroundColor: theme.palette.background.paper,
-    boxShadow:
-      theme.palette.mode === 'dark'
-        ? '0px -1px 2px rgba(0, 0, 0, 0.35)'
-        : '0px -1px 2px rgba(0, 0, 0, 0.1)'
+    borderTop: '1px solid var(--border-soft)',
+    backgroundColor: 'var(--bg-card)',
   },
-
-  '& .MuiDataGrid-columnsContainer, .MuiDataGrid-cell': {
-    // border: `1px solid var(--border-color, currentColor)`,
+  '& .MuiDataGrid-selectedRowCount': {
+    fontSize: '11px',
+    color: 'var(--text-muted)',
   },
-  '& .MuiDataGrid-filler': {
-    color: 'var(--mui-palette-text-primary)',
-    // border:  `1px solid var(--border-color, currentColor)`,
+  '& .MuiTablePagination-root': {
+    fontSize: '11px',
+    color: 'var(--text-body)',
   },
-  '& .MuiDataGrid-root .MuiDataGrid-columnHeader': {
-    BorderTop: '1px solid var(--DataGrid-rowBorderColor)',
+  '& .MuiCheckbox-root': {
+    color: '#E2E8F0',
   },
-  '&  .MuiDataGrid-root .MuiDataGrid-row--borderBottom .MuiDataGrid-columnHeader': {
-    BorderTop: '1px solid var(--DataGrid-rowBorderColor)',
+  '& .MuiCheckbox-root.Mui-checked, & .MuiCheckbox-root.MuiCheckbox-indeterminate': {
+    color: '#1D4ED8',
   },
-  
+  '& .MuiDataGrid-overlay': {
+    backgroundColor: 'transparent',
+  },
 }));
 
 export default StyledDataGrid

@@ -1,0 +1,250 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { readAccessTokenDataParsed } from "@/utils/accessTokenDataStorage";
+import { getFormFields } from "@/services/api/general_apis/layout-api";
+import { fetchRawDataGridListing } from "@/services/api/common-erpnext-api/listing-api-get";
+import { getRelatedListKind } from "./relatedListMeta";
+
+/**
+ * A single rendered column of a related-list section, derived from the Settings
+ * "Detail View" related-list configuration (`config.related_column`) plus the child
+ * doctype's form-field metadata (for labels/types). No column is hardcoded.
+ */
+export interface RelatedListColumn {
+  /** Stable key (main field name, or `alias.subfield` for address sub-columns). */
+  key: string;
+  headerName: string;
+  type: string;
+  /** Candidate row keys, tried in order, to resolve this column's value. */
+  valueKeys: string[];
+}
+
+export interface UseRelatedListDataResult {
+  columns: RelatedListColumn[];
+  rows: any[];
+  totalCount: number;
+  loading: boolean;
+  /** True once field metadata has resolved (so callers can distinguish empty vs. loading). */
+  ready: boolean;
+  refetch: () => void;
+}
+
+const isAddressType = (t: any) => String(t || "").toLowerCase() === "address";
+
+/**
+ * Encapsulates the exact config-driven column/data logic used by the standalone
+ * DataGrid related-list components (Deal/Contact/Account/Task RelatedList), but
+ * exposes plain column descriptors + rows so callers can render any presentation
+ * (e.g. the bespoke detail-dashboard HTML tables).
+ */
+export function useRelatedListData(
+  config: any,
+  parent_module: string,
+  link_name: string,
+  refreshTrigger?: number
+): UseRelatedListDataResult {
+  const [userToken] = useState<any>(() => {
+    try {
+      return readAccessTokenDataParsed() || {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [colFields, setColFields] = useState<any[]>([]);
+  const [joinQuery, setJoinQuery] = useState("");
+  const [fieldMeta, setFieldMeta] = useState<Record<string, { label: string; type: string; in_list_view: boolean }>>({});
+  const [fieldOrder, setFieldOrder] = useState<string[]>([]);
+  const [ready, setReady] = useState(false);
+
+  const [rows, setRows] = useState<any[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const mainDoctype = config?.main_doctype_name;
+  const kind = useMemo(() => getRelatedListKind(mainDoctype, config?.label), [mainDoctype, config?.label]);
+
+  // ── Resolve child-doctype fields (labels/types) + build the fetch column set ──
+  useEffect(() => {
+    let cancelled = false;
+    const fetchFields = async () => {
+      setReady(false);
+      if (!userToken?.access_token || !mainDoctype) {
+        setReady(true);
+        return;
+      }
+      try {
+        const response: any = await getFormFields(
+          config.child_module || mainDoctype,
+          userToken.access_token,
+          userToken.role_profile,
+          ""
+        );
+        const fieldList: any[] = Array.isArray(response?.fields)
+          ? response.fields
+          : Array.isArray(response)
+            ? response
+            : [];
+
+        const meta: Record<string, { label: string; type: string; in_list_view: boolean }> = {};
+        const order: string[] = [];
+        const parsedColFields = fieldList
+          .filter((f: any) => !f.hide && !isAddressType(f.type || f.fieldtype))
+          .map((f: any) => {
+            const fn = f.fieldname || f.name;
+            meta[fn] = { label: f.label || fn, type: String(f.type || f.fieldtype || "string"), in_list_view: !!f.in_list_view };
+            order.push(fn);
+            return { doctype: mainDoctype, field: fn, hidden: f.in_list_view ? "False" : "True" };
+          });
+
+        // Address fields → LEFT JOINs + flattened sub-columns (mirrors the DataGrid variants).
+        const addressSubColFields: any[] = [];
+        const joinParts: string[] = [];
+        fieldList.forEach((f: any) => {
+          if (isAddressType(f.type || f.fieldtype) && Array.isArray(f.sub_fields)) {
+            const mainFieldName = f.fieldname || f.name;
+            const subDoctype = f.sub_fields[0]?.doctype || "Address";
+            const alias = mainFieldName.replace(/_address$/i, "_addr") || mainFieldName + "_alias";
+            joinParts.push(
+              `LEFT JOIN \`tab${subDoctype}\` AS \`tab${alias}\` ON \`tab${mainDoctype}\`.\`${mainFieldName}\` = \`tab${alias}\`.\`name\``
+            );
+            const mainLabel = f.label || mainFieldName;
+            f.sub_fields.forEach((sub: any) => {
+              const subFieldName = sub.fieldname || sub.name;
+              const subFieldAlias = `${mainFieldName}_${subFieldName}`;
+              const subKey = `${alias}.${subFieldName}`;
+              const headerName = `${mainLabel} - ${sub.label || subFieldName}`;
+              meta[subKey] = { label: headerName, type: "string", in_list_view: !!f.in_list_view };
+              order.push(subKey);
+              addressSubColFields.push({ doctype: alias, field: subFieldName, hidden: f.in_list_view ? "False" : "True", subFieldAlias });
+            });
+          }
+        });
+
+        // Dedupe, always fetch `name` for row identity + detail links.
+        const initial = [{ doctype: mainDoctype, field: "name", hidden: "True" }];
+        const seen = new Set(initial.map((f) => `${f.doctype}:${f.field}`));
+        const combined = [...parsedColFields, ...addressSubColFields].filter((f) => {
+          const k = `${f.doctype}:${f.field}`;
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+
+        if (cancelled) return;
+        setColFields([...initial, ...combined]);
+        setJoinQuery(joinParts.length ? joinParts.join(" ") : "");
+        setFieldMeta(meta);
+        setFieldOrder(order);
+      } catch (err) {
+        console.error("useRelatedListData: failed to load fields", err);
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    };
+    fetchFields();
+    return () => {
+      cancelled = true;
+    };
+  }, [userToken?.access_token, userToken?.role_profile, mainDoctype, config?.child_module]);
+
+  // ── Derive the visible/ordered columns purely from the Settings config ──
+  const columns = useMemo<RelatedListColumn[]>(() => {
+    if (!mainDoctype) return [];
+    const relatedCols: any[] = Array.isArray(config?.related_column) ? config.related_column : [];
+
+    const buildCol = (fieldName: string): RelatedListColumn | null => {
+      const m = fieldMeta[fieldName];
+      const isAddressSub = fieldName.includes(".");
+      const valueKeys = isAddressSub
+        ? [fieldName.replace(".", "_"), fieldName, `tab${fieldName}`]
+        : [fieldName, `${mainDoctype}.${fieldName}`, `tab${mainDoctype}.${fieldName}`];
+      return {
+        key: fieldName,
+        headerName: m?.label || fieldName,
+        type: m?.type || "string",
+        valueKeys,
+      };
+    };
+
+    if (relatedCols.length > 0) {
+      return relatedCols
+        .filter((rc: any) => rc.in_list_view)
+        .sort((a: any, b: any) => Number(a.order ?? 1000) - Number(b.order ?? 1000))
+        .map((rc: any) => buildCol(rc.field_name))
+        .filter((c): c is RelatedListColumn => !!c);
+    }
+
+    // No explicit config → fall back to child fields flagged in_list_view (still dynamic).
+    return fieldOrder
+      .filter((fn) => fieldMeta[fn]?.in_list_view)
+      .map(buildCol)
+      .filter((c): c is RelatedListColumn => !!c);
+  }, [config?.related_column, fieldMeta, fieldOrder, mainDoctype]);
+
+  // ── Fetch rows filtered to the parent record (kind-aware WHERE, mirrors DataGrid variants) ──
+  const fetchData = useCallback(async () => {
+    if (!config || !userToken?.access_token || !link_name || !ready || colFields.length === 0) return;
+    setLoading(true);
+    try {
+      let where = "";
+      if (kind === "task") {
+        if (parent_module === "Contacts") {
+          where = ` AND \`tab${mainDoctype}\`.\`contact_name\` = '${link_name}'`;
+        } else {
+          const refDoctype =
+            parent_module === "Accounts" ? "CRM Organization" :
+            parent_module === "Leads" ? "CRM Leads" :
+            parent_module === "Deals" ? "CRM Deals" : "";
+          where = refDoctype
+            ? ` AND \`tab${mainDoctype}\`.\`reference_docname\` = '${link_name}' AND \`tab${mainDoctype}\`.\`reference_doctype\` = '${refDoctype}'`
+            : ` AND \`tab${mainDoctype}\`.\`${config.link_field_name}\` = '${link_name}'`;
+        }
+      } else {
+        where = ` AND \`tab${mainDoctype}\`.\`${config.link_field_name}\` = '${link_name}'`;
+      }
+
+      const result = await fetchRawDataGridListing(
+        { page: 0, pageSize: 100, filters: { items: [], quickFilterValues: [] }, sort: [] },
+        userToken.access_token,
+        colFields as any,
+        mainDoctype,
+        [],
+        "",
+        "",
+        [],
+        joinQuery,
+        where,
+        "",
+        "",
+        `${mainDoctype}.modified desc`,
+        "True"
+      );
+      setRows(result.data || []);
+      setTotalCount(result.totalCount || 0);
+    } catch (err) {
+      console.error("useRelatedListData: failed to load rows", err);
+      setRows([]);
+      setTotalCount(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [config, userToken?.access_token, link_name, ready, colFields, joinQuery, kind, mainDoctype, parent_module]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData, refreshTrigger]);
+
+  return { columns, rows, totalCount, loading, ready, refetch: fetchData };
+}
+
+/** Resolve a column's display value from a row across its candidate keys. */
+export function resolveCellValue(row: any, col: RelatedListColumn): any {
+  if (!row) return "";
+  for (const k of col.valueKeys) {
+    const v = row[k];
+    if (v !== undefined && v !== null && v !== "") return v;
+  }
+  return "";
+}

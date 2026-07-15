@@ -19,6 +19,10 @@ import KanbanBoard from "../Common/KanbanBoard";
 import { getFormFields } from "@/services/api/general_apis/layout-api";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import { useComponentPicklist } from "@/hooks/GeneralHooks/useComponentPicklist";
+
+// Neutral fallback used only when a backend status option has no color configured.
+const DEFAULT_STAGE_COLOR = "#64748b";
 
 const LeadsListing = () => {
   const module = "CRM Lead";
@@ -90,7 +94,7 @@ const LeadsListing = () => {
   };
 
   const handleRowDetail: any = async (name: any) => {
-    router.push(`leads/detail/${name}`);
+    router.push(`/leads/detail/${name}`);
   };
 
   const defaultColFields = [
@@ -325,14 +329,23 @@ const LeadsListing = () => {
     "modified"
   ];
 
-  const stages = [
-    { label: "New", index: 0, bgColor: "#525252", color: "var(--mui-palette-grey-700)" },
-    { label: "Contacted", index: 1, bgColor: "#e06c39", color: "var(--mui-palette-grey-700)" },
-    { label: "Nurture", index: 2, bgColor: "#007adb", color: "var(--mui-palette-grey-700)" },
-    { label: "Qualified", index: 3, bgColor: "#00794c", color: "var(--mui-palette-grey-700)" },
-    { label: "Unqualified", index: 4, bgColor: "#d62a30", color: "var(--mui-palette-grey-700)" },
-    { label: "Junk", index: 5, bgColor: "#8a40be", color: "var(--mui-palette-grey-700)" },
-  ];
+  // Lead statuses loaded dynamically from the backend Component Pick List API
+  // (same source as the Add/Edit form dropdown), via the shared generic hook.
+  const { options: leadStatusOptions, field: statusFieldName } = useComponentPicklist(
+    "Leads",
+    ["lead_status", "status"],
+    {
+      token: userToken?.access_token,
+      roleProfile: userToken?.role_profile,
+    }
+  );
+
+  const stages = leadStatusOptions.map((option, index) => ({
+    label: option.value,
+    index,
+    bgColor: option.color || DEFAULT_STAGE_COLOR,
+    color: "var(--mui-palette-grey-700)",
+  }));
   const view_mode = useSelector((state: RootState) => state.viewMode.viewMode);
   const handleRowEdit = async (rowData: any) => {
 
@@ -343,6 +356,57 @@ const LeadsListing = () => {
     setOperation("Edit");
     return false;
   };
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchAllCounts = async () => {
+      if (!userToken?.access_token || colFields.length <= 2 || !isFieldsLoaded || leadStatusOptions.length === 0) return;
+
+      const statuses = ["All", ...leadStatusOptions.map((o) => o.value)];
+      const countsObj: Record<string, number> = {};
+
+      try {
+        const promises = statuses.map(async (statusVal) => {
+          // Filter on the exact field the pick list resolved on (e.g. "lead_status"),
+          // not a hardcoded "status", so counts match the values shown in the list.
+          const statusCol = statusFieldName
+            ? colFields.find(f => f.field.toLowerCase() === statusFieldName.toLowerCase())
+            : undefined;
+          const statusKey = statusFieldName
+            ? `${statusCol?.doctype || module}.${statusFieldName}`
+            : `${module}.status`;
+
+          const params = {
+            page: 0,
+            pageSize: 1,
+            filters: {
+              items: statusVal === "All" ? [] : [
+                {
+                  field: statusKey,
+                  operator: "equals",
+                  value: statusVal
+                }
+              ],
+              quickFilterValues: []
+            },
+            sort: []
+          };
+
+          const res = await fetchDataWrapper(fetchRawDataGridListing, params, userToken?.access_token);
+          countsObj[statusVal] = res?.totalCount || 0;
+        });
+
+        await Promise.all(promises);
+        setStatusCounts(countsObj);
+      } catch (err) {
+        console.error("Error fetching status counts:", err);
+      }
+    };
+
+    fetchAllCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userToken?.access_token, colFields, isFieldsLoaded, refreshKey, leadStatusOptions, statusFieldName]);
+
   return (
     <div>
       {!isFieldsLoaded ? (
@@ -358,42 +422,27 @@ const LeadsListing = () => {
         </Box>
       ) : (
         <Box>
-          {/* Conditionally render the views */}
-          {view_mode === "list" ? (
-            <RawDynamicDataGrid
-              module={module}
-              heading={"Leads"}
-              onAddNew={handleAddNew}
-              // handleRowEdit={handleRowEdit }
-              handleRowDetail={handleRowDetail}
-              handleRowDelete={handleDelete}
-              colFields={colFields}
-              columnDefinitions={columnDefs}
-              relatedDocs={relatedDocs}
-              fetchDataFunction={(p, t, q) =>
-                fetchDataWrapper(fetchRawDataGridListing, p, t)
-              }
-              refreshKey={refreshKey}
-              multipleViews={true}
-              multiviewList={"Kanban"}
-              module_name={module_name}
-              btnnewtitle={"Lead"}
-            />
-          ) : (
-            // <CommonKanbanBoard deals={leadRows} stages={stages} doctype="CRM Lead" fieldname="status" />
-            <KanbanBoard
-              stages={stages}
-              listfields={listfields}
-              module={module}
-              title={"Leads"}
-              fieldname={"status"}
-              onAddNew={handleAddNew}
-              refreshKey={refreshKey}
-              module_name={module_name}
-              multiviewList={"Kanban"}
-              whereCondition={leadsNotConvertedWhere}
-            />
-          )}
+          <RawDynamicDataGrid
+            module={module}
+            heading={"Leads"}
+            onAddNew={handleAddNew}
+            handleRowDetail={handleRowDetail}
+            handleRowDelete={handleDelete}
+            colFields={colFields}
+            columnDefinitions={columnDefs}
+            relatedDocs={relatedDocs}
+            fetchDataFunction={(p, t, q) =>
+              fetchDataWrapper(fetchRawDataGridListing, p, t)
+            }
+            refreshKey={refreshKey}
+            multipleViews={true}
+            multiviewList={"Kanban"}
+            module_name={module_name}
+            btnnewtitle={"Lead"}
+            stages={stages}
+            statusCounts={statusCounts}
+            statusField={statusFieldName || undefined}
+          />
           {open && (
             <AddEditLeadDrawer
               initialValues={selectedRow}

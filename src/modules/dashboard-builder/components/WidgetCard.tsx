@@ -48,14 +48,16 @@ function WidgetCardInner({
       >
         {!readOnly ? (
           <span
-            className="widget-drag-grip -ml-0.5 flex h-6 w-4 shrink-0 items-center justify-center text-slate-300 transition-colors group-hover:text-slate-500"
+            className="widget-drag-grip -ml-0.5 flex h-6 w-4 shrink-0 items-center justify-center text-slate-300 dark:text-zinc-700 transition-colors group-hover:text-slate-500 dark:group-hover:text-zinc-400"
             aria-hidden
             title="Drag to move"
           >
             <i className="ri-draggable text-base leading-none" />
           </span>
         ) : null}
-        <span className="truncate text-sm font-semibold text-slate-800">{widget.title}</span>
+        <span className="truncate font-heading text-[11.5px] font-semibold uppercase tracking-[0.1em] text-[#4A5675] dark:text-[#94A3B8]">
+          {widget.title}
+        </span>
         <div className="widget-no-drag ml-auto flex items-center gap-1">
           {componentFilterFields.length > 0 ? (
             <ComponentFiltersButton

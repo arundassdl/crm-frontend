@@ -20,6 +20,7 @@ import Typography from '@mui/material/Typography'
 import Divider from '@mui/material/Divider'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
+import { UserCircleIcon, SignOutIcon } from '@phosphor-icons/react'
 import { useAppDispatch } from '@/libs/hooks'
 import { fetchLoginUser } from '@/store/slices/auth/login_slice'
 import LogoutList from '@/services/api/auth/logout_api'
@@ -61,7 +62,11 @@ function profileRecordFromStored(
   return null
 }
 
-const UserDropdown = () => {
+type UserDropdownProps = {
+  placement?: 'bottom-end' | 'right-end'
+}
+
+const UserDropdown = ({ placement = 'bottom-end' }: UserDropdownProps) => {
   // States
   const [open, setOpen] = useState(false);
   // const [userData, setUserData] = useState<any>({}); // Initialize with an empty object
@@ -216,15 +221,15 @@ const UserDropdown = () => {
         open={open}
         transition
         disablePortal
-        placement='bottom-end'
+        placement={placement}
         anchorEl={anchorRef.current}
         className='min-is-[240px] !mbs-4 z-[1]'
       >
-        {({ TransitionProps, placement }) => (
+        {({ TransitionProps, placement: resolvedPlacement }) => (
           <Fade
             {...TransitionProps}
             style={{
-              transformOrigin: placement === 'bottom-end' ? 'right top' : 'left top'
+              transformOrigin: resolvedPlacement === 'bottom-end' ? 'right top' : 'left top'
             }}
           >
             <Paper className='shadow-lg'>
@@ -244,7 +249,7 @@ const UserDropdown = () => {
                     className='gap-3'
                     onClick={e => handleLinkClick('/settings?tab=general&subtab=personal-settings')}
                   >
-                    <i className='ri-user-3-line' />
+                    <UserCircleIcon size={18} weight='duotone' />
                     <Typography color='text.primary'>My Account</Typography>
                   </MenuItem>
                   <div className='flex items-center plb-2 pli-4'>
@@ -253,7 +258,7 @@ const UserDropdown = () => {
                       variant='contained'
                       color='error'
                       size='small'
-                      endIcon={<i className='ri-logout-box-r-line' />}
+                      endIcon={<SignOutIcon size={16} weight='bold' />}
                       onClick={handleClick}
                       sx={{ '& .MuiButton-endIcon': { marginInlineStart: 1.5 } }}
                     >

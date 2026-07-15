@@ -10,13 +10,13 @@ import { parseSettingsSearchParams } from './utils/getMenu'
 const UserDetail = dynamic(() => import('@/components/Users/Users/UserDetails'))
 
 const listColumnClass =
-  'relative flex h-full min-h-0 w-[35%] min-w-[260px] max-w-[520px] shrink-0 flex-col overflow-hidden border-r border-[var(--mui-palette-divider)] bg-[var(--mui-palette-background-paper)] pt-[2.4rem]'
+  'relative flex h-full min-h-0 w-[340px] shrink-0 flex-col overflow-hidden border-r border-[#E3ECFC] bg-[#f9fbff] dark:border-[#27272A] dark:bg-[#111113]'
 
 const detailColumnClass =
-  'relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[var(--mui-palette-background-paper)] pt-[2.4rem] px-4 pb-8 sm:px-6 md:px-8'
+  'relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[#EFF6FF] dark:bg-[#0A0A0A]'
 
 const emptyDetailClass =
-  'flex flex-1 flex-col items-center justify-center px-6 py-16 text-center text-[var(--mui-palette-text-secondary)]'
+  'flex flex-1 flex-col items-center justify-center px-6 py-16 text-center text-slate-400'
 
 /**
  * Users tab: two-column layout — listing + details at `/settings?tab=general&subtab=users`.
@@ -32,7 +32,7 @@ export default function UserUsersSettingsPanel() {
   const detail = parsed.detail ?? safeParams.get('detail')
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-1 flex-row overflow-hidden bg-[var(--mui-palette-background-paper)]">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-row overflow-hidden bg-[#EFF6FF] dark:bg-[#0A0A0A]">
       <div className={listColumnClass}>
         <UsersListingEmbed settingsDetailKey={detail ?? ''} />
       </div>

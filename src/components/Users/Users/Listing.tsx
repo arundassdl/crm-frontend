@@ -163,8 +163,8 @@ const handleRowEdit = async (rowData: any) => {
       }}
     >
         {/* Conditionally render the views */}
-       {view_mode === "list" ? (
-      embedInSettings ? (
+       {/* Settings embed has no view-mode toggle: never follow the global (cross-module) `viewMode`, which would swap this panel for the Leads kanban. */}
+       {embedInSettings ? (
         <Suspense
           fallback={
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, py: 6 }}>
@@ -180,7 +180,7 @@ const handleRowEdit = async (rowData: any) => {
             settingsDetailKey={settingsDetailKey}
           />
         </Suspense>
-      ) : (
+      ) : view_mode === "list" ? (
       <RawDynamicDataGrid
         module={module}
         heading={"Users"}
@@ -199,7 +199,6 @@ const handleRowEdit = async (rowData: any) => {
         module_name={module_name}
         gridHeight={undefined}
       />
-      )
        ) : (
           // <CommonKanbanBoard deals={leadRows} stages={stages} doctype="CRM Lead" fieldname="status" />
           <KanbanBoard stages={stages} listfields={listfields} module={module} title={"Leads"} fieldname={"status"} onAddNew={handleAddNew} refreshKey={refreshKey} />

@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
+import { PencilSimple } from "@phosphor-icons/react";
 import { fetchFromERPNext } from "@/services/api/common-erpnext-api/listing-api-get";
 import { updateResource, createResource } from "@/services/api/common-erpnext-api/create-edit-api";
 import {
@@ -43,6 +44,8 @@ interface EditableAddressFieldProps {
   isEditPermission?: boolean;
   /** Optional callback so parent (CommonForm) can update main doc field with new Address name */
   onSave?: (field: string, value: string) => Promise<void> | void;
+  /** Settings card row: uppercase label above the value, edit pencil revealed on row hover. */
+  kvLayout?: boolean;
 }
 
 interface AddressDoc {
@@ -65,6 +68,7 @@ const EditableAddressField: React.FC<EditableAddressFieldProps> = ({
   value,
   isEditPermission = true,
   onSave,
+  kvLayout = false,
 }) => {
   const [hover, setHover] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -313,8 +317,57 @@ const EditableAddressField: React.FC<EditableAddressFieldProps> = ({
     );
   };
 
-  return (
-    <>
+  const kvRow = (
+    <Box
+      className="group"
+      sx={{
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        py: "10px",
+      }}
+    >
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box className="mb-0.5 text-[11.5px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#ABABAD]">
+          {label}
+        </Box>
+        <Box
+          className={`text-[14px] font-bold leading-snug ${
+            hasAddress || value
+              ? "text-slate-700 dark:text-[#D4D4D8]"
+              : "text-slate-300 dark:text-[#3F3F46]"
+          }`}
+        >
+          {loading ? "Loading address..." : hasAddress || value ? renderDisplayAddress() : "—"}
+        </Box>
+      </Box>
+      {isEditPermission && (
+        <Tooltip title="Edit">
+          <IconButton
+            onClick={handleOpenDialog}
+            size="small"
+            sx={{
+              p: 0.4,
+              mt: 0.5,
+              borderRadius: "6px",
+              color: theme => (theme.palette.mode === "dark" ? "#3F3F46" : "#E2E8F0"),
+              opacity: 0,
+              transition: "opacity 0.15s",
+              ".group:hover &": { opacity: 1 },
+              "&:hover": {
+                color: theme => (theme.palette.mode === "dark" ? "#71717A" : "#1D4ED8"),
+                bgcolor: theme => (theme.palette.mode === "dark" ? "#27272A" : "#EFF6FF"),
+              },
+            }}
+          >
+            <PencilSimple size={13} weight="duotone" />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Box>
+  );
+
+  const legacyRow = (
       <Box
         display="flex"
         alignItems="flex-start"
@@ -376,6 +429,11 @@ const EditableAddressField: React.FC<EditableAddressFieldProps> = ({
         )}
         </Box>
       </Box>
+  );
+
+  return (
+    <>
+      {kvLayout ? kvRow : legacyRow}
 
       <Dialog
         open={dialogOpen}

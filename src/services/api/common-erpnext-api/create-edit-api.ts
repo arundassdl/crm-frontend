@@ -571,26 +571,67 @@ export const fetchDetailData = async (doctype: any,docname: any,token: any,linke
 };
 
 export async function createCustomDocument(doctype: string, data: any, token: string) {
-  let payload: Record<string, any> = {};
+  try {
+    let payload: Record<string, any> = {};
 
+    // Check if formData is an instance of FormData
+    if (data instanceof FormData) {
+      data.forEach((value: any, key: string) => {
+        payload[key] = value;
+      });
+    } else {
+      payload = { ...data }; // If it's already an object, copy it directly
+    }
 
-  // Check if formData is an instance of FormData
-  if (data instanceof FormData) {
-    data.forEach((value: any, key: string) => {
-      payload[key] = value;
+    payload = applySalutationKeyForApi(payload);
+
+    const res = await fetch('/api/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `${token}` },
+      body: JSON.stringify({ doctype, data: payload }),
     });
-  } else {
-    payload = { ...data }; // If it's already an object, copy it directly
+
+    const body = await res.json().catch(() => ({}));
+
+    // Success must reflect real persistence, not just a 2xx status: the backend
+    // only returns a document `name` when the record was actually saved.
+    const createdName = extractCreatedDocName(body);
+
+    if (!res.ok || !createdName) {
+      const serverMessage = extractFrappeMessage(body) || body?.error;
+      return {
+        success: false,
+        message: serverMessage || 'Failed to create document',
+        data: body,
+      };
+    }
+
+    const cleanedDoctype = doctype.replace(/^CRM\s*/i, '').trim() || 'Module';
+    return {
+      success: true,
+      message: `${cleanedDoctype} Created Successfully`,
+      data: body,
+      name: createdName,
+    };
+  } catch (error: any) {
+    console.error('Document creation failed:', error);
+    return {
+      success: false,
+      message: error?.message || 'Unknown error occurred',
+    };
   }
+}
 
-  const res = await fetch('/api/create', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `${token}` },
-    body: JSON.stringify({ doctype, data: payload }),
-  });
-
-  if (!res.ok) throw new Error('Failed to create document');
-  return res.json();
+/** Pull the created document identifier out of the various shapes create_document can return. */
+function extractCreatedDocName(body: any): string | null {
+  if (!body || typeof body !== 'object') return null;
+  return (
+    body.name ||
+    body.docname ||
+    body?.data?.name ||
+    body?.message?.name ||
+    null
+  );
 }
 /**
  * 

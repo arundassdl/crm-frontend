@@ -366,7 +366,7 @@ export default function SettingsPageClient() {
         : 'ready'
 
   return (
-    <div className="flex min-h-[calc(100vh-7rem)] w-full items-stretch overflow-hidden rounded-xl border border-[var(--mui-palette-divider)] bg-[var(--mui-palette-background-paper)] shadow-sm">
+    <div className="flex min-h-[calc(100vh-7rem)] w-full items-stretch overflow-hidden rounded-xl border border-[#E3ECFC] bg-[#EFF6FF] shadow-sm dark:border-[#27272A] dark:bg-[#000000]">
       <Sidebar menu={menu} activeTab={activeTab} onSelectTab={onSelectTab} />
 
       <div
@@ -375,8 +375,8 @@ export default function SettingsPageClient() {
           (activeTab === 'user-users' ||
             activeTab === 'user-roles' ||
             isHomePageBuilderUrl)
-            ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--mui-palette-background-default)]'
-            : 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[var(--mui-palette-background-default)]'
+            ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#EFF6FF] dark:bg-[#0A0A0A]'
+            : 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[#EFF6FF] dark:bg-[#0A0A0A]'
         }
       >
         {mainState === 'empty' && (

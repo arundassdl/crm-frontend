@@ -10,10 +10,7 @@ import {
   MenuItem,
   Tooltip,
 } from "@mui/material";
-import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
-import Check from "@mui/icons-material/Check";
-import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
-import ViewListOutlined from "@mui/icons-material/ViewListOutlined";
+import { ListBullets, Tree } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import {
   fetchRawDataGridListing,
@@ -180,6 +177,34 @@ const RoleListing: React.FC<RoleListingProps> = ({
   const view_mode = useSelector((state: RootState) => state.viewMode.viewMode);
 
   if (embedInSettings) {
+    /** Segmented Tree/List toggle + New Role, matching the settings reference toolbar. */
+    const viewToggle = (
+      <div className="flex items-center gap-1 rounded-xl border border-[#E3ECFC] bg-[#EFF6FF] p-1 dark:border-[#27272A] dark:bg-[#1C1C1E]">
+        {(["tree", "list"] as const).map((mode) => {
+          const active = settingsRolesView === mode;
+          return (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setSettingsRolesView(mode)}
+              className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-semibold capitalize transition-colors ${
+                active
+                  ? "bg-[#E3ECFC] text-[#0C2472] dark:bg-[#27272A] dark:text-[#D4D4D8]"
+                  : "text-slate-400 dark:text-[#9CA3AF]"
+              }`}
+            >
+              {mode === "tree" ? (
+                <Tree size={12} weight="duotone" />
+              ) : (
+                <ListBullets size={12} weight="duotone" />
+              )}
+              {mode}
+            </button>
+          );
+        })}
+      </div>
+    );
+
     return (
       <Box
         sx={{
@@ -188,178 +213,33 @@ const RoleListing: React.FC<RoleListingProps> = ({
           display: "flex",
           flexDirection: "column",
           height: "100%",
+          bgcolor: theme => (theme.palette.mode === "dark" ? "#111113" : "#f9fbff"),
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 1,
-            px: 1.5,
-            py: 1.25,
-            flexShrink: 0,
-            borderBottom: 1,
-            borderColor: "divider",
-            bgcolor: "background.paper",
-          }}
-        >
-          <Box>
-            <Button
-              id="roles-settings-view-button"
-              variant="outlined"
-              size="small"
-              aria-controls={rolesViewMenuOpen ? "roles-settings-view-menu" : undefined}
-              aria-expanded={rolesViewMenuOpen ? "true" : undefined}
-              aria-haspopup="true"
-              onClick={(e) => setRolesViewMenuAnchor(e.currentTarget)}
-              startIcon={
-                settingsRolesView === "tree" ? (
-                  <AccountTreeOutlinedIcon sx={{ fontSize: 20 }} />
-                ) : (
-                  <ViewListOutlined sx={{ fontSize: 20 }} />
-                )
-              }
-              endIcon={
-                <KeyboardArrowDown
-                  sx={{
-                    fontSize: 18,
-                    color: "text.secondary",
-                    transition: (t) =>
-                      t.transitions.create("transform", { duration: 150 }),
-                    transform: rolesViewMenuOpen ? "rotate(-180deg)" : "none",
-                  }}
-                />
-              }
-              sx={{
-                textTransform: "none",
-                px: 1.25,
-                py: 0.5,
-                borderColor: "divider",
-                bgcolor: "background.paper",
-                color: "text.primary",
-                fontWeight: 500,
-                "&:hover": {
-                  borderColor: "action.active",
-                  bgcolor: "action.hover",
-                },
-              }}
-            >
-              {settingsRolesView === "tree" ? "Tree" : "List"}
-            </Button>
-            <Menu
-              id="roles-settings-view-menu"
-              anchorEl={rolesViewMenuAnchor}
-              open={rolesViewMenuOpen}
-              onClose={() => setRolesViewMenuAnchor(null)}
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-              transformOrigin={{ vertical: "top", horizontal: "left" }}
-              slotProps={{
-                paper: {
-                  elevation: 8,
-                  sx: {
-                    mt: 0.75,
-                    minWidth: 200,
-                    borderRadius: 1,
-                    boxShadow: (t) => t.shadows[8],
-                  },
-                },
-              }}
-              MenuListProps={{ dense: true, "aria-labelledby": "roles-settings-view-button" }}
-            >
-              <MenuItem
-                onClick={() => {
-                  setSettingsRolesView("list");
-                  setRolesViewMenuAnchor(null);
-                }}
-                selected={settingsRolesView === "list"}
-                sx={{
-                  py: 1,
-                  gap: 1,
-                  "&.Mui-selected": {
-                    bgcolor: "rgba(25, 118, 210, 0.08)",
-                  },
-                  "&.Mui-selected:hover": {
-                    bgcolor: "rgba(25, 118, 210, 0.12)",
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  <ViewListOutlined
-                    sx={{
-                      fontSize: 22,
-                      color:
-                        settingsRolesView === "list" ? "primary.main" : "action.active",
-                    }}
-                  />
-                </ListItemIcon>
-                <ListItemText
-                  primary="List"
-                  primaryTypographyProps={{
-                    variant: "body2",
-                    fontWeight: settingsRolesView === "list" ? 600 : 500,
-                    color: "text.primary",
-                  }}
-                />
-                {settingsRolesView === "list" ? (
-                  <Check sx={{ fontSize: 20, color: "primary.main", ml: 0.5 }} />
-                ) : (
-                  <Box sx={{ width: 24, flexShrink: 0 }} aria-hidden />
-                )}
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  setSettingsRolesView("tree");
-                  setRolesViewMenuAnchor(null);
-                }}
-                selected={settingsRolesView === "tree"}
-                sx={{
-                  py: 1,
-                  gap: 1,
-                  "&.Mui-selected": {
-                    bgcolor: "rgba(25, 118, 210, 0.08)",
-                  },
-                  "&.Mui-selected:hover": {
-                    bgcolor: "rgba(25, 118, 210, 0.12)",
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  <AccountTreeOutlinedIcon
-                    sx={{
-                      fontSize: 22,
-                      color:
-                        settingsRolesView === "tree" ? "primary.main" : "action.active",
-                    }}
-                  />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Tree"
-                  primaryTypographyProps={{
-                    variant: "body2",
-                    fontWeight: settingsRolesView === "tree" ? 600 : 500,
-                    color: "text.primary",
-                  }}
-                />
-                {settingsRolesView === "tree" ? (
-                  <Check sx={{ fontSize: 20, color: "primary.main", ml: 0.5 }} />
-                ) : (
-                  <Box sx={{ width: 24, flexShrink: 0 }} aria-hidden />
-                )}
-              </MenuItem>
-            </Menu>
-          </Box>
-          <Tooltip title="New role">
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleAddNew}
-              sx={{ flexShrink: 0 }}
-            >
-              New Role
-            </Button>
-          </Tooltip>
-        </Box>
+        <div className="flex flex-shrink-0 items-center gap-2 border-b border-[#E3ECFC] px-4 py-3 dark:border-[#27272A]">
+          {viewToggle}
+          <div className="flex-1" />
+          <Button
+            variant="contained"
+            size="small"
+            onClick={handleAddNew}
+            sx={{
+              flexShrink: 0,
+              bgcolor: "#1D4ED8",
+              color: "white",
+              borderRadius: "9px",
+              textTransform: "none",
+              fontWeight: 700,
+              fontSize: "0.73rem",
+              px: 1.5,
+              py: 0.7,
+              boxShadow: "0 1px 6px #1D4ED833",
+              "&:hover": { bgcolor: "#2563EB" },
+            }}
+          >
+            New Role
+          </Button>
+        </div>
         <Box sx={{ flex: 1, minHeight: 0, overflow: "auto", position: "relative" }}>
           {settingsRolesView === "tree" ? (
             <RoleTreeView

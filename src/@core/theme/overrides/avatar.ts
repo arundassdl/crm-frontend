@@ -27,7 +27,7 @@ const avatar: Theme['components'] = {
   MuiAvatar: {
     styleOverrides: {
       root: ({ theme }) => ({
-        color: 'var(--mui-palette-text-primary)',
+        // color: 'var(--mui-palette-text-primary)',
         fontSize: theme.typography.body1.fontSize,
         lineHeight: 1.2
       })

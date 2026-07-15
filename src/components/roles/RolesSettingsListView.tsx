@@ -1,20 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  Box,
-  Checkbox,
-  Chip,
-  CircularProgress,
-  Divider,
-  InputAdornment,
-  List,
-  ListItemButton,
-  TablePagination,
-  TextField,
-  Typography,
-} from '@mui/material'
-import SearchIcon from '@mui/icons-material/Search'
+import { Checkbox, CircularProgress, InputBase, TablePagination } from '@mui/material'
+import { MagnifyingGlass } from '@phosphor-icons/react'
 import { fetchRawDataGridListing } from '@/services/api/common-erpnext-api/listing-api-get'
 import type { GridFilterModel, GridSortModel } from '@mui/x-data-grid'
 
@@ -213,176 +201,118 @@ export default function RolesSettingsListView({
   }
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        minHeight: 0,
-        bgcolor: 'background.paper',
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          gap: 1,
-          px: 1.5,
-          py: 1.25,
-          flexShrink: 0,
-          bgcolor: 'background.paper',
-        }}
-      >
+    <div className="flex h-full min-h-0 flex-col bg-[#f9fbff] dark:bg-[#111113]">
+      <div className="flex flex-shrink-0 items-center gap-2 px-3 py-2.5">
         <Checkbox
           size="small"
           checked={allPageSelected}
           indeterminate={!allPageSelected && somePageSelected}
           onChange={toggleSelectAll}
           inputProps={{ 'aria-label': 'Select all roles on this page' }}
-          sx={{ alignSelf: 'center', mb: 0.25 }}
+          sx={{ p: 0.3, color: '#E2E8F0', '&.Mui-checked': { color: '#1D4ED8' } }}
         />
-        <TextField
-          variant="standard"
-          size="small"
-          fullWidth
-          placeholder="Search"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          InputProps={{
-            disableUnderline: false,
-            startAdornment: (
-              <InputAdornment position="start" sx={{ mr: 0.25 }}>
-                <SearchIcon sx={{ fontSize: 20, color: 'grey.400' }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            '& .MuiInputBase-root': {
-              bgcolor: 'transparent',
-            },
-            '& .MuiInput-underline:before': {
-              borderBottomColor: 'rgba(180, 175, 210, 0.55)',
-            },
-            '& .MuiInput-underline:hover:not(.Mui-disabled):before': {
-              borderBottomColor: 'rgba(160, 155, 195, 0.75)',
-            },
-            '& .MuiInput-underline:after': {
-              borderBottomWidth: 2,
-            },
-            '& .MuiInputBase-input': {
-              py: 0.75,
-              fontSize: '0.9375rem',
-            },
-            '& .MuiInputBase-input::placeholder': {
-              color: 'rgba(96, 125, 160, 0.75)',
-              opacity: 1,
-            },
-          }}
-        />
-      </Box>
+        <div className="flex flex-1 items-center gap-1.5 rounded-xl border border-[#E3ECFC] bg-white px-3 py-1.5 transition-all focus-within:border-[#1D4ED8] focus-within:shadow-[0_0_0_2px_#4A7AE8] dark:border-[#3F3F46] dark:bg-[#18181B]">
+          <MagnifyingGlass size={13} color="#94A3B8" weight="duotone" />
+          <InputBase
+            placeholder="Search"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            sx={{
+              flex: 1,
+              fontSize: '0.75rem',
+              color: theme => (theme.palette.mode === 'dark' ? '#D4D4D8' : '#334155'),
+              '& input::placeholder': { color: '#94A3B8', opacity: 1 },
+            }}
+          />
+        </div>
+      </div>
 
-      <Divider />
-
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', position: 'relative' }}>
+      <div className="relative min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <div className="flex justify-center py-12">
             <CircularProgress size={28} />
-          </Box>
+          </div>
         ) : rows.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ p: 3 }}>
-            No roles found
-          </Typography>
+          <div className="p-4 text-[13px] text-slate-400">No roles found</div>
         ) : (
-          <List disablePadding sx={{ py: 0 }}>
-            {rows.map((row) => {
-              const r = row as Record<string, unknown>
-              const id = String(r.name ?? '')
-              const roleName = String(r.role_name ?? '').trim() || '—'
-              const description = String(r.role_description ?? '').trim()
-              const navKey = rowDetailKey(r)
-              const nm = String(r.name ?? '').trim()
-              const rn = String(r.role_name ?? '').trim()
-              const selectedRow = Boolean(
-                normalizedSelection &&
-                  (normalizedSelection === nm ||
-                    normalizedSelection === rn ||
-                    normalizedSelection === normalizeRoleKey(nm) ||
-                    normalizedSelection === normalizeRoleKey(rn))
-              )
-              const checked = id ? selectedIds.has(id) : false
-              const dis = r.disabled
-              const disabled = dis === 1 || dis === true || dis === '1'
-              const admin = r.is_admin
-              const isAdmin = admin === 1 || admin === true || admin === '1'
+          rows.map((row) => {
+            const r = row as Record<string, unknown>
+            const id = String(r.name ?? '')
+            const roleName = String(r.role_name ?? '').trim() || '—'
+            const description = String(r.role_description ?? '').trim()
+            const navKey = rowDetailKey(r)
+            const nm = String(r.name ?? '').trim()
+            const rn = String(r.role_name ?? '').trim()
+            const selectedRow = Boolean(
+              normalizedSelection &&
+                (normalizedSelection === nm ||
+                  normalizedSelection === rn ||
+                  normalizedSelection === normalizeRoleKey(nm) ||
+                  normalizedSelection === normalizeRoleKey(rn))
+            )
+            const checked = id ? selectedIds.has(id) : false
+            const dis = r.disabled
+            const disabled = dis === 1 || dis === true || dis === '1'
+            const admin = r.is_admin
+            const isAdmin = admin === 1 || admin === true || admin === '1'
 
-              return (
-                <ListItemButton
-                  key={id || roleName}
-                  selected={!!selectedRow}
-                  onClick={() => navKey && onSelectRole(navKey)}
-                  sx={{
-                    alignItems: 'flex-start',
-                    py: 1.5,
-                    px: 1.5,
-                    gap: 1.5,
-                    borderBottom: 1,
-                    borderColor: 'divider',
-                    bgcolor: selectedRow ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
-                    '&.Mui-selected': {
-                      bgcolor: 'rgba(25, 118, 210, 0.12)',
-                    },
-                    '&:hover': {
-                      bgcolor: selectedRow ? 'rgba(25, 118, 210, 0.14)' : 'action.hover',
-                    },
-                  }}
-                >
-                  <Checkbox
-                    size="small"
-                    checked={checked}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={() => id && toggleRow(id)}
-                    inputProps={{ 'aria-label': `Select ${roleName}` }}
-                    sx={{ pt: 0.5 }}
-                  />
-                  <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap>
+            return (
+              <div
+                key={id || roleName}
+                role="button"
+                tabIndex={0}
+                onClick={() => navKey && onSelectRole(navKey)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    if (navKey) onSelectRole(navKey)
+                  }
+                }}
+                className={`flex w-full cursor-pointer items-start gap-2 rounded-lg border px-3 py-2.5 text-left transition-all ${
+                  selectedRow
+                    ? 'border-[#1D4ED8] bg-[#EFF6FF] shadow-sm dark:border-[#3F3F46] dark:bg-[#27272A]'
+                    : 'border-[#E3ECFC] hover:bg-[#f9fbff] dark:border-[#27272A] dark:hover:bg-[#1C1C1E]'
+                }`}
+              >
+                <Checkbox
+                  size="small"
+                  checked={checked}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={() => id && toggleRow(id)}
+                  inputProps={{ 'aria-label': `Select ${roleName}` }}
+                  sx={{ p: 0.3, mt: '1px', color: '#E2E8F0', '&.Mui-checked': { color: '#1D4ED8' } }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`truncate text-[14px] font-semibold ${
+                        selectedRow
+                          ? 'text-[#0C2472] dark:text-[#D4D4D8]'
+                          : 'text-slate-600 dark:text-[#71717A]'
+                      }`}
+                    >
                       {roleName}
-                    </Typography>
-                    <Box sx={{ mt: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
-                      {disabled ? (
-                        <Chip label="Disabled" size="small" variant="outlined" sx={{ height: 22, fontSize: '0.7rem' }} />
-                      ) : null}
-                      {isAdmin ? (
-                        <Chip
-                          label="Admin"
-                          size="small"
-                          variant="outlined"
-                          sx={{ height: 22, fontSize: '0.7rem' }}
-                        />
-                      ) : null}
-                    </Box>
-                    {description ? (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          display: 'block',
-                          mt: 0.5,
-                          color: 'text.secondary',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {description}
-                      </Typography>
+                    </span>
+                    {disabled ? (
+                      <span className="flex-shrink-0 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] px-1.5 py-px text-[10px] font-bold text-slate-500">
+                        Disabled
+                      </span>
                     ) : null}
-                  </Box>
-                </ListItemButton>
-              )
-            })}
-          </List>
+                    {isAdmin ? (
+                      <span className="flex-shrink-0 rounded-full border border-[#FDE68A] bg-[#FEF3C7] px-1.5 py-px text-[10px] font-bold text-[#B45309]">
+                        Admin
+                      </span>
+                    ) : null}
+                  </div>
+                  {description ? (
+                    <div className="mt-0.5 text-[12px] text-slate-400">{description}</div>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })
         )}
-      </Box>
+      </div>
 
       {!loading && rowCount > 0 ? (
         <TablePagination
@@ -398,8 +328,19 @@ export default function RolesSettingsListView({
             })
           }
           rowsPerPageOptions={[10, 25, 50, 100]}
+          sx={{
+            flexShrink: 0,
+            borderTop: '1px solid',
+            borderColor: theme => (theme.palette.mode === 'dark' ? '#27272A' : '#E3ECFC'),
+            '& .MuiTablePagination-toolbar': { minHeight: 44, px: 2 },
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              fontSize: '12px',
+              color: '#94A3B8',
+            },
+            '& .MuiTablePagination-select': { fontSize: '12px', fontWeight: 600 },
+          }}
         />
       ) : null}
-    </Box>
+    </div>
   )
 }

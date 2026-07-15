@@ -1,21 +1,17 @@
 "use client";
 
 import React from "react";
-import { Grid } from "@mui/material";
-import ViewDetailsForm from "@/components/Common/Form/ViewDetailsForm";
+import DealDetailDashboard from "@/components/Deals/Detail/DealDetailDashboard";
 
-const DealDetails: any = (slug) => {
+const DealDetails = (slug: any) => {
   const deal_name = slug?.name;
 
+  if (!deal_name) return null;
+
   return (
-    <Grid container spacing={5} style={{ padding: "0px" }}>
-      <ViewDetailsForm
-        moduleName="Deals"
-        record_name={deal_name}
-        doctype="CRM Deal"
-        isEditPermission={true}
-      />
-    </Grid>
+    <div className="w-full">
+      <DealDetailDashboard name={deal_name} />
+    </div>
   );
 };
 

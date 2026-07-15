@@ -22,7 +22,8 @@ export type Config = {
   layoutPadding: number
   compactContentWidth: number
   disableRipple: boolean
-  fontFamily:string
+  fontFamily: string
+  backgroundColor: string
 }
 
 const themeConfig: Config = {
@@ -31,11 +32,12 @@ const themeConfig: Config = {
   footerText: 'Social DNA Labs',
   settingsCookieName: 'sdl',
   mode: 'light', // 'light', 'dark'
-  layoutPadding: 10, // Common padding for header, content, footer layout components (in px)
+  layoutPadding: 20, // Common padding for header, content, footer layout components (in px)
   compactContentWidth: -1, // in px
   disableRipple: false, // true, false
   // Match `@fontsource/inter` (see `inter-fonts.ts`); not `next/font` (avoids build-time Google fetch)
-  fontFamily: '"Inter", system-ui, -apple-system, "Segoe UI", "Roboto", "Helvetica Neue", sans-serif'
+  fontFamily: '"Inter", system-ui, -apple-system, "Segoe UI", "Roboto", "Helvetica Neue", sans-serif',
+  backgroundColor: '#EBF3FE', // Background color for the layout components (header, content, footer)
 }
 
 export default themeConfig

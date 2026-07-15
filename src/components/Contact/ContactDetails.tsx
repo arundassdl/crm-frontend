@@ -1,21 +1,17 @@
 "use client";
 
 import React from "react";
-import { Grid } from "@mui/material";
-import ViewDetailsForm from "@/components/Common/Form/ViewDetailsForm";
+import ContactDetailDashboard from "@/components/Contact/Detail/ContactDetailDashboard";
 
 const ContactDetails: any = (slug) => {
   const contact_name = slug?.name;
 
+  if (!contact_name) return null;
+
   return (
-    <Grid container spacing={5} style={{ padding: "0px" }}>
-      <ViewDetailsForm
-        moduleName="Contacts"
-        record_name={contact_name}
-        doctype="Contact"
-        isEditPermission={true}
-      />
-    </Grid>
+    <div className="w-full">
+      <ContactDetailDashboard name={contact_name} />
+    </div>
   );
 };
 

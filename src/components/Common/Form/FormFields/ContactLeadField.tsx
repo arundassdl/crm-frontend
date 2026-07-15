@@ -3,8 +3,10 @@ import { readAccessTokenString } from '@/utils/accessTokenDataStorage'
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import LookupField from "./LookupField";
 import { getDocument } from "@/services/api/common-erpnext-api/create-edit-api";
+import { getFormFieldSx } from "@/@core/styles/formFieldStyles";
 
 type ContactLeadType = "Contact" | "CRM Lead";
 
@@ -78,9 +80,12 @@ const ContactLead: React.FC<ContactLeadFieldProps> = ({
     onChange(null);
   };
 
+  const theme = useTheme();
+  const fieldSx = getFormFieldSx(theme.palette.mode === "dark");
+
   return (
     <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
-      <FormControl sx={{ minWidth: 180 }} disabled={disabled}>
+      <FormControl sx={{ minWidth: 180, ...fieldSx }} disabled={disabled}>
         {/* <InputLabel id={typeLabelId}>Type</InputLabel> */}
         <Select
           labelId={typeLabelId}

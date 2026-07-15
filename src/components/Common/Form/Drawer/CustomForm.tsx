@@ -24,7 +24,7 @@ import {
   Backdrop,
   Stack,
 } from "@mui/material";
-import { styled } from '@mui/material/styles'
+import { styled, useTheme } from '@mui/material/styles'
 import { Autocomplete } from "@mui/lab";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
@@ -38,12 +38,14 @@ import {
 import { useDebounce } from "react-use";
 import { fetchDataBySearch } from "@/services/api/common-erpnext-api/lookup-api";
 import { GridExpandMoreIcon } from "@mui/x-data-grid";
+import { User, Envelope, TrendUp, SlidersHorizontal, Buildings } from "@phosphor-icons/react";
 import DatePickerField from "../FormFields/DatePickerField";
 import LookupField from "../FormFields/LookupField";
 import ContactLead from "../FormFields/ContactLeadField";
 import RelatedTo from "../FormFields/RelatedToField";
 import ReminderField from "../FormFields/ReminderField";
 import PickListField from "../FormFields/PickListField";
+import { getFormFieldSx } from "@/@core/styles/formFieldStyles";
 import StageProbabilityField from "../FormFields/StageProbabilityField";
 import AddressField from "../FormFields/AddressField";
 // import { DropzoneArea } from 'react-mui-dropzone';
@@ -147,6 +149,12 @@ const FormField: React.FC<FormFieldProps> = ({
   onRelatedToTypeChange,
   fields,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+
+  // Shared canonical form-field styling (see @core/styles/formFieldStyles).
+  const FX = getFormFieldSx(isDark);
+
   const isHidden =
     typeof field.hide === "function" ? field.hide(values) : field.hide === true;
 
@@ -282,6 +290,7 @@ const FormField: React.FC<FormFieldProps> = ({
             <FormControl
               fullWidth
               error={touched[field.name] && Boolean(errors[field.name])}
+              sx={FX}
             >
               <InputLabel id={field.name}>{field.label}</InputLabel>
               <Select
@@ -404,6 +413,7 @@ const FormField: React.FC<FormFieldProps> = ({
                       : undefined
                   }
                   fullWidth
+                  sx={FX}
                 />
               )}
               disabled={
@@ -483,7 +493,7 @@ const FormField: React.FC<FormFieldProps> = ({
     <>
       {!field.showIf || field.showIf(values) ? (
         <>
-          <DatePickerField name={field?.name} label={field.label} value={values[field.name] || field.value} />
+          <DatePickerField name={field?.name} label={field.label} value={values[field.name] || field.value} sx={FX} />
         </>
       ) : (null)}
     </>
@@ -500,6 +510,7 @@ const FormField: React.FC<FormFieldProps> = ({
         error={touched[field.name] && Boolean(errors[field.name])}
         helperText={touched[field.name] ? errors[field.name] : ""}
         fullWidth
+        sx={FX}
       />
     </>
   ) : (field.type as string) === "firstname" ? (
@@ -507,7 +518,7 @@ const FormField: React.FC<FormFieldProps> = ({
     <>
       {(!field.showIf || field.showIf(values)) && (
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-          <FormControl sx={{ minWidth: 90 }}>
+          <FormControl sx={{ minWidth: 90, ...FX }}>
             <InputLabel id={`sal-label-${field.name}`}>Salutation</InputLabel>
             <Select
               labelId={`sal-label-${field.name}`}
@@ -533,6 +544,7 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => handleFieldChange(field.name, e.target.value, setFieldValue, values)}
             disabled={typeof field.disable === "function" ? field.disable(values) : field.disable}
             inputProps={{ maxLength: (field as any).max_length ?? 255 }}
+            sx={FX}
           />
         </Box>
       )}
@@ -709,6 +721,7 @@ const FormField: React.FC<FormFieldProps> = ({
                 if (ft === "longinteger" || ft === "currency") return { maxLength: (field as any).max_digits ?? 18 };
                 return undefined;
               })()}
+              sx={FX}
             />
           ) : null}
         </>
@@ -737,6 +750,18 @@ const CustomForm: React.FC<CustomFormProps> = ({
   const [contactLeadType, setContactLeadType] = useState<string>("Contact");
   const [relatedToTypes, setRelatedToTypes] = useState<Record<string, "CRM Organization" | "CRM Deal">>({});
   const isQuickCreate = variant === "quickCreate";
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+
+  const getSectionIcon = (name: string) => {
+    const lowercase = name.toLowerCase();
+    if (lowercase.includes("personal")) return User;
+    if (lowercase.includes("contact") || lowercase.includes("address") || lowercase.includes("communication")) return Envelope;
+    if (lowercase.includes("detail") || lowercase.includes("sales") || lowercase.includes("stage")) return TrendUp;
+    if (lowercase.includes("company") || lowercase.includes("organization") || lowercase.includes("industry")) return Buildings;
+    return SlidersHorizontal;
+  };
+
   const formInitialValues = { ...initialValues, ...editValues }; // Merge default & edit values
 
   fields.forEach(field => {
@@ -1154,7 +1179,20 @@ const CustomForm: React.FC<CustomFormProps> = ({
                       </Grid>
                     ) : (
                       <Grid item xs={12} key={section}>
-                        {section && issection && <Typography variant="h6">{section}</Typography>}
+                        {section && issection && (() => {
+                          const IconComponent = getSectionIcon(section);
+                          return (
+                            <div className="flex items-center gap-2.5 mb-5 mt-6 px-2">
+                              <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? "bg-[#27272A]" : "bg-[#EFF6FF]"}`}>
+                                <IconComponent size={13} color={isDark ? "#71717A" : "#1D4ED8"} weight="duotone" />
+                              </div>
+                              <p className={`font-sans text-[10.5px] font-bold uppercase tracking-[0.13em] m-0 whitespace-nowrap ${isDark ? "text-[#71717A]" : "text-[#1D4ED8]"}`}>
+                                {section}
+                              </p>
+                              <div className={`flex-1 h-px ${isDark ? "bg-[#27272A]" : "bg-[#E3ECFC]"}`} />
+                            </div>
+                          );
+                        })()}
                         {renderFields()}
                       </Grid>
                     )
@@ -1172,23 +1210,53 @@ const CustomForm: React.FC<CustomFormProps> = ({
                 width: "100%",
                 display: "flex",
                 justifyContent: "flex-end",
+                alignItems: "center",
                 mt: 0,
-                padding: isQuickCreate ? 2 : 2,
-                borderTop: isQuickCreate ? "1px solid #ccc" : "1px solid #ccc",
-                background: "var(--mui-palette-background-paper)",
+                px: 6,
+                py: 3,
+                borderTop: `1px solid ${isDark ? "#27272A" : "#E3ECFC"}`,
+                bgcolor: isDark ? "#111113" : "#f9fbff",
                 zIndex: 1100,
               }}
             >
-              <Button onClick={onClose} color="secondary">
+              <Button
+                onClick={onClose}
+                sx={{
+                  color: isDark ? "#A1A1AA" : "#64748B",
+                  textTransform: "none",
+                  fontWeight: 500,
+                  fontSize: "14px",
+                  borderRadius: "9px",
+                  px: 3,
+                  py: 1,
+                  "&:hover": { bgcolor: isDark ? "#27272A" : "#EFF6FF" }
+                }}
+              >
                 {cancelLabel}
               </Button>
-              {typeof btnDisable === 'function' ? btnDisable(values) : btnDisable}
               <Button
-                color="primary"
                 type="submit"
                 variant="contained"
-                sx={{ ml: 2 }}
                 disabled={typeof btnDisable === 'function' ? btnDisable(values) : btnDisable}
+                sx={{
+                  ml: 2,
+                  bgcolor: isDark ? "#27272A" : "#1D4ED8",
+                  color: isDark ? "#F4F4F5" : "white",
+                  borderRadius: "9px",
+                  textTransform: "none",
+                  fontWeight: 500,
+                  fontSize: "14px",
+                  px: 3,
+                  py: 1,
+                  boxShadow: isDark ? "none" : "0 1px 8px 0 #1D4ED833",
+                  "&:hover": {
+                    bgcolor: isDark ? "#3F3F46" : "#2563EB",
+                    boxShadow: isDark ? "none" : "0 2px 14px 0 #60A5FA55",
+                  },
+                  "&:active": {
+                    bgcolor: isDark ? "#52525B" : "#0C2472",
+                  },
+                }}
               >
                 {submitLabel}
               </Button>

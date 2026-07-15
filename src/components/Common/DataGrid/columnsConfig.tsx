@@ -2,6 +2,7 @@ import { GridColDef } from "@mui/x-data-grid";
 import CustomAvatar from "@/@core/components/mui/Avatar";
 import { CONSTANTS } from "@/services/config/app-config";
 import { Box, Chip, MenuItem, Select, Switch, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import Link from "@/components/Link";
 import { GridRenderEditCellParams } from "@mui/x-data-grid";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -11,6 +12,41 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import DonutLargeIcon from '@mui/icons-material/DonutLarge'; //Backlog
 import { HourglassBottom, CheckCircle, Cancel } from '@mui/icons-material';
 import CircleIcon from '@mui/icons-material/Circle';
+import { getAvatarColor as avatarColor } from "@/@core/utils/avatarColor";
+
+const STATUS_CFG: Record<string, { bg: string; text: string; dot: string; bgDark: string; textDark: string }> = {
+  "New":         { bg:"#EFF6FF", text:"#0C2472", dot:"#3B82F6", bgDark:"rgba(96, 165, 250, 0.15)", textDark:"#60A5FA" },
+  "Contacted":   { bg:"#E3ECFC", text:"#0C2472", dot:"#3B82F6", bgDark:"rgba(96, 165, 250, 0.15)", textDark:"#60A5FA" },
+  "Nurture":     { bg:"#EFF6FF", text:"#007adb", dot:"#007adb", bgDark:"rgba(0, 122, 219, 0.15)", textDark:"#60A5FA" },
+  "Qualified":   { bg:"#DCFCE7", text:"#166534", dot:"#16A34A", bgDark:"rgba(16, 185, 129, 0.15)", textDark:"#34D399" },
+  "Unqualified": { bg:"#F1F5F9", text:"#475569", dot:"#94A3B8", bgDark:"rgba(168, 85, 247, 0.15)", textDark:"#A855F7" },
+  "Junk":        { bg:"#FEF2F2", text:"#991B1B", dot:"#EF4444", bgDark:"rgba(244, 63, 94, 0.15)", textDark:"#F87171" },
+  "In Progress": { bg:"#E3ECFC", text:"#0C2472", dot:"#1D4ED8", bgDark:"rgba(251, 191, 36, 0.15)", textDark:"#FBBF24" },
+  "Lost":        { bg:"#FEF2F2", text:"#991B1B", dot:"#EF4444", bgDark:"rgba(244, 63, 94, 0.15)", textDark:"#F87171" },
+};
+
+const renderStatusCell = (status: string, isDark: boolean) => {
+  const cfg = STATUS_CFG[status] || { bg: "#F1F5F9", text: "#475569", dot: "#94A3B8", bgDark: "rgba(168, 85, 247, 0.15)", textDark: "#A855F7" };
+  const bg = isDark ? cfg.bgDark : cfg.bg;
+  const text = isDark ? cfg.textDark : cfg.text;
+  
+  return (
+    <div
+      style={{ backgroundColor: bg, color: text }}
+      className="inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-full text-[13px] font-medium leading-none transition-colors"
+    >
+      <span className="w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ backgroundColor: isDark ? text : cfg.dot }} />
+      {status}
+    </div>
+  );
+};
+
+// avatarColor is imported at the top from the shared theme-aligned palette.
+const initials = (n: string) => {
+  const p = n.trim().split(/\s+/);
+  return p.length >= 2 ? (p[0][0] + p[1][0]).toUpperCase() : n.substring(0, 2).toUpperCase();
+};
+
 
 const handleEditCellChange = (id: number, value: string) => {
   console.log("valuevalue", value);
@@ -401,7 +437,6 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
         hours = hours % 12;
         if (hours === 0) hours = 12;
         const hh = String(hours).padStart(2, "0");
-        return `${day}/${month}/${year} ${hh}:${minutes} ${ampm}`;
       },
     },
   },
@@ -409,62 +444,76 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
     name: {
       flex: 1,
       minWidth: 200,
-      renderCell: (params) => (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            "&:hover": {
-              color: "primary.main", // Change to primary color on hover
-            },
-          }}
-          className="gap-2"
-        >
-          {/* <CustomAvatar
-            alt={params?.row?.name}
-            src={`${CONSTANTS.API_BASE_URL}${params?.row?.image}`}
-            size={35}
-            className="shadow-xs"
-          /> */}
-          <Link
-            href={`/leads/detail/${params.row.name}`}
-            color="inherit"
-            rel="noopener noreferrer"
+      renderCell: (params) => {
+        const theme = useTheme();
+        const isDark = theme.palette.mode === "dark";
+        const val = params.row.name;
+        if (!val) return <span className={isDark ? "text-[#52525B]" : "text-slate-300"}>—</span>;
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2.5,
+              "&:hover": {
+                color: "primary.main",
+              },
+            }}
           >
-            {params.row.name}
-          </Link>
-        </Box>
-      ),
+            <div
+              style={{ backgroundColor: avatarColor(String(val)) }}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0"
+            >
+              {initials(String(val))}
+            </div>
+            <Link
+              href={`/leads/detail/${params.row.name}`}
+              color="inherit"
+              rel="noopener noreferrer"
+              style={{ fontSize: "15px", lineHeight: "20px", fontWeight: 500 }}
+            >
+              {val}
+            </Link>
+          </Box>
+        );
+      },
     },
     lead_name: {
       flex: 1,
       minWidth: 200,
-      renderCell: (params) => (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            "&:hover": {
-              color: "primary.main", // Change to primary color on hover
-            },
-          }}
-          className="gap-2"
-        >
-          {/* <CustomAvatar
-            alt={params?.row?.lead_name}
-            src={`${CONSTANTS.API_BASE_URL}${params?.row?.image}`}
-            size={35}
-            className="shadow-xs"
-          /> */}
-          <Link
-            href={`/leads/detail/${params.row.name}`}
-            color="inherit"
-            rel="noopener noreferrer"
+      renderCell: (params) => {
+        const theme = useTheme();
+        const isDark = theme.palette.mode === "dark";
+        const val = params.row.lead_name;
+        if (!val) return <span className={isDark ? "text-[#52525B]" : "text-slate-300"}>—</span>;
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2.5,
+              "&:hover": {
+                color: "primary.main",
+              },
+            }}
           >
-            {params.row.lead_name}
-          </Link>
-        </Box>
-      ),
+            <div
+              style={{ backgroundColor: avatarColor(String(val)) }}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0"
+            >
+              {initials(String(val))}
+            </div>
+            <Link
+              href={`/leads/detail/${params.row.name}`}
+              color="inherit"
+              rel="noopener noreferrer"
+              style={{ fontSize: "15px", lineHeight: "20px", fontWeight: 500 }}
+            >
+              {val}
+            </Link>
+          </Box>
+        );
+      },
     },
 
     account: {
@@ -515,53 +564,10 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
       flex: 1,
       minWidth: 150,
       type: "string",
-      // valueGetter: (params, row) => row.status,
-      //  valueGetter: (params,row) =>
-      //   row?.is_group?"Yes":"No",
       renderCell: (params) => {
-        if (params?.row?.status === "New") {
-          return <Chip
-            icon={<RadioButtonUncheckedIcon />}
-            label={params?.row?.status}
-            // sx={{ borderColor: '#525252 !important' }}
-            variant="outlined"
-          />
-        } else if (params?.row?.status === "Contacted") {
-          return <Chip
-            icon={<RadioButtonUncheckedIcon sx={{ color: '#e06c39 !important' }} />}
-            label={params?.row?.status}
-            // sx={{ borderColor: '#e06c39 !important' }}
-            variant="outlined"
-          />
-        } else if (params?.row?.status === "Nurture") {
-          return <Chip
-            icon={<RadioButtonUncheckedIcon sx={{ color: '#007adb !important' }} />}
-            label={params?.row?.status}
-            // sx={{ borderColor: '#007adb !important' }}
-            variant="outlined"
-          />
-        } else if (params?.row?.status === "Qualified") {
-          return <Chip
-            icon={<RadioButtonUncheckedIcon sx={{ color: '#00794c !important' }} />}
-            label={params?.row?.status}
-            // sx={{ borderColor: '#00794c !important' }}
-            variant="outlined"
-          />
-        } else if (params?.row?.status === "Unqualified") {
-          return <Chip
-            icon={<RadioButtonUncheckedIcon sx={{ color: '#d62a30 !important' }} />}
-            label={params?.row?.status}
-            // sx={{ borderColor: '#d62a30 !important' }}
-            variant="outlined"
-          />
-        } else if (params?.row?.status === "Junk") {
-          return <Chip
-            icon={<RadioButtonUncheckedIcon sx={{ color: '#8a40be !important' }} />}
-            label={params?.row?.status}
-            // sx={{ borderColor: '#8a40be !important' }}
-            variant="outlined"
-          />
-        }
+        const theme = useTheme();
+        const isDark = theme.palette.mode === "dark";
+        return renderStatusCell(params.row.status, isDark);
       },
     },
 

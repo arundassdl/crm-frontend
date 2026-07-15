@@ -41,12 +41,12 @@ const nextConfig = {
       }
     }
 
-    if (!dev && !isServer) {
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        maxSize: 244000,
-      }
-    }
+    // if (!dev && !isServer) {
+    //   config.optimization.splitChunks = {
+    //     chunks: 'all',
+    //     maxSize: 244000,
+    //   }
+    // }
     return config
   },
 

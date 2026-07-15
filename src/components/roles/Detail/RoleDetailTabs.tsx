@@ -30,102 +30,29 @@ const RoleDetailTabs = ({ customerData }) => {
   ];
 
   return (
-    <StyledContainer
-      maxWidth={false}
-      sx={{
-        backgroundColor: "var(--mui-palette-background-paper)",
-        display: "flex",
-        flexDirection: "column",
-        maxHeight: "calc(100vh - 160px)",
-        p: 0,
-      }}
-    >
-      <Box
-        sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 1200,
-          width: "100%",
-          bgcolor: "var(--mui-palette-background-paper)",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 1.5,
-            mb: 0.5,
-            pr: 8,
-          }}
-        >
-          <Box
-            sx={{
-              borderColor: "divider",
-              width: "fit-content",
-              alignItems: "center",
-              border: "2px solid var(--mui-palette-grey-100)",
-              borderRadius: 5,
-            }}
-          >
-            <Tabs
-              value={activeTab}
-              onChange={(_event, newValue) => setActiveTab(newValue)}
-              aria-label="role-detail-tabs"
-              sx={{
-                minHeight: 40,
-                "& .MuiTabs-flexContainer": { gap: 1 },
-                "& .MuiTabs-indicator": { display: "none" },
-                "& .MuiTab-root": {
-                  textTransform: "none",
-                  minHeight: 40,
-                  minWidth: 150,
-                  px: 2.5,
-                  py: 1.25,
-                  borderRadius: 5,
-                  backgroundColor: "background.paper",
-                  color: "#666666",
-                  fontWeight: 400,
-                  fontSize: 13,
-                },
-                "& .MuiTab-root.Mui-selected": {
-                  backgroundColor: "#E8E4F4",
-                  borderColor: "#C4BCE0",
-                  color: "#333333",
-                  fontWeight: 600,
-                },
-                "& .MuiTab-root:hover": {
-                  backgroundColor: "action.hover",
-                  borderRadius: 5,
-                },
-                "& .MuiTab-root.Mui-selected:hover": {
-                  backgroundColor: "#E8E4F4",
-                  borderRadius: 5,
-                },
-              }}
+    <div className="flex flex-1 flex-col overflow-y-auto bg-[#EFF6FF] px-6 py-6 dark:bg-[#0A0A0A]">
+      <div className="mb-5 flex items-center gap-2">
+        {tabsData.map((tab, index) => {
+          const selected = activeTab === index;
+          return (
+            <button
+              key={tab.label}
+              type="button"
+              onClick={() => setActiveTab(index)}
+              className={`rounded-full px-4 py-1.5 text-[14px] font-semibold transition-all ${
+                selected
+                  ? "bg-[#1D4ED8] text-white shadow-sm dark:bg-[#27272A] dark:text-[#D4D4D8]"
+                  : "bg-white text-slate-500 hover:bg-[#E3ECFC] hover:text-[#0C2472] dark:bg-[#1C1C1E] dark:text-[#9CA3AF] dark:hover:bg-[#27272A]"
+              }`}
             >
-              {tabsData.map((tab, index) => (
-                <Tab key={index} label={tab.label} />
-              ))}
-            </Tabs>
-          </Box>
-        </Box>
-      </Box>
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-      <Box
-        sx={{
-          pt: 3,
-          pr: 3,
-          pb: 3,
-          pl: 0,
-          flex: 1,
-          overflowY: "auto",
-        }}
-      >
-        {tabsData[activeTab]?.Component}
-      </Box>
-    </StyledContainer>
+      <div className="flex-1">{tabsData[activeTab]?.Component}</div>
+    </div>
   );
 };
 

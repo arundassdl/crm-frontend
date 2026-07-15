@@ -9,6 +9,7 @@ import { showToast } from "@/components/ToastNotificationNew";
 import { deleteClient } from "@/services/api/common-erpnext-api/create-edit-api";
 import { columnsConfig } from "@/components/Common/DataGrid/columnsConfig";
 import RawDynamicDataGrid from "@/components/Common/DataGrid/RawDynamicDataGrid";
+import ContactGridView from "@/components/Contact/ContactGridView";
 import { getFormFields } from "@/services/api/general_apis/layout-api";
 import { Box, Link, CircularProgress } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -326,6 +327,9 @@ const ContactListingMain: React.FC<ContactListingProps> = ({ link_name }) => {
                 refreshKey={refreshKey}
                 module_name={module_name}
                 btnnewtitle={"Contact"}
+                multipleViews={true}
+                availableViews={["list", "grid"]}
+                gridViewComponent={ContactGridView}
             />
             {open && (
                 <AddEditConctactDrawer

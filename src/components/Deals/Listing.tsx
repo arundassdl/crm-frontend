@@ -6,18 +6,19 @@ import { showToast } from "../ToastNotificationNew";
 import { deleteClient } from "@/services/api/common-erpnext-api/create-edit-api";
 import { columnsConfig } from "@/components/Common/DataGrid/columnsConfig";
 import RawDynamicDataGrid from "../Common/DataGrid/RawDynamicDataGrid";
+import DealGridView from "@/components/Deals/DealGridView";
+import DealKanbanView from "@/components/Deals/DealKanbanView";
+import { resolveAmount, fmtTotal } from "@/components/Deals/dealTokens";
 import AddEditLeadDrawer from "./CreateEdit";
-import { Box, Link, Button, ButtonGroup, Stack, CircularProgress } from "@mui/material";
-import DealsKanbanBoard from "./DealsKanbanBoard";
+import { Box, Link, CircularProgress } from "@mui/material";
 import { GridFilterModel, GridSortModel } from "@mui/x-data-grid";
-import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
-import ReorderIcon from '@mui/icons-material/Reorder';
-import { useSelector } from "react-redux";
-import { RootState } from "@/store/store";
-import KanbanBoard from "../Common/KanbanBoard";
 import { getFormFields } from "@/services/api/general_apis/layout-api";
+import { fetchModuleStageOptions } from "@/services/api/general_apis/component-picklist-api";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+
+// Neutral fallback used only when a backend stage option has no color configured.
+const DEFAULT_STAGE_COLOR = "#64748b";
 
 interface DealProps {
   link_name?: string;
@@ -36,7 +37,12 @@ const DealsListing: React.FC<DealProps> = ({ link_name }) => {
   const [open, setOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [viewMode, setViewMode] = useState<"list" | "kanban">("list"); // NEW
+  // Deal stage field + options loaded dynamically from the backend Stage Probability API.
+  const [dealStageField, setDealStageField] = useState<string>("");
+  /** Deal amount field, resolved from the layout (the `type: "currency"` field). */
+  const [dealAmountField, setDealAmountField] = useState<string>("");
+  const [dealStageOptions, setDealStageOptions] = useState<{ value: string; color?: string }[]>([]);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
 
   // Open dialog only when selectedRow is updated
   useEffect(() => {
@@ -69,7 +75,7 @@ const DealsListing: React.FC<DealProps> = ({ link_name }) => {
   };
 
   const handleRowDetail: any = async (name: any) => {
-    router.push(`deals/detail/${name}`);
+    router.push(`/deals/detail/${name}`);
   };
 
   const [colFields, setColFields] = useState<any[]>([
@@ -126,16 +132,14 @@ const DealsListing: React.FC<DealProps> = ({ link_name }) => {
     "modified"
   ];
 
-  const stages = [
-    { label: "Qualification", index: 0, bgColor: "#525252", color: "var(--mui-palette-grey-700)" },
-    { label: "Demo/Making", index: 1, bgColor: "rgb(212 90 8 / var(--tw-text-opacity, 1))", color: "var(--mui-palette-grey-700)" },
-    { label: "Proposal/Quotation", index: 2, bgColor: "rgb(0 123 224 / var(--tw-text-opacity, 1))", color: "var(--mui-palette-grey-700)" },
-    { label: "Negotiation", index: 3, bgColor: "rgb(209 147 13 / var(--tw-text-opacity, 1))", color: "var(--mui-palette-grey-700)" },
-    { label: "Ready to Close", index: 4, bgColor: "rgb(134 66 194 / var(--tw-text-opacity, 1))", color: "var(--mui-palette-grey-700)" },
-    { label: "Won", index: 5, bgColor: "rgb(19 121 73 / var(--tw-text-opacity, 1))", color: "var(--mui-palette-grey-700)" },
-    { label: "Lost", index: 6, bgColor: "rgb(204 41 41 / var(--tw-text-opacity, 1))", color: "var(--mui-palette-grey-700)" },
-  ];
-  const view_mode = useSelector((state: RootState) => state.viewMode.viewMode);
+  // Stage filter tabs, derived from backend-driven stage options (same source as
+  // the deal form's Stage field), instead of a hardcoded list.
+  const stages = dealStageOptions.map((option, index) => ({
+    label: option.value,
+    index,
+    bgColor: option.color || DEFAULT_STAGE_COLOR,
+    color: "var(--mui-palette-grey-700)",
+  }));
 
   useEffect(() => {
     const fetchFields = async () => {
@@ -153,6 +157,31 @@ const DealsListing: React.FC<DealProps> = ({ link_name }) => {
             : Array.isArray(response)
               ? response
               : [];
+
+          // Locate the deal stage field (type "stage") so its options can drive the
+          // stage-filter tabs, matching the field the record actually stores the stage in.
+          const stageFieldMeta = fieldList.find(
+            (f: any) => String(f?.type || f?.fieldtype || "").toLowerCase().trim() === "stage"
+          );
+          setDealStageField(
+            String(stageFieldMeta?.fieldname || stageFieldMeta?.name || "").trim() || "status"
+          );
+
+          // Locate the deal amount field (type "currency"). Its name is layout-driven
+          // and is NOT reliably `annual_revenue` — hardcoding that made the cards and
+          // the pipeline total read an empty column and render ₹0. Prefer a currency
+          // field that looks like the deal value, else fall back to the first one.
+          const currencyFields = fieldList.filter(
+            (f: any) => String(f?.type || f?.fieldtype || "").toLowerCase().trim() === "currency"
+          );
+          const amountMeta =
+            currencyFields.find((f: any) =>
+              /amount|deal[_\s-]?value|opportunity/i.test(
+                `${f?.fieldname || f?.name || ""} ${f?.label || ""}`
+              )
+            ) || currencyFields[0];
+          const amountFieldName = String(amountMeta?.fieldname || amountMeta?.name || "").trim();
+          setDealAmountField(amountFieldName);
 
           const parsedColFields = fieldList
             .filter((field: any) => {
@@ -241,6 +270,15 @@ const DealsListing: React.FC<DealProps> = ({ link_name }) => {
             const additionalFields = [
               { doctype: module, field: "creation", hidden: "False", flex: 1, minWidth: 200, type: "date" },
               { doctype: module, field: "modified", hidden: "False", flex: 1, minWidth: 200, type: "date" },
+              // Fields the Grid/Kanban cards + pipeline total render. The SELECT is
+              // driven by colFields, so if the layout omits these the rows come back
+              // without them (amount rendered as ₹0). `amountFieldName` is resolved
+              // from the layout's currency field rather than hardcoded. Fetched
+              // hidden — they add no columns to the List view.
+              ...(amountFieldName ? [{ doctype: module, field: amountFieldName, hidden: "True" }] : []),
+              { doctype: module, field: "probability", hidden: "True" },
+              { doctype: module, field: "organization", hidden: "True" },
+              { doctype: module, field: "close_date", hidden: "True" },
             ].filter((f) => !finalKeys.has(f.field));
 
             return [...updatedFields, ...additionalFields];
@@ -383,43 +421,123 @@ const DealsListing: React.FC<DealProps> = ({ link_name }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userToken, module]);
 
+  // Load the deal stage options (Stage Probability API) once the stage field is known.
+  useEffect(() => {
+    const loadStages = async () => {
+      if (!userToken?.access_token || !dealStageField) return;
+      const result = await fetchModuleStageOptions(
+        "Deals",
+        dealStageField,
+        userToken.access_token,
+        userToken.role_profile
+      );
+      setDealStageOptions(
+        (result.options || []).map((o) => ({ value: o.value, color: o.color }))
+      );
+    };
+    loadStages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userToken?.access_token, userToken?.role_profile, dealStageField]);
+
+  // Per-stage record counts for the stage-filter tab badges.
+  useEffect(() => {
+    const fetchAllCounts = async () => {
+      if (
+        !userToken?.access_token ||
+        colFields.length <= 1 ||
+        !isFieldsLoaded ||
+        dealStageOptions.length === 0
+      )
+        return;
+
+      const statuses = ["All", ...dealStageOptions.map((o) => o.value)];
+      const countsObj: Record<string, number> = {};
+
+      try {
+        const statusCol = dealStageField
+          ? colFields.find((f) => f.field.toLowerCase() === dealStageField.toLowerCase())
+          : undefined;
+        const statusKey = dealStageField
+          ? `${statusCol?.doctype || module}.${dealStageField}`
+          : `${module}.status`;
+
+        await Promise.all(
+          statuses.map(async (statusVal) => {
+            const params = {
+              page: 0,
+              pageSize: 1,
+              filters: {
+                items:
+                  statusVal === "All"
+                    ? []
+                    : [{ field: statusKey, operator: "equals", value: statusVal }],
+                quickFilterValues: [],
+              },
+              sort: [],
+            };
+            const res = await fetchDataWrapper(
+              fetchRawDataGridListing,
+              params,
+              userToken?.access_token
+            );
+            countsObj[statusVal] = res?.totalCount || 0;
+          })
+        );
+
+        setStatusCounts(countsObj);
+      } catch (err) {
+        console.error("Error fetching deal stage counts:", err);
+      }
+    };
+
+    fetchAllCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userToken?.access_token, colFields, isFieldsLoaded, refreshKey, dealStageOptions, dealStageField]);
+
   return (
     <div>
       <Box>
-        {view_mode === "list" ? (
-          !isFieldsLoaded ? (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: "400px",
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          ) : (
-            <RawDynamicDataGrid
-              module={module}
-              heading={"Deals"}
-              onAddNew={handleAddNew}
-              handleRowDetail={handleRowDetail}
-              handleRowDelete={handleDelete}
-              colFields={colFields}
-              columnDefinitions={columnDefs}
-              relatedDocs={relatedDocs}
-              fetchDataFunction={(p, t, q) =>
-                fetchDataWrapper(fetchRawDataGridListing, p, t)
-              }
-              refreshKey={refreshKey}
-              multipleViews={true}
-              multiviewList={"Kanban"}
-              module_name={module_name}
-              btnnewtitle={"Deal"}
-            />
-          )
+        {!isFieldsLoaded ? (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "400px",
+            }}
+          >
+            <CircularProgress />
+          </Box>
         ) : (
-          <KanbanBoard stages={stages} listfields={listfields} module={module} title={"Deals"} fieldname={"status"} onAddNew={handleAddNew} refreshKey={refreshKey} multiviewList={"Kanban"} />
+          <RawDynamicDataGrid
+            module={module}
+            heading={"Deals"}
+            onAddNew={handleAddNew}
+            handleRowDetail={handleRowDetail}
+            handleRowDelete={handleDelete}
+            colFields={colFields}
+            columnDefinitions={columnDefs}
+            relatedDocs={relatedDocs}
+            fetchDataFunction={(p, t, q) =>
+              fetchDataWrapper(fetchRawDataGridListing, p, t)
+            }
+            refreshKey={refreshKey}
+            multipleViews={true}
+            availableViews={["list", "grid", "kanban"]}
+            gridViewComponent={DealGridView}
+            kanbanViewComponent={DealKanbanView}
+            viewProps={{ amountField: dealAmountField }}
+            summary={{
+              label: "Pipeline",
+              compute: (row: any) => resolveAmount(row, dealAmountField),
+              format: fmtTotal,
+            }}
+            module_name={module_name}
+            btnnewtitle={"Deal"}
+            stages={stages}
+            statusCounts={statusCounts}
+            statusField={dealStageField || undefined}
+          />
         )}
 
         {open && (

@@ -2,18 +2,15 @@
 import { readAccessTokenDataParsed } from '@/utils/accessTokenDataStorage'
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Card, CardContent, Divider, Typography } from "@mui/material";
-import Timeline from "@mui/lab/Timeline";
-import TimelineItem from "@mui/lab/TimelineItem";
-import TimelineSeparator from "@mui/lab/TimelineSeparator";
-import TimelineDot from "@mui/lab/TimelineDot";
-import TimelineConnector from "@mui/lab/TimelineConnector";
-import TimelineContent from "@mui/lab/TimelineContent";
-import TimelineOppositeContent from "@mui/lab/TimelineOppositeContent";
-import EditIcon from "@mui/icons-material/Edit";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
+import {
+  ClockCounterClockwise,
+  Paperclip,
+  PencilSimple,
+  Plus,
+} from "@phosphor-icons/react";
 
 import DealSkeleton from "@/components/Common/Skeletons/DealSkeleton";
+import { SettingCard } from "@/components/Users/Users/Detail/ProfileCards";
 import { fetchTimelineComments } from "@/services/api/common-erpnext-api/create-update-custom-api";
 
 const SDL_ROLE_DOCTYPE = "SDL Role";
@@ -32,6 +29,36 @@ const EXCLUDED_TIMELINE_COMMENT_TYPES = new Set(
   ["Links", "Status change log", "Stage History"].map((t) => t.toLowerCase())
 );
 
+/**
+ * Frappe `creation` is `"YYYY-MM-DD HH:MM:SS.ffffff"` — not valid ISO 8601.
+ * Chrome's `new Date()` tolerates it, but Firefox/Safari return Invalid Date, and a later
+ * `.toISOString()` then throws inside render (blank Timeline). Parse defensively:
+ * try native first (keeps Chrome behaviour), then fall back to explicit field parsing.
+ */
+const parseFrappeDate = (value?: string): Date | null => {
+  if (!value) return null;
+  const s = String(value).trim();
+  if (!s) return null;
+  const native = new Date(s);
+  if (!Number.isNaN(native.getTime())) return native;
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?/.exec(s);
+  if (m) {
+    const [, y, mo, da, h, mi, se, frac] = m;
+    const ms = frac ? Number(frac.slice(0, 3).padEnd(3, "0")) : 0;
+    const d = new Date(
+      Number(y),
+      Number(mo) - 1,
+      Number(da),
+      Number(h),
+      Number(mi),
+      Number(se),
+      ms
+    );
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return null;
+};
+
 const isTimelineCommentExcluded = (entry: TimelineCommentEntry) => {
   const ct = String(entry.comment_type ?? "")
     .trim()
@@ -39,27 +66,57 @@ const isTimelineCommentExcluded = (entry: TimelineCommentEntry) => {
   return ct.length > 0 && EXCLUDED_TIMELINE_COMMENT_TYPES.has(ct);
 };
 
-const stripContentLinks = (html: string): string => {
-  if (!html) return html;
-  let result = html.replace(/<a[^>]*>([\s\S]*?)<\/a>/gi, "$1");
-  result = result.replace(/<b>Links<\/b>\s*:[\s\S]*?(<br\s*\/?>|$)/gi, "");
-  result = result.replace(
-    /<b>Status change log<\/b>\s*:[\s\S]*?(<br\s*\/?>|$)/gi,
-    ""
-  );
-  result = result.replace(
-    /<b>Contact Numbers<\/b>\s*:[\s\S]*?(<br\s*\/?>|$)/gi,
-    ""
-  );
-  result = result.replace(
-    /<b>Email IDs<\/b>\s*:[\s\S]*?(<br\s*\/?>|$)/gi,
-    ""
-  );
-  result = result.replace(
-    /<b>Stage History<\/b>\s*:[\s\S]*?(<br\s*\/?>|$)/gi,
-    ""
-  );
-  return result;
+/** Plain text from a Frappe comment `content` (HTML or raw dump), collapsed. */
+const stripToText = (raw: string): string =>
+  String(raw ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * Frappe stores raw HTML / Python-repr change dumps in `Comment.content` (e.g. a
+ * `permission: [{...datetime.datetime(...)...}]` snapshot). Render a readable
+ * "Subject: verb" action + creation icon instead of the raw dump, matching the reference.
+ */
+const deriveActivity = (
+  entry: TimelineCommentEntry
+): { subject: string; detail: string; kind: "created" | "attachment" | "edit" } => {
+  const ct = String(entry.comment_type ?? "").toLowerCase();
+  const text = stripToText(entry.content || entry.subject || "");
+  const lower = text.toLowerCase();
+
+  if (ct === "attachment") {
+    return { subject: "Attachment", detail: "added", kind: "attachment" };
+  }
+
+  /** Field-change / child-table dumps: long, or carrying repr/JSON markers. */
+  const looksLikeDump =
+    /[[{]/.test(text) &&
+    (text.length > 120 ||
+      /datetime\.datetime|'name'|"name"|chkview|chkcreate|frontend_module/i.test(text));
+
+  if (looksLikeDump) {
+    if (/permission/i.test(lower)) {
+      return { subject: "Permissions", detail: "modified", kind: "edit" };
+    }
+    return { subject: "Role", detail: "updated", kind: "edit" };
+  }
+
+  if (ct === "created" || /\bcreated\b/.test(lower)) {
+    return { subject: "Role", detail: "created", kind: "created" };
+  }
+
+  if (!text) {
+    return { subject: "Role", detail: "updated", kind: "edit" };
+  }
+
+  /** Readable comment: bold the leading word (matches reference "Subject: rest"). */
+  const [first, ...rest] = text.split(" ");
+  return { subject: first, detail: rest.join(" "), kind: "edit" };
 };
 
 export type RoleDetailTimelineProps = {
@@ -113,209 +170,103 @@ const RoleDetailTimeline: React.FC<RoleDetailTimelineProps> = ({
   }, [active, recordName, loadTimeline]);
 
   const groupedTimeline = useMemo(() => {
-    const groups: Record<string, TimelineCommentEntry[]> = {};
+    const groups: Record<string, { date: Date; items: TimelineCommentEntry[] }> = {};
 
     timelineComments.forEach((entry) => {
-      if (!entry?.creation) return;
+      const dt = parseFrappeDate(entry?.creation);
+      if (!dt) return;
       if (isTimelineCommentExcluded(entry)) return;
-      const dateOnly = new Date(entry.creation).toISOString().slice(0, 10);
-      if (!groups[dateOnly]) groups[dateOnly] = [];
-      groups[dateOnly].push(entry);
+      const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+      if (!groups[key]) groups[key] = { date: dt, items: [] };
+      groups[key].items.push(entry);
     });
 
-    return Object.entries(groups)
-      .sort(([a], [b]) => (a < b ? 1 : -1))
-      .map(([date, items]) => ({
+    return Object.values(groups)
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .map(({ date, items }) => ({
         date,
         items: items.sort(
           (a, b) =>
-            new Date(b.creation).getTime() - new Date(a.creation).getTime()
+            (parseFrappeDate(b.creation)?.getTime() ?? 0) -
+            (parseFrappeDate(a.creation)?.getTime() ?? 0)
         ),
       }));
   }, [timelineComments]);
 
-  const formatDisplayDate = (isoDate: string) => {
-    const d = new Date(isoDate);
-    return d.toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-    });
+  const formatDisplayDate = (d: Date) =>
+    d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+  const formatTime = (creation: string) => {
+    const d = parseFrappeDate(creation);
+    if (!d) return "";
+    return d
+      .toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
+      .toLowerCase();
   };
 
   if (!recordName) {
     return (
-      <Box sx={{ pt: 3, px: 2 }}>
-        <Card
-          sx={{ mb: 4, boxShadow: "0px 0px 10px 0px rgba(0, 0, 0, 0.1)" }}
-          className="border"
-        >
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              History
-            </Typography>
-            <Divider sx={{ borderBottomWidth: "2px", mb: 3 }} />
-            <Typography variant="body2" color="text.secondary">
-              Save the role or open a valid role to view history.
-            </Typography>
-          </CardContent>
-        </Card>
-      </Box>
+      <SettingCard icon={ClockCounterClockwise} title="History" color="#1D4ED8">
+        <div className="py-4 text-[13px] text-slate-400">
+          Save the role or open a valid role to view history.
+        </div>
+      </SettingCard>
     );
   }
 
   return (
-    <Box sx={{ pt: 3, px: 2 }}>
-      <Card
-        sx={{ mb: 4, boxShadow: "0px 0px 10px 0px rgba(0, 0, 0, 0.1)" }}
-        className="border"
-      >
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            History
-          </Typography>
-          <Divider sx={{ borderBottomWidth: "2px", mb: 3 }} />
-
-          {timelineLoading ? (
-        <DealSkeleton />
+    <SettingCard icon={ClockCounterClockwise} title="History" color="#1D4ED8">
+      {timelineLoading ? (
+        <div className="py-2">
+          <DealSkeleton />
+        </div>
       ) : groupedTimeline.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
-          No activity yet.
-        </Typography>
+        <div className="py-8 text-center text-[14px] text-slate-400">
+          No activity recorded for this role.
+        </div>
       ) : (
-        <Box>
+        <div className="space-y-5 py-2">
           {groupedTimeline.map((group) => (
-            <Box key={group.date} sx={{ mb: 2 }}>
-              <Box
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  px: 1.25,
-                  py: 0.25,
-                  mb: 1,
-                  borderRadius: 0.75,
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "light"
-                      ? "grey.100"
-                      : "rgba(255,255,255,0.06)",
-                  fontSize: 12,
-                  lineHeight: 1.8,
-                  color: "text.secondary",
-                }}
-              >
-                {formatDisplayDate(group.date)}
-              </Box>
-              <Timeline
-                sx={{
-                  m: 0,
-                  p: 0,
-                  "& .MuiTimelineItem-root:before": {
-                    flex: 0,
-                    padding: 0,
-                  },
-                }}
-              >
-                {group.items.map((entry) => (
-                  <TimelineItem key={entry.name} sx={{ minHeight: "auto" }}>
-                    <TimelineOppositeContent
-                      sx={{
-                        flex: 0,
-                        pr: 2,
-                        pt: 0.75,
-                        minWidth: 96,
-                        textAlign: "right",
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "text.secondary",
-                          fontSize: 12,
-                          fontWeight: 400,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {new Date(entry.creation).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </Typography>
-                    </TimelineOppositeContent>
-                    <TimelineSeparator>
-                      <TimelineDot
-                        sx={{
-                          width: 28,
-                          height: 28,
-                          m: 0,
-                          p: 0,
-                          border: "1px solid",
-                          borderColor: "divider",
-                          bgcolor: "background.paper",
-                          color: "text.primary",
-                          boxShadow: "none",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          "& svg": { fontSize: 16 },
-                        }}
-                      >
-                        {entry.comment_type === "Attachment" ? (
-                          <AttachFileIcon fontSize="inherit" />
-                        ) : (
-                          <EditIcon fontSize="inherit" />
-                        )}
-                      </TimelineDot>
-                      <TimelineConnector
-                        sx={{
-                          bgcolor: "divider",
-                          width: "1px",
-                          my: 0.25,
-                        }}
-                      />
-                    </TimelineSeparator>
-                    <TimelineContent sx={{ pt: 0.5, pb: 2 }}>
-                      <Box
-                        component="div"
-                        sx={{
-                          typography: "body2",
-                          color: "text.primary",
-                          lineHeight: 1.6,
-                          "& b, & strong": { fontWeight: 600 },
-                          "& p": { m: 0 },
-                        }}
-                        dangerouslySetInnerHTML={{
-                          __html: stripContentLinks(
-                            entry.content ||
-                              entry.subject ||
-                              entry.name ||
-                              ""
-                          ),
-                        }}
-                      />
-                      {(entry.owner_name || entry.owner) && (
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            display: "block",
-                            mt: 0.75,
-                            color: "text.secondary",
-                            fontSize: 12,
-                          }}
-                        >
-                          by {entry.owner_name || entry.owner}
-                        </Typography>
-                      )}
-                    </TimelineContent>
-                  </TimelineItem>
-                ))}
-              </Timeline>
-            </Box>
+            <div key={group.date.getTime()}>
+              <div className="mb-4 flex items-center gap-3">
+                <span className="whitespace-nowrap text-[12px] font-semibold text-slate-400">
+                  {formatDisplayDate(group.date)}
+                </span>
+                <div className="h-px flex-1 bg-[#E3ECFC] dark:bg-[#27272A]" />
+              </div>
+              <div className="space-y-4">
+                {group.items.map((entry) => {
+                  const { subject, detail, kind } = deriveActivity(entry);
+                  const Icon = kind === "created" ? Plus : kind === "attachment" ? Paperclip : PencilSimple;
+                  const author = entry.owner_name || entry.owner;
+                  return (
+                    <div key={entry.name} className="flex items-start gap-4">
+                      <span className="w-[64px] flex-shrink-0 pt-0.5 text-[12px] font-medium text-slate-400">
+                        {formatTime(entry.creation)}
+                      </span>
+                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#EFF6FF] dark:bg-[#27272A]">
+                        <Icon size={13} color="#1D4ED8" weight="duotone" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[14px] leading-snug text-slate-700 dark:text-[#D4D4D8]">
+                          <span className="font-bold">{subject}:</span>{" "}
+                          <span className="font-medium">{detail}</span>
+                        </div>
+                        {author ? (
+                          <div className="mt-0.5 break-all text-[11.5px] text-[#1D4ED8] dark:text-[#A1A1AA]">
+                            by {author}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ))}
-        </Box>
+        </div>
       )}
-        </CardContent>
-      </Card>
-    </Box>
+    </SettingCard>
   );
 };
 

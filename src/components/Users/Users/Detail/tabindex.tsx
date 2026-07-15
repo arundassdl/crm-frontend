@@ -10,10 +10,15 @@ import Tab from '@mui/material/Tab'
 import TabContext from '@mui/lab/TabContext'
 import TabList from '@mui/lab/TabList'
 import TabPanel from '@mui/lab/TabPanel'
-import PropTypes from 'prop-types';
+
+interface UserDetailPageProps {
+  tabContentList: Record<string, ReactElement>;
+  tab: string;
+  onTabChange: (tab: string) => void;
+}
 
 // const SPSettings = ({ tabContentList }: { tabContentList: { [key: string]: ReactElement } }) => {
-const UserDetailPage = ({ tabContentList, tab, onTabChange }) => {
+const UserDetailPage = ({ tabContentList, tab, onTabChange }: UserDetailPageProps) => {
   // States
   const [activeTab, setActiveTab] = useState(tab || 'overview');
 
@@ -46,7 +51,4 @@ const UserDetailPage = ({ tabContentList, tab, onTabChange }) => {
   )
 }
 
-UserDetailPage.propTypes = {
-  tab: PropTypes.string.isRequired,
-};
 export default UserDetailPage

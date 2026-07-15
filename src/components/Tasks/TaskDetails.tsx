@@ -1,21 +1,18 @@
 "use client";
-import React from "react";
-import { Grid } from "@mui/material";
-import ViewDetailsForm from "@/components/Common/Form/ViewDetailsForm";
 
-const LeadDetails: any = (slug) => {
-  const lead_name = slug?.name;
+import React from "react";
+import TaskDetailDashboard from "@/components/Tasks/Detail/TaskDetailDashboard";
+
+const TaskDetails: any = (slug: any) => {
+  const task_name = slug?.name;
+
+  if (!task_name) return null;
 
   return (
-    <Grid container spacing={5} style={{ padding: "0px" }}>
-      <ViewDetailsForm
-        moduleName="Tasks"
-        record_name={lead_name}
-        doctype="CRM Task"
-        isEditPermission={true}
-      />
-    </Grid>
+    <div className="w-full">
+      <TaskDetailDashboard name={task_name} />
+    </div>
   );
 };
 
-export default LeadDetails;
+export default TaskDetails;

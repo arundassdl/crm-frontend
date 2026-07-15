@@ -52,6 +52,13 @@ interface MultiFileUploadProps {
   heading?: string;
   btnHeading?: string;
   onRefresh?: () => void;
+  /** Hide the built-in heading + upload button row (use when supplying an external trigger). */
+  hideHeader?: boolean;
+  /** Increment this value to open the upload dialog from an external button. */
+  openSignal?: number;
+  /** Controlled attachment display mode. When set, the built-in toggle in
+   *  AttachmentContainer is hidden (the shared Attachments card owns it). */
+  viewMode?: "grid" | "list";
 }
 
 const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
@@ -67,6 +74,9 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
   heading,
   btnHeading,
   onRefresh,
+  hideHeader = false,
+  openSignal,
+  viewMode,
 }) => {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -239,16 +249,25 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
 
   const listFiles = async (doctype: string, name: string) => {
     setLoading(true);
-    const res = await fetch("/api/list-files", {
-      method: "POST",
-      body: JSON.stringify({ doctype, name }),
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `${userToken?.access_token}`,
-      },
-    });
-    const data = await res.json();
-    return data.data || [];
+    try {
+      const res = await fetch("/api/list-files", {
+        method: "POST",
+        body: JSON.stringify({ doctype, name }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${userToken?.access_token}`,
+        },
+      });
+      // Guard against empty / non-JSON bodies (e.g. upstream error) which would
+      // otherwise throw "Unexpected end of JSON input".
+      const text = await res.text();
+      if (!res.ok || !text) return [];
+      const data = JSON.parse(text);
+      return data?.data || [];
+    } catch (err) {
+      console.error("Failed to list files:", err);
+      return [];
+    }
   };
   useEffect(() => {
     listFiles(attachedToDoctype, attachedToName).then((files) => {
@@ -256,6 +275,26 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
       setUploadedFiles(files);
     });
   }, [attachedToDoctype]);
+
+  // Allow an external button (via openSignal) to open the upload dialog.
+  // `openSignal` is a signal: only act when it *changes* after mount. Opening on
+  // mount would reopen the dialog whenever this component remounts (e.g. when a
+  // parent tab that conditionally renders it is re-selected) with a persisted
+  // non-zero signal value.
+  const lastOpenSignal = useRef(openSignal);
+  useEffect(() => {
+    if (openSignal !== lastOpenSignal.current) {
+      lastOpenSignal.current = openSignal;
+      if (openSignal) {
+        if (uploadedFiles.length >= maxFilesAllowed) {
+          alert(`You can upload up to ${maxFilesAllowed} files only.`);
+          return;
+        }
+        setDropzoneOpen(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openSignal]);
 
   const deleteFile = async (file: any) => {
     setDeletingFile(file.file_url);
@@ -354,34 +393,38 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
       </Dialog>
 
       <div>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mt={2}
-        >
-          {/* Left Side: Heading */}
-          <Typography variant="h6" sx={{ mb: 2 }}>{heading || "Attachments"}</Typography>
-
-          {/* Right Side: Upload Button */}
-          <Box display="flex" alignItems="center" gap={3}>
-            {uploadedFiles.length >= maxFilesAllowed && (
-              <Typography color="error" variant="body2">
-                A maximum of {maxFilesAllowed} files is allowed.
-              </Typography>
-            )}
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setDropzoneOpen(true)}
-              disabled={uploading || uploadedFiles.length >= maxFilesAllowed}
-              sx={{ fontSize: 12, minWidth: "120px", px: 1.5 }}
+        {!hideHeader && (
+          <>
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              mt={2}
             >
-              {uploading ? "Uploading..." : btnHeading || "Attach File"}
-            </Button>
-          </Box>
-        </Box>
-        <Divider sx={{ borderBottomWidth: "2px", mb: 3, pt: 2 }} />
+              {/* Left Side: Heading */}
+              <Typography variant="h6" sx={{ mb: 2 }}>{heading || "Attachments"}</Typography>
+
+              {/* Right Side: Upload Button */}
+              <Box display="flex" alignItems="center" gap={3}>
+                {uploadedFiles.length >= maxFilesAllowed && (
+                  <Typography color="error" variant="body2">
+                    A maximum of {maxFilesAllowed} files is allowed.
+                  </Typography>
+                )}
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setDropzoneOpen(true)}
+                  disabled={uploading || uploadedFiles.length >= maxFilesAllowed}
+                  sx={{ fontSize: 12, minWidth: "120px", px: 1.5 }}
+                >
+                  {uploading ? "Uploading..." : btnHeading || "Attach File"}
+                </Button>
+              </Box>
+            </Box>
+            <Divider sx={{ borderBottomWidth: "2px", mb: 3, pt: 2 }} />
+          </>
+        )}
         <Grid container spacing={2} sx={{ mt: 2 }}>
           {/* {loading && <CircularProgress />} */}
           <AttachmentContainer
@@ -390,6 +433,7 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
             handleView={handleView}
             handleDelete={handleDelete}
             deletingFile={deletingFile}
+            viewMode={viewMode}
           />
         </Grid>
       </div>

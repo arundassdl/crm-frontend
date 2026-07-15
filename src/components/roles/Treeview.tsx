@@ -25,6 +25,7 @@ import {
   Box,
 } from "@mui/material";
 import { ExpandMore, ExpandLess, Add, Edit, Delete, People } from "@mui/icons-material";
+import { CaretDown, CaretRight, CheckCircle } from "@phosphor-icons/react";
 
 
 import { get_full_roles_tree } from "@/services/api/roles/roles-api";
@@ -163,6 +164,64 @@ export default function RoleTreeView({
       (detailNorm === nodeName ||
         detailNorm === String(role.role_name ?? "").trim());
 
+    /** Settings reference: flat rows with caret/leaf-dot, blue selected row + check. */
+    if (variant === "settings") {
+      return (
+        <div key={role.id}>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => openRoleDetail(role)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openRoleDetail(role);
+              }
+            }}
+            style={{ paddingLeft: `${12 + depth * 20}px` }}
+            className={`flex cursor-pointer items-center gap-2 border-b py-2.5 pr-3 transition-colors ${
+              selected
+                ? "border-[#E3ECFC] bg-[#EFF6FF] dark:border-[#27272A] dark:bg-[#27272A]"
+                : "border-[#E3ECFC] hover:bg-[#f9fbff] dark:border-[#27272A] dark:hover:bg-[#1C1C1E]"
+            }`}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (hasChildren) toggleExpanded(role.id);
+              }}
+              className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md transition-colors hover:bg-[#E3ECFC] dark:hover:bg-[#3F3F46]"
+            >
+              {hasChildren ? (
+                isExpanded ? (
+                  <CaretDown size={10} color="#94A3B8" weight="bold" />
+                ) : (
+                  <CaretRight size={10} color="#94A3B8" weight="bold" />
+                )
+              ) : (
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#CBD5E1] dark:bg-[#3F3F46]" />
+              )}
+            </button>
+            <span
+              title={nodeName}
+              className={`flex-1 truncate text-[14px] ${
+                selected
+                  ? "font-semibold text-[#0C2472] dark:text-[#D4D4D8]"
+                  : "font-medium text-slate-500 dark:text-[#71717A]"
+              }`}
+            >
+              {role.name}
+            </span>
+            {selected && <CheckCircle size={14} color="#1D4ED8" weight="duotone" />}
+          </div>
+          {hasChildren && isExpanded
+            ? role.children.map((child) => renderRole(child, depth + 1))
+            : null}
+        </div>
+      );
+    }
+
     return (
       <Box key={role.id} sx={{ ml: depth * 3, mt: 1 }}>
         <Box
@@ -222,22 +281,22 @@ export default function RoleTreeView({
     );
   };
 
-  const shellPadding = variant === "settings" ? 1 : 3;
+  if (variant === "settings") {
+    return (
+      <div className="h-full min-h-0 bg-[#f9fbff] dark:bg-[#111113]">
+        {treeRoleData.map((role: Role) => renderRole(role))}
+      </div>
+    );
+  }
 
   return (
-    <Box sx={{ p: shellPadding, height: "100%", minHeight: 0 }}>
-      <Box display="grid" gap={variant === "settings" ? 1 : 3}>
-        {variant === "settings" ? (
-          <Box sx={{ minHeight: 0 }}>
+    <Box sx={{ p: 3, height: "100%", minHeight: 0 }}>
+      <Box display="grid" gap={3}>
+        <Card>
+          <CardContent>
             {treeRoleData.map((role: Role) => renderRole(role))}
-          </Box>
-        ) : (
-          <Card>
-            <CardContent>
-              {treeRoleData.map((role: Role) => renderRole(role))}
-            </CardContent>
-          </Card>
-        )}
+          </CardContent>
+        </Card>
       </Box>
     </Box>
   );

@@ -4,10 +4,12 @@ import { readAccessTokenString } from '@/utils/accessTokenDataStorage'
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Autocomplete } from "@mui/lab";
 import { Box, CircularProgress, TextField, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   getComponentStageProbability,
   StageProbabilityOption,
 } from "@/services/api/general_apis/component-picklist-api";
+import { getFormFieldSx } from "@/@core/styles/formFieldStyles";
 
 interface StageProbabilityFieldProps {
   module: string;
@@ -138,6 +140,8 @@ const StageProbabilityField: React.FC<StageProbabilityFieldProps> = ({
   ]);
 
   const selectedColor = selectedOption?.color;
+  const theme = useTheme();
+  const fieldSx = getFormFieldSx(theme.palette.mode === "dark");
 
   return (
     <Autocomplete
@@ -175,16 +179,17 @@ const StageProbabilityField: React.FC<StageProbabilityFieldProps> = ({
           placeholder={placeholder}
           error={error}
           helperText={helperText}
-          sx={
-            selectedColor
+          sx={{
+            ...fieldSx,
+            ...(selectedColor
               ? {
                   "& .MuiOutlinedInput-input": {
                     bgcolor: selectedColor,
                     color: "#fff",
                   },
                 }
-              : undefined
-          }
+              : {}),
+          }}
           InputProps={{
             ...params.InputProps,
             endAdornment: (

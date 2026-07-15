@@ -1,7 +1,8 @@
-import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage'
-import React, { useEffect, useState } from "react";
+"use client";
+
+import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage';
+import React, { useEffect, useState, useMemo } from "react";
 import {
-  DataGrid,
   GridColDef,
   GridActionsCellItem,
   GridSortModel,
@@ -12,27 +13,104 @@ import classnames from "classnames";
 import SDLDataGrid from "@/@core/components/datagrid/SDLDataGrid";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { debounce } from "@mui/material";
-// import { fetchCommonListingGet } from "@/services/api/common-erpnext-api/listing-api-get";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
-import { GridRowId } from "@mui/x-data-grid";
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
+import { setViewMode } from '@/store/slices/viewmode/viewModeSlice';
+
+// Drawers and Popovers
+import FiltersDrawer, { FilterRow } from "./FiltersDrawer";
+import ColumnsDrawer from "./ColumnsDrawer";
+import SortPopover, { SortRow } from "./SortPopover";
+
+// Styles & Icons
+import { useTheme } from "@mui/material/styles";
+import { Badge, InputBase, Button } from "@mui/material";
+import {
+  List, GridFour, GitFork, MagnifyingGlass, FunnelSimple, Columns, SortAscending, Plus,
+  User, IdentificationBadge, UserCircle, CalendarBlank,
+  Envelope, Phone, DeviceMobile, Pulse, Buildings, Globe, Briefcase, Tag,
+  House, CaretRight, CaretDown, Kanban, TrendUp
+} from "@phosphor-icons/react";
+
+import LeadGridView from "@/components/Leads/LeadGridView";
+import LeadKanbanView from "@/components/Leads/LeadKanbanView";
+import { getAvatarColor as avatarColor } from "@/@core/utils/avatarColor";
 
 // Utility function to format header names dynamically
 const formatHeaderName = (field: string) => {
   if (field != undefined) {
     return field
-      .replace(/_/g, " ") // Replace underscores with spaces
-      .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
-  return ""
+  return "";
 };
 
-// Define props for the component
+// Phosphor Icon mapping for headers based on field patterns
+const getHeaderIcon = (field: string) => {
+  const f = field.toLowerCase();
+  if (f === "lead_name" || f === "full_name" || f === "first_name" || f === "customer_name" || f === "name") return User;
+  if (f === "owner" || f === "lead_owner" || f === "assigned_to") return UserCircle;
+  if (f === "email" || f === "email_id") return Envelope;
+  if (f === "mobile_no" || f === "mobile") return DeviceMobile;
+  if (f === "phone" || f === "customer_phone" || f === "phone_no") return Phone;
+  if (f === "status" || f === "lead_status") return Tag;
+  if (f === "creation" || f === "modified" || f === "due_date" || f === "close_date") return CalendarBlank;
+  if (f === "organization" || f === "company" || f === "organization_name") return Buildings;
+  if (f === "website") return Globe;
+  if (f === "industry") return Briefcase;
+  if (f === "job_title" || f === "title") return Briefcase;
+  if (f === "territory") return Globe;
+  return null;
+};
+
+// Premium Status Badges config
+const STATUS_CFG: Record<string, { bg: string; text: string; dot: string; bgDark: string; textDark: string }> = {
+  "New": { bg: "#EFF6FF", text: "#0C2472", dot: "#3B82F6", bgDark: "rgba(96, 165, 250, 0.15)", textDark: "#60A5FA" },
+  "Contacted": { bg: "#E3ECFC", text: "#0C2472", dot: "#3B82F6", bgDark: "rgba(96, 165, 250, 0.15)", textDark: "#60A5FA" },
+  "Nurture": { bg: "#EFF6FF", text: "#007adb", dot: "#007adb", bgDark: "rgba(0, 122, 219, 0.15)", textDark: "#60A5FA" },
+  "Qualified": { bg: "#DCFCE7", text: "#166534", dot: "#16A34A", bgDark: "rgba(16, 185, 129, 0.15)", textDark: "#34D399" },
+  "Unqualified": { bg: "#F1F5F9", text: "#475569", dot: "#94A3B8", bgDark: "rgba(168, 85, 247, 0.15)", textDark: "#A855F7" },
+  "Junk": { bg: "#FEF2F2", text: "#991B1B", dot: "#EF4444", bgDark: "rgba(244, 63, 94, 0.15)", textDark: "#F87171" },
+  "In Progress": { bg: "#E3ECFC", text: "#0C2472", dot: "#1D4ED8", bgDark: "rgba(251, 191, 36, 0.15)", textDark: "#FBBF24" },
+  "Lost": { bg: "#FEF2F2", text: "#991B1B", dot: "#EF4444", bgDark: "rgba(244, 63, 94, 0.15)", textDark: "#F87171" },
+  // Deal stages
+  "Qualification": { bg: "#F1F5F9", text: "#334155", dot: "#64748B", bgDark: "rgba(148, 163, 184, 0.15)", textDark: "#94A3B8" },
+  "Demo/Making": { bg: "#FFF7ED", text: "#9A3412", dot: "#EA580C", bgDark: "rgba(251, 146, 60, 0.15)", textDark: "#FB923C" },
+  "Proposal/Quotation": { bg: "#EFF6FF", text: "#0C2472", dot: "#007BE0", bgDark: "rgba(0, 123, 224, 0.15)", textDark: "#60A5FA" },
+  "Negotiation": { bg: "#FEFCE8", text: "#854D0E", dot: "#CA8A04", bgDark: "rgba(234, 179, 8, 0.15)", textDark: "#FBBF24" },
+  "Ready to Close": { bg: "#F5F3FF", text: "#5B21B6", dot: "#8642C2", bgDark: "rgba(167, 139, 250, 0.15)", textDark: "#A78BFA" },
+  "Won": { bg: "#DCFCE7", text: "#166534", dot: "#16A34A", bgDark: "rgba(16, 185, 129, 0.15)", textDark: "#34D399" },
+};
+
+const renderStatusCell = (status: string, isDark: boolean) => {
+  const cfg = STATUS_CFG[status] || { bg: "#F1F5F9", text: "#475569", dot: "#94A3B8", bgDark: "rgba(168, 85, 247, 0.15)", textDark: "#A855F7" };
+  const bg = isDark ? cfg.bgDark : cfg.bg;
+  const text = isDark ? cfg.textDark : cfg.text;
+
+  return (
+    <div
+      style={{ backgroundColor: bg, color: text }}
+      className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded-full text-[13px] font-medium leading-none transition-colors"
+    >
+      <span className="w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ backgroundColor: isDark ? text : cfg.dot }} />
+      {status}
+    </div>
+  );
+};
+
+// Avatar color helper comes from the shared theme-aligned palette (imported at top).
+const initials = (n: string) => {
+  const p = n.trim().split(/\s+/);
+  return p.length >= 2 ? (p[0][0] + p[1][0]).toUpperCase() : n.substring(0, 2).toUpperCase();
+};
+
 interface DynamicDataGridColField {
   doctype: string;
   field: string;
   hidden: string;
   headerName?: string;
-  /** Optional logical alias key for API response (e.g. billing_address_country) */
   subFieldAlias?: string;
 }
 
@@ -51,7 +129,6 @@ interface DynamicDataGridProps {
   handleRowRename?: (row: any) => void;
   handleRowClone?: (row: any) => void;
   handleRowLayoutPermission?: (row: any) => void;
-  //   fetchDataFunction?: (params: any, token?: string, queryString?: string) => Promise<{ data: any[]; total: number }>;
   relatedDocs?: string[];
   fetchDataFunction?: (
     ...args: any[]
@@ -62,14 +139,36 @@ interface DynamicDataGridProps {
   multipleViews?: boolean;
   module_name?: string;
   multiviewList?: string;
-  /** When true, toolbar title (heading) is not shown */
   hideToolbarTitle?: boolean;
-  /** Optional custom toolbar component (e.g. for modules page) */
   customToolbar?: React.ComponentType<any>;
-  /** When false, hides the row selection checkbox column (default: true in SDLDataGrid) */
   checkboxSelection?: boolean;
-  /** Optional custom title for the "New" button */
   btnnewtitle?: string;
+  stages?: { label: string; index: number; bgColor: string; color: string }[];
+  statusCounts?: Record<string, number>;
+  /** Field key the status pick list resolved on (e.g. "lead_status"); used for tab filtering. */
+  statusField?: string;
+  /** Optional grid-view renderer; defaults to LeadGridView. Receives the fetched rows. */
+  gridViewComponent?: React.ComponentType<{ rows: any[]; statusField?: string }>;
+  /** Optional kanban-view renderer; defaults to LeadKanbanView. Must accept the same props. */
+  kanbanViewComponent?: React.ComponentType<any>;
+  /** Extra props forwarded to the grid/kanban view components (e.g. a resolved field name). */
+  viewProps?: Record<string, any>;
+  /**
+   * Optional aggregate shown next to the heading (e.g. "Pipeline: ₹32.4L").
+   * Computed over the *whole filtered result set* — not just the current page —
+   * so it stays correct under server-side pagination, and re-runs whenever the
+   * filters / status tab / search change.
+   */
+  summary?: {
+    label: string;
+    /** Per-row value to add up (lets callers resolve aliased/qualified fields). */
+    compute: (row: any) => number;
+    /** Render the total (e.g. ₹32.4L). */
+    format: (total: number) => string;
+  };
+  /** Which view buttons to show (default: all three). A globally-selected view not in
+   *  this list falls back to "list" so e.g. Contacts never renders the Kanban view. */
+  availableViews?: Array<"list" | "grid" | "kanban">;
 }
 
 const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
@@ -99,49 +198,76 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
   customToolbar,
   checkboxSelection,
   btnnewtitle,
+  stages,
+  statusCounts,
+  statusField,
+  gridViewComponent: GridViewComponent,
+  kanbanViewComponent: KanbanViewComponent,
+  viewProps,
+  summary,
+  availableViews,
 }) => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const safeSearchParams = useSearchParams() ?? new URLSearchParams();
-  // Extract query params
   const pathname = usePathname();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+
+  // Redux state for viewmode
+  const view_mode = useSelector((state: RootState) => state.viewMode.viewMode);
+  // View mode is global (shared across listings). Clamp it to the views this listing
+  // supports so a view selected elsewhere (e.g. Kanban on Leads) doesn't leak in.
+  const allowedViews = availableViews ?? ["list", "grid", "kanban"];
+  const effectiveView = (allowedViews.includes(view_mode as any) ? view_mode : "list") as "list" | "grid" | "kanban";
+
+  // Pagination states
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: pageSize,
   });
-  const [selectedMultiLangData, setSelectedMultiLangData] = useState<any>();
-  const [sortModel, setSortModel] = useState<GridSortModel>([]); // Type the state as GridSortModel
+
+  // Filters & Sorting state controllers
   const [filterModel, setFilterModel] = useState<GridFilterModel>({
     items: [],
     quickFilterValues: [],
   });
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
   const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>({});
-  const [pageSizeOptions, setPageSizeOptions] = useState<number[]>([
-    20, 50, 100,
-  ]);
+
+  // Custom interactive panel states
+  const [activeFilters, setActiveFilters] = useState<FilterRow[]>([]);
+  const [activeSorts, setActiveSorts] = useState<SortRow[]>([]);
+  const [visibleCols, setVisibleCols] = useState<Set<string>>(new Set());
+
+  // Dialog, loading and grid items
+  const [pageSizeOptions, setPageSizeOptions] = useState<number[]>([20, 50, 100]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [rowCount, setRowCount] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRowId, setSelectedRowId] = useState<any | null>(null);
-  const moduleHeading = (heading && heading != "") ? heading : module
+
+  // Anchors for popovers
+  const [filterAnchor, setFiltersAnchor] = useState<HTMLElement | null>(null);
+  const [sortAnchor, setSortAnchor] = useState<HTMLElement | null>(null);
+  const [columnsDrawerOpen, setColumnsDrawerOpen] = useState(false);
+  const [currentStatusTab, setCurrentStatusTab] = useState("All");
+  const [searchVal, setSearchVal] = useState("");
+
+  const moduleHeading = (heading && heading != "") ? heading : module;
   const [isAddPermission, setIsAddPermission] = useState(0);
   const [isEditPermission, setIsEditPermission] = useState(0);
   const [isDeletePermission, setIsDeletePermission] = useState(0);
 
   const [userToken, setUserToken] = useState<any>(() => {
-    const initialValue = JSON.parse(
-      readAccessTokenDataRaw()
-    );
+    const initialValue = JSON.parse(readAccessTokenDataRaw());
     return initialValue || "";
   });
 
   const [userPermission, setUserPermission] = useState<any>(() => {
-    const initialValue = JSON.parse(
-      localStorage.getItem("userpermission") || "[]"
-    );
-    // Ensure initialValue is an array before calling .find()
+    const initialValue = JSON.parse(localStorage.getItem("userpermission") || "[]");
     const permissionArray = Array.isArray(initialValue) ? initialValue : [];
-    console.log(permissionArray, 'userpermission.create 108', module_name);
     return permissionArray.find(m => m.frontend_module === module_name) || "";
   });
 
@@ -149,37 +275,108 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
     setPageSizeOptions((prev) =>
       Array.from(new Set([...[pageSize], ...prev])).sort((a, b) => a - b)
     );
-  }, [pageSize]); // Only updates when `pageSize` changes
+  }, [pageSize]);
 
   useEffect(() => {
     if (userPermission.hasOwnProperty('create')) {
-
-      console.log(userPermission, 'userpermission.create', userPermission.create);
       setIsAddPermission(userPermission.create);
       setIsEditPermission(userPermission.edit);
       setIsDeletePermission(userPermission.delete);
     }
-    // console.log(userPermission, 'userPermission===>50 line');
   }, [userPermission]);
 
+  // Sync columns drawer visibility set
   useEffect(() => {
-    const newModel: GridColumnVisibilityModel = {};
-    colFields.forEach((field) => {
-      if (field.hidden?.toLowerCase() === "true") {
-        const fieldName = `${field.doctype}.${field.field}`;
-        newModel[fieldName] = false;
+    const initialVisible = new Set<string>();
+    colFields.forEach(field => {
+      if (field.hidden?.toLowerCase() !== "true") {
+        initialVisible.add(`${field.doctype}.${field.field}`);
       }
     });
-    console.log("newModel000->", newModel, "colFields000->", colFields);
-    setColumnVisibilityModel(newModel);
+    setVisibleCols(initialVisible);
   }, [colFields]);
 
-  const dataParams = {
-    doctype: module,
-    page: paginationModel.page,
-    pageSize: paginationModel.pageSize,
-    filters: filterModel,
-    sort: sortModel,
+  // Sync back visibility model changes
+  useEffect(() => {
+    const newModel: GridColumnVisibilityModel = {};
+    colFields.forEach(field => {
+      const fieldKey = `${field.doctype}.${field.field}`;
+      if (!visibleCols.has(fieldKey)) {
+        newModel[fieldKey] = false;
+      } else {
+        newModel[fieldKey] = true;
+      }
+    });
+    setColumnVisibilityModel(newModel);
+  }, [visibleCols, colFields]);
+
+  // Sync filters drawer changes back to GridFilterModel
+  useEffect(() => {
+    const muiFilters = activeFilters.map(f => ({
+      field: f.column,
+      operator: f.operator,
+      value: f.value
+    }));
+
+    if (currentStatusTab !== "All") {
+      // Prefer the field the status pick list resolved on (e.g. "lead_status"); fall back
+      // to detecting a status-like column so the tab filter targets the displayed value.
+      const targetField = (statusField || "status").toLowerCase();
+      const statusCol =
+        colFields.find(f => f.field.toLowerCase() === targetField) ||
+        colFields.find(f => ["lead_status", "status"].includes(f.field.toLowerCase()));
+      const statusKey = statusCol ? `${statusCol.doctype}.${statusCol.field}` : (statusField || "status");
+      muiFilters.push({
+        field: statusKey,
+        operator: "equals",
+        value: currentStatusTab
+      });
+    }
+
+    setFilterModel(prev => ({
+      ...prev,
+      items: muiFilters
+    }));
+  }, [activeFilters, currentStatusTab, colFields, statusField]);
+
+  // Sync sorting drawer changes back to GridSortModel
+  useEffect(() => {
+    setSortModel(activeSorts.map(s => ({
+      field: s.column,
+      sort: s.dir
+    })));
+  }, [activeSorts]);
+
+  /**
+   * Invoke `fetchDataFunction`, adapting to its arity (callers supply wrappers
+   * with different signatures). Shared by the paged fetch and the summary
+   * aggregate so both hit the backend the same way.
+   */
+  const callFetch = async (dataParams: any) => {
+    if (!fetchDataFunction) return undefined;
+
+    if (fetchDataFunction.length === 2) {
+      return await fetchDataFunction(
+        dataParams,
+        userToken?.access_token,
+        safeSearchParams.toString()
+      );
+    }
+    if (fetchDataFunction.length === 3) {
+      return await fetchDataFunction(dataParams, userToken?.access_token, [], module);
+    }
+    if (fetchDataFunction.length === 4) {
+      return await fetchDataFunction(
+        dataParams,
+        userToken?.access_token,
+        [],
+        module,
+        [],
+        relatedDocs,
+      );
+    }
+    console.error("fetchDataFunction does not match expected parameters.");
+    return undefined;
   };
 
   // Fetch Data
@@ -188,54 +385,14 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
 
     setLoading(true);
     try {
-      const dataParams = {
+      const result = await callFetch({
         doctype: module,
         page: paginationModel.page,
         pageSize: paginationModel.pageSize,
         filters: filterModel,
         sort: sortModel,
-      };
-
-      //   const result = await fetchDataFunction(
-      //     dataParams,
-      //     userToken?.access_token,
-      //     listfields,
-      //     module
-      //   );
-      let result;
-
-      if (fetchDataFunction.length === 2) {
-
-        // If function expects 2 parameters (example: `datagrid_listing`)
-        result = await fetchDataFunction(
-          dataParams,
-          userToken?.access_token,
-          safeSearchParams.toString()
-        );
-      } else if (fetchDataFunction.length === 3) {
-        // If function expects 3 parameters
-        result = await fetchDataFunction(
-          dataParams,
-          userToken?.access_token,
-          [],
-          module,
-        );
-      } else if (fetchDataFunction.length === 4) {
-        console.log("filtersObj k here");
-
-        // If function expects 4 parameters ()
-        result = await fetchDataFunction(
-          dataParams,
-          userToken?.access_token,
-          [],
-          module,
-          [],
-          relatedDocs,
-        );
-      } else {
-        console.error("fetchDataFunction does not match expected parameters.");
-        return;
-      }
+      });
+      if (!result) return;
 
       setData(result.data || []);
       setRowCount(result.totalCount || 0);
@@ -245,15 +402,86 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
     setLoading(false);
   };
 
-  // Fetch when pagination, sorting, or filters change
+  useEffect(() => {
+    if (effectiveView === "grid" || effectiveView === "kanban") {
+      setPaginationModel(prev => ({ ...prev, pageSize: 1000, page: 0 }));
+    } else {
+      setPaginationModel(prev => ({ ...prev, pageSize: pageSize, page: 0 }));
+    }
+  }, [view_mode, pageSize]);
+
+  const handleUpdateLeadStatus = async (leadName: string, newStatus: string) => {
+    const payload = {
+      doctype: module,
+      name: leadName,
+      fieldname: statusField || "status",
+      value: newStatus,
+    };
+    try {
+      const res = await fetch("/api/set-value", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${userToken?.access_token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      fetchData();
+    } catch (err) {
+      console.error("Failed to update lead status:", err);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [paginationModel, sortModel, filterModel, onSubmit, refreshKey]);
 
-  const handleSortModelChange = (sortModel) => {
+  /**
+   * Heading aggregate (e.g. "Pipeline: ₹32.4L").
+   *
+   * The grid is server-paginated, so the loaded `data` is only the current page —
+   * summing it would under-report. Instead re-query with the *same filters* but a
+   * large page size and add up every matching row. Depends on `filterModel`, so it
+   * follows the status tab, the filters drawer and the search box.
+   */
+  const [summaryTotal, setSummaryTotal] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!summary || !fetchDataFunction) return;
+
+    let cancelled = false;
+    const loadSummary = async () => {
+      try {
+        const res = await callFetch({
+          doctype: module,
+          page: 0,
+          pageSize: 1000, // cap: aggregate over the filtered set, not just a page
+          filters: filterModel,
+          sort: [],
+        });
+        if (cancelled || !res) return;
+        const rows: any[] = res.data || [];
+        const total = rows.reduce((acc, row) => acc + (Number(summary.compute(row)) || 0), 0);
+        setSummaryTotal(total);
+      } catch (err) {
+        console.error("Error computing summary total:", err);
+        if (!cancelled) setSummaryTotal(null);
+      }
+    };
+
+    loadSummary();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterModel, refreshKey, module, userToken?.access_token, !!summary]);
+
+  const handleSortModelChange = (newSortModel) => {
     const params = new URLSearchParams(safeSearchParams);
-    if (sortModel?.length > 0) {
-      const { field, sort } = sortModel[0]; // MUI provides an array
+    if (newSortModel?.length > 0) {
+      const { field, sort } = newSortModel[0];
       params.set("sort", field);
       params.set("order", sort);
     } else {
@@ -261,12 +489,12 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
       params.delete("order");
     }
     router.replace(`${pathname ?? ''}?${params.toString()}`);
-    setSortModel(sortModel);
+    setSortModel(newSortModel);
   };
 
-  const handleFilterModelChange = debounce((filterModel) => {
+  const handleFilterModelChange = debounce((newFilterModel) => {
     const params = new URLSearchParams(safeSearchParams);
-    filterModel.items.forEach((filter) => {
+    newFilterModel.items.forEach((filter) => {
       if (filter.value) {
         params.set(filter.field, filter.value);
       } else {
@@ -274,96 +502,160 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
       }
     });
     router.replace(`${pathname ?? ''}?${params.toString()}`);
-    setFilterModel(filterModel);
+    setFilterModel(newFilterModel);
   }, 1000);
 
   const handlePaginationChange = (newPaginationModel) => {
     const params = new URLSearchParams(safeSearchParams);
-    params.set("page", (newPaginationModel.page + 1).toString()); // MUI pages are 0-indexed
+    params.set("page", (newPaginationModel.page + 1).toString());
     params.set("limit", newPaginationModel.pageSize.toString());
     router.replace(`${pathname ?? ''}?${params.toString()}`);
     setPaginationModel(newPaginationModel);
   };
+
   const handleDeletePopup = (id: any) => {
     setSelectedRowId(id);
     setDialogOpen(true);
   };
+
   const handleDeleteClick = () => {
     if (selectedRowId) {
       handleRowDelete?.(selectedRowId);
     }
     setDialogOpen(false);
-    fetchData()
+    fetchData();
     setTimeout(() => {
       fetchData();
     }, 1500);
   };
 
+  const handleSearchChange = (val: string) => {
+    setSearchVal(val);
+    updateQuickFilter(val);
+  };
+
+  const updateQuickFilter = useMemo(
+    () =>
+      debounce((val: string) => {
+        setFilterModel(prev => ({
+          ...prev,
+          quickFilterValues: val ? [val] : []
+        }));
+      }, 500),
+    []
+  );
+
+  const handleStatusTabChange = (status: string) => {
+    setCurrentStatusTab(status);
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  };
+
   // Generate columns dynamically
-  // const columns: GridColDef[] = colFields.map((field) => ({
-  //   field,
-  //   headerName: formatHeaderName(field),
-  //   width: 130,
-  //   type: "string",
-  //   ...(columnDefinitions[field] || {}),
-  // }));
+  const columns: GridColDef[] = colFields.map(({ doctype, field, headerName, subFieldAlias }) => {
+    const fieldKey = `${doctype}.${field}`;
+    const tabFieldKey = `tab${doctype}.${field}`;
+    const displayHeader = headerName && headerName !== "" ? headerName : formatHeaderName(field);
+    const aliasKey = subFieldAlias || field;
 
-  // const columns: GridColDef[] = colFields
-  // .filter(({ field }) => field !== "name") // Exclude 'name' field
-  // .map(({ doctype, field }) => ({
-  //   field: `${field}`, // Combine doctype & field for uniqueness
-  //   headerName: formatHeaderName(field), // Format header
-  //   width: 130,
-  //   type: "string",
-  //   ...(columnDefinitions[field] || {}), // Apply extra properties if needed
-  // }));
-  const columns: GridColDef[] = colFields
-    .map(({ doctype, field, headerName, subFieldAlias }) => {
-      const fieldKey = `${doctype}.${field}`;
-      const tabFieldKey = `tab${doctype}.${field}`;
-      const displayHeader =
-        headerName && headerName !== "" ? headerName : formatHeaderName(field);
-      // subFieldAlias is the logical alias/key used in the API response
-      // (e.g. "billing_address_country"). If not provided, fall back to `field`.
-      const aliasKey = subFieldAlias || field;
+    const baseDef = columnDefinitions[field] || {};
+    const hasCustomValueGetter = typeof baseDef.valueGetter === "function";
 
-      const baseDef = columnDefinitions[field] || {};
-      const hasCustomValueGetter = typeof baseDef.valueGetter === "function";
+    // Phosphor icon header injector
+    const IconComponent = getHeaderIcon(field);
+    // Header typography kept in sync with the shared DataGrid theme
+    // (14px / 600 / uppercase / tracking, color via --text-header) for a consistent UI.
+    const renderHeader = IconComponent ? () => (
+      <div className="flex items-center gap-1.5 font-heading text-[14px]/[18px] font-semibold uppercase tracking-wide select-none text-[color:var(--text-header)]">
+        <IconComponent size={13} weight="duotone" />
+        {displayHeader}
+      </div>
+    ) : undefined;
 
-      return {
-        field: fieldKey,
-        fieldvalue: `${field}`,
-        headerName: displayHeader,
-        width: 130,
-        type: "string",
-        ...baseDef,
-        // Only inject our generic valueGetter when columnDefinitions
-        // has NOT already provided one (e.g. for date columns).
-        ...(hasCustomValueGetter
-          ? {}
-          : {
-            valueGetter: (_value, row) => {
-              const r = row ?? {};
-              const direct =
-                r[aliasKey] ??
-                r[fieldKey] ??
-                r[tabFieldKey] ??
-                r[field] ??
-                (displayHeader ? r[displayHeader] : undefined);
-              if (direct !== undefined && direct !== null && direct !== "") {
-                return direct;
-              }
-              const nested = r[doctype]?.[field] ?? r[`tab${doctype}`]?.[field];
-              return nested !== undefined && nested !== null
-                ? String(nested)
-                : "";
-            },
-          }),
-      };
-    });
-  console.log("columns", columns);
+    return {
+      field: fieldKey,
+      fieldvalue: `${field}`,
+      headerName: displayHeader,
+      width: 140,
+      type: "string",
+      renderHeader,
+      ...baseDef,
+      // Generic Avatar Renderer for primary names
+      ...(baseDef.renderCell ? {} : (field === "lead_name" || field === "full_name" || field === "customer_name" || field === "name") ? {
+        renderCell: (params) => {
+          const nameVal = params.value;
+          if (!nameVal) return <span className={isDark ? "text-[#52525B]" : "text-slate-300"}>—</span>;
+          return (
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                style={{ backgroundColor: avatarColor(String(nameVal)) }}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold text-white flex-shrink-0"
+              >
+                {initials(String(nameVal))}
+              </div>
+              <p className={`m-0 font-sans text-[15px]/[20px] font-medium truncate ${isDark ? "text-white" : "text-slate-800"}`}>
+                {String(nameVal)}
+              </p>
+            </div>
+          );
+        }
+      } : {}),
+      // Generic Email link styling
+      ...(baseDef.renderCell ? {} : field.toLowerCase().includes("email") ? {
+        renderCell: (params) => {
+          const val = params.value;
+          if (!val) return <span className={isDark ? "text-[#52525B]" : "text-slate-300"}>—</span>;
+          return (
+            <span className={`underline decoration-1 underline-offset-2 cursor-pointer text-[15px]/[20px] truncate transition-colors ${isDark ? "text-[#60A5FA] hover:text-[#93C5FD]" : "text-[#1D4ED8] hover:text-[#2563EB]"}`}>
+              {String(val)}
+            </span>
+          );
+        }
+      } : {}),
+      // Generic Mobile Phone icon rendering
+      ...(baseDef.renderCell ? {} : (field.toLowerCase().includes("mobile") || field.toLowerCase().includes("phone")) ? {
+        renderCell: (params) => {
+          const val = params.value;
+          if (!val) return <span className={isDark ? "text-[#52525B]" : "text-slate-300"}>—</span>;
+          return (
+            <div className="flex items-center gap-1.5 text-[15px]/[20px] font-mono truncate">
+              <Phone size={11} weight="duotone" color="#94A3B8" />
+              <span className={isDark ? "text-[#D4D4D8]" : "text-slate-600"}>{String(val)}</span>
+            </div>
+          );
+        }
+      } : {}),
+      // Generic Pill Status Badge rendering
+      ...(baseDef.renderCell ? {} : field.toLowerCase() === "status" ? {
+        renderCell: (params) => {
+          const val = params.value;
+          if (!val) return <span className={isDark ? "text-[#52525B]" : "text-slate-300"}>—</span>;
+          return renderStatusCell(String(val), isDark);
+        }
+      } : {}),
+      ...(hasCustomValueGetter
+        ? {}
+        : {
+          valueGetter: (_value, row) => {
+            const r = row ?? {};
+            const direct =
+              r[aliasKey] ??
+              r[fieldKey] ??
+              r[tabFieldKey] ??
+              r[field] ??
+              (displayHeader ? r[displayHeader] : undefined);
+            if (direct !== undefined && direct !== null && direct !== "") {
+              return direct;
+            }
+            const nested = r[doctype]?.[field] ?? r[`tab${doctype}`]?.[field];
+            return nested !== undefined && nested !== null
+              ? String(nested)
+              : "";
+          },
+        }),
+    };
+  });
 
-  // Add Actions column (only if at least one handler is provided)
+  // Add Actions column if handlers are provided
   if (handleRowDetail || handleRowEdit || handleRowRename || handleRowDelete || handleRowClone || handleRowLayoutPermission) {
     columns.push({
       field: "action",
@@ -374,26 +666,30 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
       type: "actions",
       getActions: (params) => {
         const actions: React.ReactElement[] = [];
-        // Conditionally show "View" button
+        // JOINed listing queries qualify column names, so the primary key may be
+        // "<module>.name" / "tab<module>.name" instead of a plain "name".
+        const rowName =
+          params?.row?.name ??
+          params?.row?.[`${module}.name`] ??
+          params?.row?.[`tab${module}.name`];
         if (handleRowDetail) {
           actions.push(
             <GridActionsCellItem
+              key="view"
               icon={<i className={classnames("ri-eye-line", "text-[18px]")} />}
               label="View"
-              onClick={() => handleRowDetail?.(params?.row?.name)}
+              onClick={() => handleRowDetail?.(rowName)}
               showInMenu
               className="gap-2"
             />
           );
         }
 
-        // Conditionally show "Edit" button (used as "Edit Layout" in layout listing)
         if (handleRowEdit && isEditPermission) {
           actions.push(
             <GridActionsCellItem
-              icon={
-                <i className={classnames("ri-edit-box-line", "text-[18px]")} />
-              }
+              key="edit"
+              icon={<i className={classnames("ri-edit-box-line", "text-[18px]")} />}
               label="Edit Layout"
               onClick={() => handleRowEdit(params?.row)}
               showInMenu={false}
@@ -402,15 +698,11 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
           );
         }
 
-        // Conditionally show "Rename" button
         if (handleRowRename) {
           actions.push(
             <GridActionsCellItem
-              icon={
-                <i
-                  className={classnames("ri-edit-2-line", "text-[18px]")}
-                />
-              }
+              key="rename"
+              icon={<i className={classnames("ri-edit-2-line", "text-[18px]")} />}
               label="Rename"
               onClick={() => handleRowRename(params?.row)}
               showInMenu
@@ -419,15 +711,11 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
           );
         }
 
-        // Conditionally show "Clone Layout" button
         if (handleRowClone) {
           actions.push(
             <GridActionsCellItem
-              icon={
-                <i
-                  className={classnames("ri-file-copy-line", "text-[18px]")}
-                />
-              }
+              key="clone"
+              icon={<i className={classnames("ri-file-copy-line", "text-[18px]")} />}
               label="Clone Layout"
               onClick={() => handleRowClone(params?.row)}
               showInMenu
@@ -436,15 +724,11 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
           );
         }
 
-        // Conditionally show "Layout Permission" button
         if (handleRowLayoutPermission) {
           actions.push(
             <GridActionsCellItem
-              icon={
-                <i
-                  className={classnames("ri-shield-user-line", "text-[18px]")}
-                />
-              }
+              key="permission"
+              icon={<i className={classnames("ri-shield-user-line", "text-[18px]")} />}
               label="Layout Permission"
               onClick={() => handleRowLayoutPermission(params?.row)}
               showInMenu
@@ -453,18 +737,14 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
           );
         }
 
-        // Conditionally show "Delete" button (hide for core layouts)
         const isCore = params?.row?.is_core ?? params?.row?.["SDL Layout.is_core"];
         if (handleRowDelete && isDeletePermission && !isCore) {
           actions.push(
             <GridActionsCellItem
-              icon={
-                <i
-                  className={classnames("ri-delete-bin-7-line", "text-[18px]")}
-                />
-              }
+              key="delete"
+              icon={<i className={classnames("ri-delete-bin-7-line", "text-[18px]")} />}
               label="Delete"
-              onClick={() => handleDeletePopup?.(params?.row?.name)}
+              onClick={() => handleDeletePopup?.(rowName)}
               showInMenu
               className="gap-2"
             />
@@ -476,8 +756,309 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
   }
 
   return (
-    <>
-      {multipleViews}
+    <div className="flex flex-col gap-4 font-sans">
+      {/* ── Breadcrumbs ── */}
+      <div className={`flex items-center gap-1.5 text-[13px] px-2 ${isDark ? "text-[#A1A1AA]" : "text-slate-400"}`}>
+        <House size={14} weight="duotone" />
+        <CaretRight size={10} weight="bold" />
+        <span>Home</span>
+        <CaretRight size={10} weight="bold" />
+        <span className={`font-medium ${isDark ? "text-white" : "text-slate-600"}`}>{moduleHeading}</span>
+      </div>
+
+      {/* ── Header Title ── */}
+      <div className="flex items-center justify-between flex-wrap gap-4 px-2">
+        <div className="flex flex-col gap-1">
+          {/* Title Row */}
+          <div className="flex items-center gap-2.5">
+            <h1 className={`font-sans text-[22px]/[28px] font-semibold tracking-tight m-0 ${isDark ? "text-[#F4F4F5]" : "text-slate-900"}`}>
+              {moduleHeading}
+            </h1>
+            <span className={`text-[13px]/[16px] font-medium border px-2.5 py-1 rounded-full shadow-sm flex items-center ${isDark ? "bg-[#0A0A0A] border-[#27272A] text-[#E4E4E7]" : "bg-[#f9fbff] border-[#E3ECFC] text-slate-400"}`}>
+              {rowCount} total
+            </span>
+            {summary && summaryTotal !== null && (
+              <span
+                className={`flex items-center gap-1 text-[13px]/[16px] font-medium border px-2.5 py-1 rounded-full ${
+                  isDark
+                    ? "text-[#34D399] bg-[#064E3B] border-[#047857]"
+                    : "text-[#059669] bg-emerald-50 border-emerald-100"
+                }`}
+              >
+                <TrendUp size={12} weight="duotone" />
+                {summary.label}: {summary.format(summaryTotal)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* View Switcher and Action Buttons */}
+        <div className="flex items-center gap-2.5">
+          {/* Segmented view mode controller */}
+          {multipleViews && (
+            <div className={`flex items-center rounded-xl p-0.5 gap-0.5 shadow-sm border ${isDark ? "bg-[#000000] border-[#27272A]" : "bg-white border-slate-100"}`}>
+              {[
+                { k: "list", Icon: List, label: "List" },
+                { k: "grid", Icon: GridFour, label: "Grid" },
+                { k: "kanban", Icon: Kanban, label: "Kanban" },
+              ].filter((v) => allowedViews.includes(v.k as any)).map(({ k, Icon, label }) => {
+                const active = effectiveView === k;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => dispatch(setViewMode(k as any))}
+                    className={`flex items-center gap-1.5 px-2.5 py-[7px] rounded-lg text-[14px]/[18px] font-medium transition-all ${active
+                      ? isDark ? "bg-[#18181B] text-[#D4D4D8]" : "bg-[#f9fbff] text-[#1D4ED8]"
+                      : isDark ? "text-[#0f0f0f] hover:bg-[#27272A] hover:text-[#D4D4D8]" : "bg-[#f9fbff] text-slate-400 hover:bg-[#E3ECFC]"
+                      }`}
+                  >
+                    <Icon size={14} weight="duotone" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* New Item Button */}
+          {isAddPermission === 1 && onAddNew && (
+            <Button
+              variant="contained"
+              startIcon={<Plus size={16} weight="bold" />}
+              onClick={onAddNew}
+              className='p-2 px-4 '
+              sx={{
+                bgcolor: isDark ? "#27272A" : "#1D4ED8",
+                color: isDark ? "#F4F4F5" : "white",
+                borderRadius: "9px",
+                textTransform: "none",
+                fontWeight: 500,
+                fontSize: "15px",
+                px: 2,
+                py: 0.85,
+                boxShadow: isDark ? "none" : "0 1px 8px 0 #1D4ED833",
+                "&:hover": {
+                  bgcolor: isDark ? "#3F3F46" : "#2563EB",
+                  boxShadow: isDark ? "none" : "0 2px 14px 0 #60A5FA55",
+                },
+                "&:active": {
+                  bgcolor: isDark ? "#52525B" : "#0C2472",
+                },
+                "& .MuiButton-startIcon": { mr: 0.5 },
+              }}
+            >
+              New {btnnewtitle || moduleHeading}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Status Tabs ── */}
+      {stages && stages.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 px-2 scrollbar-hide">
+          <button
+            onClick={() => handleStatusTabChange("All")}
+            className={`flex items-center gap-1.5 px-3 py-[7px] rounded-xl text-[14px]/[18px] font-medium whitespace-nowrap transition-all border ${currentStatusTab === "All"
+              ? isDark ? "bg-[#18181B] text-white shadow-sm shadow-[#27272A]/10 border-[#27272A]" : "bg-[#1D4ED8] text-white shadow-sm shadow-[#1D4ED8]/25 border-[#1D4ED8]"
+              : isDark ? "bg-[#0A0A0A] text-[#A1A1AA] border-[#27272A] hover:bg-[#27272A] hover:text-[#FFFFFF]" : "bg-[#f9fbff] text-[#0C2472] border-[#E3ECFC] hover:bg-[#E3ECFC]"
+              }`}
+          >
+            All
+            <span className={`text-[13px]/[16px] font-medium px-1.5 py-0.5 rounded-full leading-none ${currentStatusTab === "All" ? "bg-white/20 text-white" : "bg-[#1D4ED8]/10 text-[#0C2472]"
+              }`}>
+              {statusCounts ? (statusCounts["All"] ?? 0) : rowCount}
+            </span>
+          </button>
+          {stages.map((stage) => {
+            const active = currentStatusTab === stage.label;
+            const cnt = statusCounts ? (statusCounts[stage.label] ?? 0) : (active ? rowCount : 0);
+            return (
+              <button
+                key={stage.label}
+                onClick={() => handleStatusTabChange(stage.label)}
+                className={`flex items-center gap-1.5 px-3 py-[7px] rounded-xl text-[14px]/[18px] font-medium whitespace-nowrap transition-all border ${active
+                  ? isDark ? "bg-[#18181B] text-white shadow-sm shadow-[#27272A]/10 border-[#27272A]" : "bg-[#1D4ED8] text-white shadow-sm shadow-[#1D4ED8]/25 border-[#1D4ED8]"
+                  : isDark ? "bg-[#0A0A0A] text-[#A1A1AA] border-[#27272A] hover:bg-[#27272A] hover:text-[#FFFFFF]" : "bg-[#f9fbff] text-[#0C2472] border-[#E3ECFC] hover:bg-[#E3ECFC]"
+                  }`}
+              >
+                {stage.label}
+                <span className={`text-[13px]/[16px] font-medium px-1.5 py-0.5 rounded-full leading-none ${active ? "bg-white/20 text-white" : "bg-[#1D4ED8]/10 text-[#0C2472]"
+                  }`}>
+                  {cnt}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Action Toolbar (Search + Popover Buttons) ── */}
+      <div className="flex items-center gap-2.5 flex-wrap px-2 mb-3">
+        {/* Search Input */}
+        <div className={`flex items-center gap-2 border rounded-xl px-3 py-1.5 w-72 focus-within:border-[#60A5FA] focus-within:border-2 focus-within:shadow-[0_0_0_2px_#60A5FA] transition-all ${isDark ? "bg-[#0A0A0A] border-[#27272A]" : "bg-[#f9fbff] border-[#E3ECFC]"}`}>
+          <MagnifyingGlass size={15} color="#94A3B8" weight="duotone" />
+          <InputBase
+            placeholder="Search by name, company, email…"
+            value={searchVal}
+            onChange={e => handleSearchChange(e.target.value)}
+            sx={{
+              flex: 1,
+              fontSize: "14px",
+              color: isDark ? "#D4D4D8" : "#334155",
+              "& input::placeholder": { color: "#94A3B8", opacity: 1 },
+            }}
+          />
+          {searchVal && (
+            <button onClick={() => handleSearchChange("")} className="text-slate-300 hover:text-slate-500 text-[15px]">✕</button>
+          )}
+        </div>
+
+        {/* Filters Button */}
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={
+            activeFilters.length > 0 ? (
+              <Badge badgeContent={activeFilters.length} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: "10px", height: 14, minWidth: 14 } }}>
+                <FunnelSimple size={14} weight="duotone" />
+              </Badge>
+            ) : (
+              <FunnelSimple size={14} weight="duotone" />
+            )
+          }
+          onClick={e => setFiltersAnchor(e.currentTarget)}
+          sx={{
+            borderColor: activeFilters.length > 0 ? "#1D4ED8" : isDark ? "#27272A" : "#E3ECFC",
+            color: activeFilters.length > 0 ? "#fff" : isDark ? "#E4E4E7" : "#0C2472",
+            bgcolor: activeFilters.length > 0 ? "#1D4ED8" : isDark ? "#0F0F0F" : "#E3ECFC",
+            borderRadius: "9px",
+            textTransform: "none",
+            fontWeight: 500,
+            fontSize: "14px",
+            py: 0.85,
+            "&:hover": {
+              borderColor: activeFilters.length > 0 ? "#1640B8" : "#1D4ED8",
+              color: activeFilters.length > 0 ? "#fff" : "#0C2472",
+              bgcolor: activeFilters.length > 0 ? "#1640B8" : isDark ? "#0A0A0A" : "#DCE6FB",
+            },
+          }}
+        >
+          Filters{activeFilters.length > 0 ? ` (${activeFilters.length})` : ""}
+        </Button>
+
+        {/* Columns Button */}
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<Columns size={14} weight="duotone" />}
+          onClick={() => setColumnsDrawerOpen(true)}
+          sx={{
+            borderColor: isDark ? "#27272A" : "#E3ECFC",
+            color: isDark ? "#E4E4E7" : "#0C2472",
+            bgcolor: isDark ? "#0F0F0F" : "#E3ECFC",
+            borderRadius: "9px",
+            textTransform: "none",
+            fontWeight: 500,
+            fontSize: "14px",
+            py: 0.85,
+            "&:hover": {
+              borderColor: "#1D4ED8",
+              color: isDark ? "#E4E4E7" : "#0C2472",
+              bgcolor: isDark ? "#0A0A0A" : "#DCE6FB",
+            },
+          }}
+        >
+          Columns
+        </Button>
+
+        {/* Sort Button */}
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={
+            activeSorts.length > 0 ? (
+              <Badge badgeContent={activeSorts.length} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: "10px", height: 14, minWidth: 14 } }}>
+                <SortAscending size={14} weight="duotone" />
+              </Badge>
+            ) : (
+              <SortAscending size={14} weight="duotone" />
+            )
+          }
+          endIcon={<CaretDown size={11} weight="duotone" />}
+          onClick={e => setSortAnchor(e.currentTarget)}
+          sx={{
+            borderColor: isDark ? "#27272A" : "#E3ECFC",
+            color: isDark ? "#E4E4E7" : "#0C2472",
+            bgcolor: isDark ? "#0F0F0F" : "#E3ECFC",
+            borderRadius: "9px",
+            textTransform: "none",
+            fontWeight: 500,
+            fontSize: "14px",
+            py: 0.85,
+            "&:hover": {
+              borderColor: "#1D4ED8",
+              color: isDark ? "#E4E4E7" : "#0C2472",
+              bgcolor: isDark ? "#0A0A0A" : "#DCE6FB",
+            },
+          }}
+        >
+          Sort{activeSorts.length > 0 ? ` (${activeSorts.length})` : ""}
+        </Button>
+
+        {/* Record count indicator */}
+        <div className={`ml-auto text-[13px] ${isDark ? "text-[#71717A]" : "text-slate-400"}`}>
+          {effectiveView === "list" ? (
+            `${paginationModel.page * paginationModel.pageSize + 1} – ${Math.min((paginationModel.page + 1) * paginationModel.pageSize, rowCount)} of ${rowCount} records`
+          ) : (
+            `1 – ${data.length} of ${rowCount} records`
+          )}
+        </div>
+      </div>
+
+      {/* ── View Rendering ── */}
+      {effectiveView === "list" && (
+        <SDLDataGrid
+          rows={data}
+          columns={columns}
+          rowCount={Number(rowCount)}
+          paginationMode="server"
+          paginationModel={paginationModel}
+          onPaginationModelChange={handlePaginationChange}
+          sortingMode="server"
+          onSortModelChange={handleSortModelChange}
+          filterMode="server"
+          filterModel={filterModel}
+          pageSizeOptions={pageSizeOptions}
+          loading={loading}
+          columnVisibilityModel={columnVisibilityModel}
+          onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel)}
+          customToolbar={() => null}
+          checkboxSelection={checkboxSelection}
+          gridHeight={gridHeight}
+        />
+      )}
+
+      {effectiveView === "grid" && (
+        GridViewComponent
+          ? <GridViewComponent rows={data} statusField={statusField || "status"} {...(viewProps || {})} />
+          : <LeadGridView leads={data} statusField={statusField || "status"} />
+      )}
+
+      {effectiveView === "kanban" && (() => {
+        const KanbanView = KanbanViewComponent ?? LeadKanbanView;
+        return (
+          <KanbanView
+            leads={data}
+            onUpdateLeadStatus={handleUpdateLeadStatus}
+            onAddNewLead={onAddNew}
+            statuses={stages?.map((s) => ({ value: s.label, label: s.label, color: s.bgColor }))}
+            statusField={statusField || "status"}
+            {...(viewProps || {})}
+          />
+        );
+      })()}
+
+      {/* Confirm deletion dialog */}
       <ConfirmDialog
         open={dialogOpen}
         title="Delete Item"
@@ -485,37 +1066,41 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
         onClose={() => setDialogOpen(false)}
         onConfirm={handleDeleteClick}
       />
-      <SDLDataGrid
-        rows={data}
-        columns={columns}
-        rowCount={Number(rowCount)}
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={handlePaginationChange}
-        sortingMode="server"
-        onSortModelChange={handleSortModelChange}
-        filterMode="server"
-        filterModel={filterModel}
-        onFilterModelChange={handleFilterModelChange}
-        pageSizeOptions={pageSizeOptions}
-        loading={loading}
-        columnVisibilityModel={columnVisibilityModel}
-        onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel)}
-        customToolbar={customToolbar}
-        checkboxSelection={checkboxSelection}
-        toolbarProps={{
-          title: hideToolbarTitle ? undefined : moduleHeading,
-          total: Number(rowCount),
-          module,
-          onAddNew,
-          multipleViews,
-          isAddPermission,
-          multiviewList,
-          btnnewtitle,
-        }}
-        gridHeight={gridHeight}
+
+      {/* Reusable Filter Popover */}
+      <FiltersDrawer
+        anchor={filterAnchor}
+        onClose={() => setFiltersAnchor(null)}
+        filters={activeFilters}
+        onChange={setActiveFilters}
+        columns={colFields.map(f => ({
+          value: `${f.doctype}.${f.field}`,
+          label: `${f.doctype} · ${f.headerName || formatHeaderName(f.field)}`,
+        }))}
       />
-    </>
+
+      {/* Reusable Column Drawer */}
+      <ColumnsDrawer
+        open={columnsDrawerOpen}
+        onClose={() => setColumnsDrawerOpen(false)}
+        selected={visibleCols}
+        onChange={setVisibleCols}
+        columns={colFields}
+        defaultVisibleFields={colFields.filter(f => f.hidden?.toLowerCase() !== "true").map(f => `${f.doctype}.${f.field}`)}
+      />
+
+      {/* Reusable Sort Popover */}
+      <SortPopover
+        anchor={sortAnchor}
+        onClose={() => setSortAnchor(null)}
+        sorts={activeSorts}
+        onChange={setActiveSorts}
+        columns={colFields.map(f => ({
+          value: `${f.doctype}.${f.field}`,
+          label: f.headerName || formatHeaderName(f.field),
+        }))}
+      />
+    </div>
   );
 };
 

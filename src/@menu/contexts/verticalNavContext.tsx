@@ -20,9 +20,15 @@ export type VerticalNavContextProps = VerticalNavState & {
 
 const VerticalNavContext = createContext({} as VerticalNavContextProps)
 
-export const VerticalNavProvider = ({ children }: ChildrenType) => {
+export type VerticalNavProviderProps = ChildrenType & {
+  initialToggled?: boolean
+}
+
+export const VerticalNavProvider = ({ children, initialToggled = false }: VerticalNavProviderProps) => {
   // States
-  const [verticalNavState, setVerticalNavState] = useState<VerticalNavState>()
+  const [verticalNavState, setVerticalNavState] = useState<VerticalNavState>({
+    isToggled: initialToggled
+  })
 
   // Hooks
   const updateVerticalNavState = useCallback((values: Partial<VerticalNavState>) => {
@@ -33,10 +39,16 @@ export const VerticalNavProvider = ({ children }: ChildrenType) => {
   }, [])
 
   const toggleVerticalNav = useCallback((value?: boolean) => {
-    setVerticalNavState(prevState => ({
-      ...prevState,
-      isToggled: value !== undefined ? Boolean(value) : !Boolean(prevState?.isToggled)
-    }))
+    setVerticalNavState(prevState => {
+      const nextToggled = value !== undefined ? Boolean(value) : !Boolean(prevState?.isToggled)
+      if (!prevState?.isBreakpointReached && typeof window !== 'undefined') {
+        document.cookie = `sidebar-collapsed=${nextToggled}; path=/; max-age=31536000; SameSite=Lax`
+      }
+      return {
+        ...prevState,
+        isToggled: nextToggled
+      }
+    })
   }, [])
 
   const verticalNavProviderValue = useMemo(

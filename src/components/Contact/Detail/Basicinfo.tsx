@@ -328,7 +328,7 @@ const Basicinfo = ({ slug, doctype }) => {
                       Customer Name :
                     </Typography>
                     <Link
-                      href={`/customers/detail/${linkData?.link_name}`}
+                      href={`/accounts/detail/${linkData?.link_name}`}
                       className="text-primary"
                     >
                       {" "}

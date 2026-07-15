@@ -41,6 +41,8 @@ import { Tooltip, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { GridCheckCircleIcon, GridCloseIcon } from "@mui/x-data-grid";
 import EditableField from "@/components/Common/EditableField";
+import { ShieldCheck } from "@phosphor-icons/react";
+import { SettingCard } from "@/components/Users/Users/Detail/ProfileCards";
 import { submit_editroles, get_full_roles_tree } from "@/services/api/roles/roles-api";
 
 
@@ -465,63 +467,46 @@ const RoleOverview = forwardRef<ChildRefType,RoleDetailsProps>(( { slug }, ref) 
     };
 
   return (
-    <Box sx={{ pt: 3, px: 2 }}>
-      <Card
-        sx={{
-          mb: 4,
-          boxShadow: "0px 0px 10px 0px rgba(0, 0, 0, 0.1)",
-        }}
-        className="border"
-      >
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Role Information
-          </Typography>
-          <Divider sx={{ borderBottomWidth: "2px", mb: 3 }} />
-          {loading ? (
-            <RoleSkeleton />
-          ) : (
-            <Stack direction="column" spacing={2}>
-              <Box sx={{ width: "100%" }}>
-                <EditableField
-                  label="Role Name"
-                  field="role_name"
-                  value={profile?.role_name}
-                  onSave={handleSave}
-                  isEditpermission={false}
-                />
-              </Box>
-              <Box sx={{ width: "100%" }}>
-                <EditableField
-                  label="Role Description"
-                  field="role_description"
-                  value={profile?.role_description}
-                  type="textarea"
-                  onSave={handleSave}
-                  isEditpermission={isEditPermission}
-                />
-              </Box>
-              {profile?.is_admin != 1 && (
-                <Box sx={{ width: "100%" }}>
-                  <EditableField
-                    label="Reports To"
-                    field="reports_to"
-                    value={profile?.reports_to}
-                    type="select"
-                    options={treewoRoleData.map((option) => ({
-                      value: option.name,
-                      label: option.role_name,
-                    }))}
-                    onSave={handleSave}
-                    isEditpermission={isEditPermission}
-                  />
-                </Box>
-              )}
-            </Stack>
+    <SettingCard icon={ShieldCheck} title="Role Information" color="#8B5CF6">
+      {loading ? (
+        <RoleSkeleton />
+      ) : (
+        <>
+          <EditableField
+            kvLayout
+            label="Role Name"
+            field="role_name"
+            value={profile?.role_name}
+            onSave={handleSave}
+            isEditpermission={false}
+          />
+          <EditableField
+            kvLayout
+            label="Role Description"
+            field="role_description"
+            value={profile?.role_description}
+            type="textarea"
+            onSave={handleSave}
+            isEditpermission={isEditPermission}
+          />
+          {profile?.is_admin != 1 && (
+            <EditableField
+              kvLayout
+              label="Reports To"
+              field="reports_to"
+              value={profile?.reports_to}
+              type="select"
+              options={treewoRoleData.map((option) => ({
+                value: option.name,
+                label: option.role_name,
+              }))}
+              onSave={handleSave}
+              isEditpermission={isEditPermission}
+            />
           )}
-        </CardContent>
-      </Card>
-    </Box>
+        </>
+      )}
+    </SettingCard>
   );
 });
 

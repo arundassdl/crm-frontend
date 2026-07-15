@@ -1,12 +1,11 @@
 import { readAccessTokenDataParsed } from '@/utils/accessTokenDataStorage'
 import React, { useEffect, useState } from "react";
 import { Box } from "@mui/material";
-import { v4 as uuidv4 } from "uuid";
 import DrawerComponent from "@/components/Common/Form/Drawer/DrawerComponent";
 import CustomForm from "@/components/Common/Form/Drawer/CustomForm";
 import { FieldConfigNew } from "@/components/Common/Form/validationSchema";
 import { showToast } from "@/components/ToastNotificationNew";
-import { createCustomMultipleDocuments } from "@/services/api/common-erpnext-api/create-edit-api";
+import { createCustomDocument, updateFieldCustomDocument } from "@/services/api/common-erpnext-api/create-edit-api";
 import { getFormFields, getLayoutList } from "@/services/api/general_apis/layout-api";
 import { getLayout } from "@/services/api/crm/crm-api";
 import LayoutSelection from "@/components/Common/Form/LayoutSelection";
@@ -33,6 +32,12 @@ export default function AddEditTaskDrawer({
 }: AddEditTaskDrawerProps) {
   const module = "CRM Task";
   const moduleName = "Tasks";
+
+  // Opened as "New" from a specific record's detail page → prefill + lock the reference.
+  const hasReferenceContext = operation === "New" && !!reference_doctype && !!reference_docname;
+  const referenceTypeLower = String(reference_doctype || "").trim().toLowerCase();
+  const isLeadReferenceContext = hasReferenceContext && (referenceTypeLower === "crm lead" || referenceTypeLower === "lead");
+
   const [isFieldsFetched, setIsFieldsFetched] = useState(false);
   const [userToken, setUserToken] = useState<any>(() => {
     const initialValue = readAccessTokenDataParsed();
@@ -109,6 +114,11 @@ export default function AddEditTaskDrawer({
           if (f.name === "title") {
             return { ...f, disable: operation === "Edit" };
           }
+          // When creating a task from a Lead, make the Contact/Lead field default to the
+          // "Lead" type so the current lead can be prefilled and shown.
+          if (isLeadReferenceContext && String(f.type).toLowerCase() === "contactlead") {
+            return { ...f, referenceDoctype: "CRM Lead", doctype: "CRM Lead" };
+          }
           return f;
         });
 
@@ -121,12 +131,6 @@ export default function AddEditTaskDrawer({
   }, [userToken, selectedLayoutId, operation]);
 
   const handleSubmit = async (values: any, action: any) => {
-    const taskKey = `task_${uuidv4().split("-")[0]}`;
-
-    const addressFieldNames = formFields
-      .filter((field: any) => String(field.type) === "address")
-      .map((field: any) => field.name);
-
     // Identify dynamic field names
     const contactLeadField = formFields.find((f) => String(f.type).toLowerCase() === "contactlead");
     const relatedToField = formFields.find((f) => String(f.type).toLowerCase() === "relatedto");
@@ -138,8 +142,40 @@ export default function AddEditTaskDrawer({
     let updatedReferenceDocname = reference_docname || "";
     let updatedRelatedTo = (relatedToField && values[relatedToField.name]) || "";
     let updatedContactName = values.contact_name;
+    // Name of a (non-`contact_name`) Contact/Lead field whose prefilled value must be
+    // cleared from the outgoing payload; empty means nothing to clear.
+    let clearContactLeadKey = "";
 
-    if (contactLeadType === "Contact") {
+    // When opened from a record's detail page, both reference props are supplied and
+    // the task must link to THAT record — the form's (defaulted) Related-To / Contact-Lead
+    // fields must not override it.
+    const hasExplicitReference = !!(reference_doctype && reference_docname);
+
+    if (hasExplicitReference) {
+      updatedReferenceDoctype = reference_doctype;
+      updatedReferenceDocname = reference_docname;
+
+      const refTypeLower = String(reference_doctype).trim().toLowerCase();
+      const isLeadReference = refTypeLower === "crm lead" || refTypeLower === "lead";
+
+      // A Lead-referenced task links through the reference, not a Contact. The Contact/Lead
+      // field is prefilled with the Lead's name, so it must not be sent as `contact_name`
+      // (the backend would try to resolve it as a Contact and fail).
+      if (isLeadReference) {
+        updatedContactName = "";
+        clearContactLeadKey =
+          contactLeadField && contactLeadField.name !== "contact_name"
+            ? contactLeadField.name
+            : "";
+      }
+
+      if (relatedToField && updatedReferenceDocname) {
+        const label =
+          updatedReferenceDoctype === "CRM Deal" ? "Deal" :
+          updatedReferenceDoctype === "CRM Lead" ? "Lead" : "Account";
+        updatedRelatedTo = `${updatedReferenceDocname} - ${label}`;
+      }
+    } else if (contactLeadType === "Contact") {
       // If ContactLead = Contact:
       // Assign the selected value to contact_name
       updatedContactName = contactLeadValue;
@@ -185,6 +221,10 @@ export default function AddEditTaskDrawer({
       dataWithLayout[relatedToField.name] = updatedRelatedTo;
     }
 
+    if (clearContactLeadKey) {
+      dataWithLayout[clearContactLeadKey] = "";
+    }
+
     // Process dates
     for (const f of formFields) {
       if (String(f?.type) !== "date") continue;
@@ -195,20 +235,21 @@ export default function AddEditTaskDrawer({
       dataWithLayout[fieldName] = formatCalDate(v);
     }
 
-    if (operation === "Edit" && initialValues?.name) {
-      dataWithLayout.name = initialValues.name;
+    // Strip UI-only helper keys (prefixed with `_`, e.g. _contactLeadType /
+    // _relatedToTypes) so only real CRM Task fields are sent to the backend.
+    const taskPayload: Record<string, any> = {};
+    for (const [key, value] of Object.entries(dataWithLayout)) {
+      if (key.startsWith("_")) continue;
+      taskPayload[key] = value;
     }
 
-    const documents = [
-      {
-        doctype: module,
-        key: taskKey,
-        data: dataWithLayout,
-        addressFields: addressFieldNames,
-      },
-    ];
+    const isEdit = operation === "Edit" && !!initialValues?.name;
 
-    const apiRes: any = await createCustomMultipleDocuments(documents, userToken?.access_token);
+    // A single CRM Task is created/updated through the dedicated single-document API,
+    // not the multi-document flow (which never confirmed real persistence).
+    const apiRes: any = isEdit
+      ? await updateFieldCustomDocument(module, initialValues.name, taskPayload, userToken?.access_token)
+      : await createCustomDocument(module, taskPayload, userToken?.access_token);
 
     if (apiRes?.success) {
       showToast(apiRes?.message, "success");
@@ -227,6 +268,22 @@ export default function AddEditTaskDrawer({
   };
 
   const currentUser = userToken?.username || userToken?.email || "";
+
+  // Prefill the Contact/Lead + reference fields with the current record when opened
+  // from a detail page, so the task is visibly linked before saving.
+  const referencePrefill: Record<string, any> = {};
+  if (hasReferenceContext) {
+    referencePrefill.reference_doctype = reference_doctype;
+    referencePrefill.reference_docname = reference_docname;
+    if (isLeadReferenceContext) {
+      const contactLeadField = formFields.find((f: any) => String(f.type).toLowerCase() === "contactlead");
+      if (contactLeadField) {
+        referencePrefill[contactLeadField.name] = reference_docname;
+        referencePrefill._contactLeadType = "CRM Lead";
+      }
+    }
+  }
+
   const mergedInitialValues = {
     ...formFields.reduce((acc: any, f: any) => {
       acc[f.name] =
@@ -237,6 +294,7 @@ export default function AddEditTaskDrawer({
     }, {}),
     ...initialValues,
     ...(operation === "New" ? { owner: currentUser } : {}),
+    ...referencePrefill,
   };
 
   return (

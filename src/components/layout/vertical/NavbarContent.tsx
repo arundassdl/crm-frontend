@@ -1,145 +1,133 @@
 'use client'
 // Next Imports
 import Link from 'next/link'
-import { useResolvedPathname } from '@/hooks/useResolvedPathname'
 
 // MUI Imports
-import IconButton from '@mui/material/IconButton'
+import { Box, IconButton, InputBase, Button, Tooltip, Badge } from '@mui/material'
 
 // Third-party Imports
 import classnames from 'classnames'
+import { ListIcon, MagnifyingGlass, Bell, Plus, Command } from '@phosphor-icons/react'
 
 // Component Imports
-import NavToggle from './NavToggle'
-import NavSearch from '@components/layout/shared/search'
 import ModeDropdown from '@components/layout/shared/ModeDropdown'
 import UserDropdown from '@components/layout/shared/UserDropdown'
 
 // Util Imports
 import { verticalLayoutClasses } from '@layouts/utils/layoutClasses'
-import NextBreadcrumb from '@/components/Breadcrumb/NextBreadcrumb'
 import React, { useEffect, useState } from 'react'
-import { Box, Paper, Typography } from '@mui/material'
 import Logo from '../shared/Logo'
 import useVerticalNav from '@/@menu/hooks/useVerticalNav'
-import { styled, useTheme } from '@mui/material/styles'
-import { useClickContext } from '@/app/GlobalProvider'
-import Image from 'next/image'
-import { getCompanyDataParsed } from '@/utils/companyDataStorage'
+import { useSettings } from '@core/hooks/useSettings'
 
 const NavbarContent = () => {
-  const pathname = useResolvedPathname()
-  const [companyData, setCompanyData] = useState<any>([]);
   const { isToggled, toggleVerticalNav } = useVerticalNav()
-  const theme = useTheme()
-  const { setIsClicked } = useClickContext()
+  const { settings } = useSettings()
+  const isDark = settings.mode === 'dark'
+  const [search, setSearch] = useState('')
 
-  /** Collapsed (narrow rail) when explicitly true; `undefined` treated as expanded so the toggle icon matches the drawer. */
-  const isCollapsed = isToggled === true
-
-  const handleExpandNav = () => {
-    setIsClicked(true)
-    toggleVerticalNav(false)
+  const handleToggleNav = () => {
+    toggleVerticalNav(!isToggled)
   }
-
-  const handleCollapseNav = () => {
-    setIsClicked(true)
-    toggleVerticalNav(true)
-  }
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCompanyData(getCompanyDataParsed())
-    }
-  }, [])
-
-  // Match Navigation useLayoutEffect: /settings defaults collapsed; Users chrome defaults expanded.
-  useEffect(() => {
-    if (pathname?.startsWith('/settings')) {
-      toggleVerticalNav(true)
-      setIsClicked(true)
-      return
-    }
-    if (
-      pathname?.startsWith('/user/users/detail') ||
-      pathname?.startsWith('/user/users') ||
-      pathname?.startsWith('/user/roles')
-    ) {
-      toggleVerticalNav(false)
-      setIsClicked(true)
-      return
-    }
-    /** Federated addons: analytics (`pages/`) + reports (App Router). */
-    if (
-      pathname?.startsWith('/analytics') ||
-      pathname?.startsWith('/reports') ||
-      pathname?.startsWith('/report/')
-    ) {
-      toggleVerticalNav(false)
-      setIsClicked(true)
-    }
-  }, [pathname, toggleVerticalNav, setIsClicked])
 
   return (
-    <Box className={classnames(verticalLayoutClasses.navbarContent, 'flex items-center justify-between gap-4 is-full')}>
-      <div className='flex items-center gap-2 sm:gap-4 mt-3'>
-        {/* <NavToggle /> */}
-        {!isCollapsed ? (
-          <IconButton onClick={handleCollapseNav} aria-label="Collapse navigation">
-            {theme.direction === 'rtl' ? (
-              <i className="ri-menu-line text-xl cursor-pointer" />
-            ) : (
-              <i className="ri-menu-line text-xl cursor-pointer" />
-            )}
-          </IconButton>
-        ) : (
-          <IconButton onClick={handleExpandNav} aria-label="Expand navigation">
-            {theme.direction === 'rtl' ? (
-              <i className="ri-menu-fold-line text-xl cursor-pointer" />
-            ) : (
-              <i className="ri-menu-fold-line text-xl cursor-pointer" />
-            )}
-          </IconButton>
-        )}
-        <Link href='/'>
-            <Logo />
-            {/* <Image
-              src="/assets/images/small-logo.png"
-              alt="Logo"
-              width={198}
-              height={25}
-            /> */}
-          </Link>
-        {/* {(isToggled == false) && (
-          <NextBreadcrumb
-            homeElement={'Home'}
-            activeClasses='text-stone-900'
-            // container='flex py-5 bg-gradient-to-r from-amber-200 to-green-500' 
-            container='flex py-3'
-            listClasses='hover:underline font-bold'
-            capitalizeLinks
-          />
-        )} */}
-      </div>
-      <div className='flex items-center'>
-        {/* <Typography variant='h5'>We ♥ {companyData?.company_name}</Typography> */}
-        {/* <Link
-          className='flex mie-2'
-          href={`https://github.com/themeselection/${process.env.NEXT_PUBLIC_REPO_NAME}`}
-          target='_blank'
+    <Box
+      className={classnames(verticalLayoutClasses.navbarContent, 'flex items-center justify-between gap-4 is-full')}
+      sx={{
+        color: isDark ? '#FFFFFF' : '#0c2472',
+        padding: '0 8px',
+      }}
+    >
+      <div className='flex items-center gap-2 sm:gap-4'>
+        <IconButton
+          onClick={handleToggleNav}
+          aria-label='Toggle navigation'
+          sx={{
+            color: 'inherit',
+            borderRadius: '9px',
+            '&:hover': { bgcolor: isDark ? '#262626' : '#EFF6FF' }
+          }}
         >
-          <img
-            height={24}
-            alt='GitHub Repo stars'
-            src={`https://img.shields.io/github/stars/themeselection/${process.env.NEXT_PUBLIC_REPO_NAME}`}
+          <ListIcon size={18} weight='bold' />
+        </IconButton>
+        <Link href='/'>
+          <Logo />
+        </Link>
+      </div>
+
+      <div className='flex items-center gap-4 sm:gap-6'>
+        {/* Search */}
+        {/* <div className={classnames(
+          'hidden md:flex items-center gap-2 border rounded-xl px-3 py-1.5 w-60 transition-all',
+          isDark
+            ? 'bg-[#0A0A0A] border-[#27272A] focus-within:border-[#60A5FA] focus-within:shadow-[0_0_0_2px_rgba(96,165,250,0.3)]'
+            : 'bg-[#f9fbff] border-[#E3ECFC] focus-within:border-[#1D4ED8] focus-within:shadow-[0_0_0_2px_#93C5FD]'
+        )}>
+          <MagnifyingGlass size={15} color={isDark ? '#71717A' : '#94A3B8'} weight='duotone' />
+          <InputBase
+            placeholder='Search leads, deals...'
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            sx={{
+              flex: 1, fontSize: '0.78rem', color: isDark ? '#D4D4D8' : '#334155',
+              '& input::placeholder': { color: isDark ? '#71717A' : '#94A3B8', opacity: 1 },
+            }}
           />
-        </Link> */}
-        {/* <LinguisticsAndForex /> */}
-        
+          <Tooltip title='⌘K'>
+            <Command size={13} color={isDark ? '#52525B' : '#CBD5E1'} weight='duotone' />
+          </Tooltip>
+        </div> */}
+
+        {/* New Deal Button */}
+        {/* <Button
+          variant='contained'
+          size='small'
+          startIcon={<Plus size={16} weight='duotone' />}
+          sx={{
+            bgcolor: isDark ? '#27272A' : '#1D4ED8',
+            color: isDark ? '#F4F4F5' : '#fff',
+            borderRadius: '9px',
+            textTransform: 'none',
+            fontWeight: 700,
+            fontSize: '0.78rem',
+            px: 2,
+            py: 0.9,
+            boxShadow: isDark ? 'none' : '0 1px 8px 0 #1D4ED833',
+            whiteSpace: 'nowrap',
+            '&:hover': {
+              bgcolor: isDark ? '#3F3F46' : '#60A5FA',
+              boxShadow: isDark ? 'none' : '0 2px 14px 0 #60A5FA55'
+            },
+            '&:active': { bgcolor: isDark ? '#52525B' : '#0C2472' },
+          }}
+        >
+          New Deal
+        </Button> */}
+
+        {/* Mode Dropdown */}
         <ModeDropdown />
-        {/* <IconButton className='text-textPrimary'>
-          <i className='ri-notification-2-line' />
-        </IconButton> */}
+
+        {/* Notifications */}
+        {/* <Tooltip title='3 unread notifications'>
+          <IconButton
+            size='small'
+            sx={{
+              borderRadius: '8px',
+              color: 'inherit',
+              '&:hover': { bgcolor: isDark ? '#262626' : '#EFF6FF' }
+            }}
+          >
+            <Badge
+              badgeContent={3}
+              color='error'
+              sx={{ '& .MuiBadge-badge': { fontSize: '0.58rem', height: 15, minWidth: 15, padding: '0 3px' } }}
+            >
+              <Bell size={20} color={isDark ? '#9CA3AF' : '#64748B'} weight='duotone' />
+            </Badge>
+          </IconButton>
+        </Tooltip> */}
+
+        {/* User Dropdown */}
         <UserDropdown />
       </div>
     </Box>

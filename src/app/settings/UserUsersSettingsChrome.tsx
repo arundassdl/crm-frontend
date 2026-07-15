@@ -43,16 +43,16 @@ export default function UserUsersSettingsChrome({ children }: { children: React.
   )
 
   const content = (
-    <div className="relative flex min-h-0 flex-1 flex-col bg-[var(--mui-palette-background-paper)] pt-[2.4rem] px-4 pb-8 sm:px-6 md:px-8">
+    <div className="relative flex min-h-0 flex-1 flex-col bg-[#EFF6FF] dark:bg-[#0A0A0A]">
       {children}
     </div>
   )
 
   return (
-    <div className="flex min-h-[calc(100vh-7rem)] w-full items-stretch overflow-hidden rounded-xl border border-[var(--mui-palette-divider)] bg-[var(--mui-palette-background-paper)] shadow-sm">
+    <div className="flex min-h-[calc(100vh-7rem)] w-full items-stretch overflow-hidden rounded-xl border border-[#E3ECFC] bg-[#EFF6FF] shadow-sm dark:border-[#27272A] dark:bg-[#000000]">
       <Sidebar menu={menu} activeTab={USER_TAB} onSelectTab={onSelectTab} />
 
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[var(--mui-palette-background-default)]">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[#EFF6FF] dark:bg-[#0A0A0A]">
         {content}
       </div>
     </div>

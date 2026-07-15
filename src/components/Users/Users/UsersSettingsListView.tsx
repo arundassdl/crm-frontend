@@ -1,25 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  Box,
-  Checkbox,
-  Chip,
-  CircularProgress,
-  Divider,
-  InputAdornment,
-  List,
-  ListItemButton,
-  TablePagination,
-  TextField,
-  Typography,
-} from '@mui/material'
-import SearchIcon from '@mui/icons-material/Search'
-import AddIcon from '@mui/icons-material/Add'
+import { Checkbox, CircularProgress, InputBase, TablePagination } from '@mui/material'
 import Button from '@mui/material/Button'
+import { MagnifyingGlass, Plus } from '@phosphor-icons/react'
 import { fetchRawDataGridListing } from '@/services/api/common-erpnext-api/listing-api-get'
 import { CONSTANTS } from '@/services/config/app-config'
 import CustomAvatar from '@/@core/components/mui/Avatar'
+import { RoleBadge } from '@/components/Users/Users/Detail/ProfileCards'
 import type { GridFilterModel, GridSortModel } from '@mui/x-data-grid'
 
 /** Do not name this `module` — it shadows webpack's `module` and breaks the client bundle. */
@@ -53,6 +41,34 @@ function normalizeUserKey(s: string | null | undefined): string {
   }
 }
 
+/** Pastel initials bubbles, matching the settings reference list. */
+const LIST_AVATAR_PALETTE: { bg: string; text: string }[] = [
+  { bg: '#FEF3C7', text: '#B45309' },
+  { bg: '#EDE9FE', text: '#6D28D9' },
+  { bg: '#DCFCE7', text: '#166534' },
+  { bg: '#EFF6FF', text: '#1D4ED8' },
+  { bg: '#FEF2F2', text: '#DC2626' },
+  { bg: '#FDF4FF', text: '#7E22CE' },
+]
+
+function listAvatarColors(name: string): { bg: string; text: string } {
+  const key = String(name ?? '').trim()
+  if (!key) return LIST_AVATAR_PALETTE[0]
+  const sum = key.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+  return LIST_AVATAR_PALETTE[sum % LIST_AVATAR_PALETTE.length]
+}
+
+function initialsOf(name: string): string {
+  const parts = String(name ?? '')
+    .split(/\s+/)
+    .filter(Boolean)
+  if (parts.length === 0) return '?'
+  return parts
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('')
+}
+
 function RoleLine({ roleName }: { roleName: string }) {
   if (!roleName?.trim()) return null
   const parts = roleName
@@ -60,48 +76,11 @@ function RoleLine({ roleName }: { roleName: string }) {
     .map((s) => s.trim())
     .filter(Boolean)
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        columnGap: 0.5,
-        rowGap: 0.25,
-      }}
-    >
-      {parts.map((part, i) => {
-        const isBadgeRole = /^super\s*admin$/i.test(part) || /^administrator$/i.test(part)
-        return (
-          <Box key={`${part}-${i}`} sx={{ display: 'inline-flex', alignItems: 'center' }}>
-            {i > 0 ? (
-              <Typography component="span" variant="caption" color="text.secondary" sx={{ mr: 0.5 }}>
-                ,
-              </Typography>
-            ) : null}
-            {isBadgeRole ? (
-              <Chip
-                label={part}
-                size="small"
-                sx={{
-                  height: 22,
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  borderColor: 'rgba(245, 166, 35, 0.85)',
-                  color: 'rgb(194, 65, 12)',
-                  bgcolor: 'rgba(245, 166, 35, 0.14)',
-                  '& .MuiChip-label': { px: 0.75 },
-                }}
-                variant="outlined"
-              />
-            ) : (
-              <Typography component="span" variant="caption" color="text.secondary">
-                {part}
-              </Typography>
-            )}
-          </Box>
-        )
-      })}
-    </Box>
+    <span className="inline-flex flex-wrap items-center gap-1">
+      {parts.map((part, i) => (
+        <RoleBadge key={`${part}-${i}`} role={part} />
+      ))}
+    </span>
   )
 }
 
@@ -279,195 +258,152 @@ export default function UsersSettingsListView({
   const canAdd = userPermission?.create === 1 || userPermission?.create === '1'
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        minHeight: 0,
-        bgcolor: 'background.paper',
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          gap: 1,
-          px: 1.5,
-          py: 1.25,
-          flexShrink: 0,
-          bgcolor: 'background.paper',
-        }}
-      >
+    <div className="flex h-full min-h-0 flex-col bg-[#f9fbff] dark:bg-[#111113]">
+      <div className="flex flex-shrink-0 items-center gap-2 border-b border-[#E3ECFC] px-4 py-3 dark:border-[#27272A]">
         <Checkbox
           size="small"
           checked={allPageSelected}
           indeterminate={!allPageSelected && somePageSelected}
           onChange={toggleSelectAll}
           inputProps={{ 'aria-label': 'Select all users on this page' }}
-          sx={{ alignSelf: 'center', mb: 0.25 }}
+          sx={{ p: 0.3, color: '#E2E8F0', '&.Mui-checked': { color: '#1D4ED8' } }}
         />
-        <TextField
-          variant="standard"
-          size="small"
-          fullWidth
-          placeholder="Search"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          InputProps={{
-            disableUnderline: false,
-            startAdornment: (
-              <InputAdornment position="start" sx={{ mr: 0.25 }}>
-                <SearchIcon sx={{ fontSize: 20, color: 'grey.400' }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            '& .MuiInputBase-root': {
-              bgcolor: 'transparent',
-            },
-            '& .MuiInput-underline:before': {
-              borderBottomColor: 'rgba(180, 175, 210, 0.55)',
-            },
-            '& .MuiInput-underline:hover:not(.Mui-disabled):before': {
-              borderBottomColor: 'rgba(160, 155, 195, 0.75)',
-            },
-            '& .MuiInput-underline:after': {
-              borderBottomWidth: 2,
-            },
-            '& .MuiInputBase-input': {
-              py: 0.75,
-              fontSize: '0.9375rem',
-            },
-            '& .MuiInputBase-input::placeholder': {
-              color: 'rgba(96, 125, 160, 0.75)',
-              opacity: 1,
-            },
-          }}
-        />
+        <div className="flex flex-1 items-center gap-1.5 rounded-xl border border-[#E3ECFC] bg-white px-3 py-1.5 transition-all focus-within:border-[#1D4ED8] focus-within:shadow-[0_0_0_2px_#4A7AE8] dark:border-[#3F3F46] dark:bg-[#18181B]">
+          <MagnifyingGlass size={13} color="#94A3B8" weight="duotone" />
+          <InputBase
+            placeholder="Search"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            sx={{
+              flex: 1,
+              fontSize: '0.75rem',
+              color: theme => (theme.palette.mode === 'dark' ? '#D4D4D8' : '#334155'),
+              '& input::placeholder': { color: '#94A3B8', opacity: 1 },
+            }}
+          />
+        </div>
         {canAdd ? (
           <Button
             variant="contained"
             size="small"
-            startIcon={<AddIcon />}
+            startIcon={<Plus size={12} weight="bold" />}
             onClick={onAddNew}
-            sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
+            sx={{
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+              bgcolor: '#1D4ED8',
+              color: 'white',
+              borderRadius: '9px',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.73rem',
+              px: 1.5,
+              py: 0.7,
+              boxShadow: '0 1px 6px #1D4ED833',
+              '&:hover': { bgcolor: '#2563EB' },
+            }}
           >
             New User
           </Button>
         ) : null}
-      </Box>
+      </div>
 
-      <Divider />
-
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', position: 'relative' }}>
+      <div className="relative min-h-0 flex-1 overflow-y-auto">
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <div className="flex justify-center py-12">
             <CircularProgress size={28} />
-          </Box>
+          </div>
         ) : rows.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ p: 3 }}>
-            No users found
-          </Typography>
+          <div className="p-6 text-[13px] text-slate-400">No users found</div>
         ) : (
-          <List disablePadding sx={{ py: 0 }}>
-            {rows.map((row) => {
-              const id = String((row as Record<string, unknown>).name ?? '')
-              const r = row as Record<string, unknown>
-              const displayName =
-                (r['full_name'] as string) ||
-                [r['first_name'], r['last_name']].filter(Boolean).join(' ') ||
-                (r['name'] as string) ||
-                '—'
-              const email = (r['email'] as string) ?? ''
-              const roleName = (r['role_name'] as string) ?? ''
-              const img = r['user_image'] as string | undefined
-              const selectedRow = Boolean(
-                normalizedSelection && id && normalizeUserKey(id) === normalizedSelection
-              )
-              const checked = id ? selectedIds.has(id) : false
-              const en = r['enabled']
-              const enabled = en !== 0 && en !== false && en !== '0'
+          rows.map((row) => {
+            const id = String((row as Record<string, unknown>).name ?? '')
+            const r = row as Record<string, unknown>
+            const displayName =
+              (r['full_name'] as string) ||
+              [r['first_name'], r['last_name']].filter(Boolean).join(' ') ||
+              (r['name'] as string) ||
+              '—'
+            const email = (r['email'] as string) ?? ''
+            const roleName = (r['role_name'] as string) ?? ''
+            const img = r['user_image'] as string | undefined
+            const selectedRow = Boolean(
+              normalizedSelection && id && normalizeUserKey(id) === normalizedSelection
+            )
+            const checked = id ? selectedIds.has(id) : false
+            const en = r['enabled']
+            const enabled = en !== 0 && en !== false && en !== '0'
+            const colors = listAvatarColors(displayName)
 
-              return (
-                <ListItemButton
-                  key={id || email}
-                  selected={!!selectedRow}
-                  onClick={() => id && onSelectUser(id)}
-                  sx={{
-                    alignItems: 'flex-start',
-                    py: 1.5,
-                    px: 1.5,
-                    gap: 1.5,
-                    borderBottom: 1,
-                    borderColor: 'divider',
-                    bgcolor: selectedRow ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
-                    '&.Mui-selected': {
-                      bgcolor: 'rgba(25, 118, 210, 0.12)',
-                    },
-                    '&:hover': {
-                      bgcolor: selectedRow ? 'rgba(25, 118, 210, 0.14)' : 'action.hover',
-                    },
-                  }}
-                >
-                  <Checkbox
-                    size="small"
-                    checked={checked}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={() => id && toggleRow(id)}
-                    inputProps={{ 'aria-label': `Select ${displayName}` }}
-                    sx={{ pt: 0.5 }}
+            return (
+              <div
+                key={id || email}
+                role="button"
+                tabIndex={0}
+                onClick={() => id && onSelectUser(id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    if (id) onSelectUser(id)
+                  }
+                }}
+                className={`flex cursor-pointer items-center gap-3 border-b border-[#EFF6FF] px-4 py-3 transition-colors dark:border-[#27272A] ${
+                  selectedRow
+                    ? 'bg-[#EFF6FF] dark:bg-[#27272A]'
+                    : 'hover:bg-[#f9fbff] dark:hover:bg-[#18181B]'
+                }`}
+              >
+                <Checkbox
+                  size="small"
+                  checked={checked}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={() => id && toggleRow(id)}
+                  inputProps={{ 'aria-label': `Select ${displayName}` }}
+                  sx={{ p: 0.3, color: '#E2E8F0', '&.Mui-checked': { color: '#1D4ED8' } }}
+                />
+                {img ? (
+                  <CustomAvatar
+                    alt={displayName}
+                    src={`${CONSTANTS.API_BASE_URL}${img}`}
+                    size={36}
+                    variant="circular"
+                    sx={{ flexShrink: 0 }}
                   />
-                  <Box sx={{ position: 'relative', flexShrink: 0 }}>
-                    <CustomAvatar
-                      alt={displayName}
-                      src={img ? `${CONSTANTS.API_BASE_URL}${img}` : undefined}
-                      size={48}
-                      variant="circular"
-                    />
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        bottom: 0,
-                        right: 0,
-                        width: 11,
-                        height: 11,
-                        borderRadius: '50%',
-                        bgcolor: enabled ? 'grey.500' : 'grey.400',
-                        border: '2px solid',
-                        borderColor: 'background.paper',
-                      }}
-                    />
-                  </Box>
-                  <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap>
+                ) : (
+                  <div
+                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-bold"
+                    style={{ backgroundColor: colors.bg, color: colors.text }}
+                  >
+                    {initialsOf(displayName)}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="mb-0.5 flex items-center gap-1.5">
+                    <span
+                      className={`truncate text-[14px] font-semibold ${
+                        selectedRow
+                          ? 'text-[#1D4ED8] dark:text-[#F4F4F5]'
+                          : 'text-slate-800 dark:text-[#D4D4D8]'
+                      }`}
+                    >
                       {displayName}
-                    </Typography>
-                    <Box sx={{ mt: 0.25 }}>
+                    </span>
+                    <span className="flex-shrink-0">
                       <RoleLine roleName={roleName} />
-                    </Box>
-                    {email ? (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          display: 'block',
-                          mt: 0.5,
-                          color: 'primary.main',
-                          wordBreak: 'break-all',
-                        }}
-                      >
-                        {email}
-                      </Typography>
-                    ) : null}
-                  </Box>
-                </ListItemButton>
-              )
-            })}
-          </List>
+                    </span>
+                  </div>
+                  <div className="truncate text-[12px] text-slate-400">{email}</div>
+                </div>
+                <div
+                  className={`h-2 w-2 flex-shrink-0 rounded-full ${
+                    enabled ? 'bg-[#10B981]' : 'bg-slate-200'
+                  }`}
+                />
+              </div>
+            )
+          })
         )}
-      </Box>
+      </div>
 
       {!loading && rowCount > 0 ? (
         <TablePagination
@@ -483,8 +419,19 @@ export default function UsersSettingsListView({
             })
           }
           rowsPerPageOptions={[10, 25, 50, 100]}
+          sx={{
+            flexShrink: 0,
+            borderTop: '1px solid',
+            borderColor: theme => (theme.palette.mode === 'dark' ? '#27272A' : '#E3ECFC'),
+            '& .MuiTablePagination-toolbar': { minHeight: 44, px: 2 },
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              fontSize: '12px',
+              color: '#94A3B8',
+            },
+            '& .MuiTablePagination-select': { fontSize: '12px', fontWeight: 600 },
+          }}
         />
       ) : null}
-    </Box>
+    </div>
   )
 }

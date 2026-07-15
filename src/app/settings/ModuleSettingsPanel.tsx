@@ -15,18 +15,18 @@ const ModuleDetailTabs = dynamic(() =>
 
 /** Same shell as `UserUsersSettingsPanel` list view */
 const moduleListShell =
-  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--mui-palette-background-paper)] pt-[2.4rem]'
+  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#EFF6FF] pt-[2.4rem] dark:bg-[#0A0A0A]'
 
 /** Customization Home Page: Insights Dashboard listing */
 const homePageShell =
-  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--mui-palette-background-paper)] pt-[2.4rem]'
+  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#EFF6FF] pt-[2.4rem] dark:bg-[#0A0A0A]'
 
 /** Same shell as `UserUsersSettingsPanel` detail view */
 const moduleDetailShell =
-  'relative flex h-full min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--mui-palette-background-paper)] pt-[2.4rem] px-4 pb-8 sm:px-6 md:px-8'
+  'relative flex h-full min-h-0 flex-1 flex-col overflow-y-auto bg-[#EFF6FF] pt-[2.4rem] dark:bg-[#0A0A0A] px-4 pb-8 sm:px-6 md:px-8'
 
 const layoutBuilderShell =
-  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[var(--mui-palette-background-paper)] pt-[2.4rem] px-2 pb-4 sm:px-4 md:px-6'
+  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#EFF6FF] pt-[2.4rem] dark:bg-[#0A0A0A] px-2 pb-4 sm:px-4 md:px-6'
 
 const CUSTOMIZATION_HOME_SUBTAB = 'home-page'
 const CUSTOMIZATION_MODULES_SUBTAB = 'modules'

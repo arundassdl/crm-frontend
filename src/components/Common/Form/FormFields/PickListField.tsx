@@ -9,10 +9,12 @@ import {
     Typography,
 } from "@mui/material";
 import { Autocomplete } from "@mui/lab";
+import { useTheme } from "@mui/material/styles";
 import {
     ComponentPicklistOption,
     getComponentPicklist,
 } from "@/services/api/general_apis/component-picklist-api";
+import { getFormFieldSx } from "@/@core/styles/formFieldStyles";
 
 interface PickListFieldProps {
     module: string;
@@ -98,6 +100,9 @@ const PickListField: React.FC<PickListFieldProps> = ({
     }, [value, options]);
 
     const selectedColor = selectedOption?.color;
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
+    const fieldSx = getFormFieldSx(isDark);
 
     return (
         <Autocomplete
@@ -123,16 +128,17 @@ const PickListField: React.FC<PickListFieldProps> = ({
                     placeholder={placeholder}
                     error={error}
                     helperText={helperText}
-                    sx={
-                        selectedColor
+                    sx={{
+                        ...fieldSx,
+                        ...(selectedColor
                             ? {
                                 '& .MuiOutlinedInput-input': {
                                     bgcolor: selectedColor,
                                     color: '#fff',
                                 },
                             }
-                            : undefined
-                    }
+                            : {}),
+                    }}
                     InputProps={{
                         ...params.InputProps,
                         endAdornment: (
