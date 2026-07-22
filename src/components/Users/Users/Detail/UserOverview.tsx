@@ -374,49 +374,45 @@ const UserOverview = (slug) => {
   });
 
   const handleSave = async (field, value) => {
-    const updatedData = {
-      [field]: value,
-    };
-    customerData[field] = value
-    console.log(customerData)
+    // Email is the user's login identifier — validate its format before saving.
+    if (field === "email") {
+      const trimmed = String(value ?? "").trim();
+      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!trimmed || !EMAIL_RE.test(trimmed)) {
+        showToast("Enter a valid email address", "error");
+        return;
+      }
+    }
+
+    // Immutable update so React re-renders the header/derived fields with the new value.
+    const nextData = { ...(customerData as Record<string, any>), [field]: value };
+    setCustomerData(nextData);
 
     const formData = new FormData();
-    // console.log("values===>",values);
-    // return false
-    
-    Object.keys(customerData).forEach(function (key) {
-      console.log(key, "============", customerData[key]);
+    Object.keys(nextData).forEach(function (key) {
       if (key == "birth_date" || key == "date_of_joining") {
-        let input = customerData[key]; // MM/DD/YYYY format
+        let input = nextData[key]; // MM/DD/YYYY format
         let date = new Date(input + " 00:00:00"); // Local time is used
-        console.log(date.toString());
-        // console.log(formatter.format(date));
         formData.append(key, date.toString());
       } else {
-        formData.append(key, customerData[key]);  
+        formData.append(key, nextData[key]);
       }
-      
     });
-
-    console.log(formData, 'date.toString()');
 
     let customerApiRes: any = await submit_edituser(
       formData,
       userToken?.access_token
     );
 
-    console.log("customerApiRes",customerApiRes);
-     // if (!customerApiRes || !customerApiRes?.success) {
-     //  throw new Error("Failed to update contact details.")
-     // } 
+    console.log("customerApiRes", customerApiRes);
 
-    console.log("saved succesfully");
     if (field == 'role_profile_name') {
-      console.log(customerApiRes?.data?.User.role_name, 'role_name');
-      setProfile((prev) => ({ ...prev, [field]: value }));  
-      setProfile((prev) => ({ ...prev, role_name: customerApiRes?.data?.User.role_name }));  
+      const newRoleName = customerApiRes?.data?.User?.role_name;
+      setProfile((prev) => ({ ...prev, [field]: value, role_name: newRoleName ?? prev.role_name }));
+      setCustomerData((prev) => ({ ...(prev as Record<string, any>), role_name: newRoleName ?? (prev as Record<string, any>)?.role_name }));
+    } else {
+      setProfile((prev) => ({ ...prev, [field]: value }));
     }
-    setProfile((prev) => ({ ...prev, [field]: value }));
   };
 
   /**
@@ -798,7 +794,7 @@ const UserOverview = (slug) => {
               type="email"
               value={profile?.email}
               onSave={handleSave}
-              isEditpermission={false}
+              isEditpermission={isEditPermission}
             />
             <EditableField
               kvLayout

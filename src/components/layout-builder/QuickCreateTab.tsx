@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Dialog, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useDispatch, useSelector } from 'react-redux';
 import { layoutSelector, setQuickCreateFields } from '@/store/slices/general_slices/layout-slice';
 import SelectedFieldList from './SelectedFieldList';
@@ -18,6 +19,8 @@ const MAX_FIELDS = 10;
 
 const QuickCreateTab: React.FC<QuickCreateTabProps> = ({ layout, moduleName }) => {
     const dispatch = useDispatch();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const storeLayout = useSelector(layoutSelector) as any;
     const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -129,17 +132,16 @@ const QuickCreateTab: React.FC<QuickCreateTabProps> = ({ layout, moduleName }) =
             </Box>
             <Box
                 sx={{
-                    height: '100%',
-                    minHeight: 0,
                     mt: 0.5,
                     mx: 2,
                     mb: 2,
-                    width: '50%',
-                    maxWidth: 760,
-                    border: '1px dashed',
-                    borderColor: 'divider',
-                    borderRadius: 2,
-                    bgcolor: 'background.paper',
+                    width: 500,
+                    maxWidth: '100%',
+                    border: '1px solid',
+                    borderColor: isDark ? '#27272A' : '#E3ECFC',
+                    borderRadius: '12px',
+                    bgcolor: isDark ? '#0A0A0A' : '#fff',
+                    boxShadow: isDark ? 'none' : '0 1px 3px rgba(12,36,114,0.06)',
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',

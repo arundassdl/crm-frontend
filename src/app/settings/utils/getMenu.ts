@@ -49,12 +49,13 @@ const normalizePath = (p: string) => p.replace(/\/$/, '') || ''
  * to General settings so `?tab=` is never `#` / `%23`.
  */
 function resolveGeneralSettingsLeaf(pathRaw: string, label: string): 'personal' | 'organization' | null {
-  const np = normalizePath(pathRaw)
+  const np = normalizePath(pathRaw).toLowerCase()
   if (np === '/my-account') return 'personal'
   if (np === '/my-company') return 'organization'
 
-  if (pathRaw.trim() !== '#') return null
-
+  // Label-based detection (runs for the `#` placeholder path AND real/ambiguous routes) so the
+  // sidebar can classify — and therefore highlight — Personal Settings / Organization regardless
+  // of the exact path the menu API returns.
   const lb = label.toLowerCase()
   const personalish = lb.includes('personal') || lb.includes('my account')
   const orgish =
@@ -141,7 +142,7 @@ function resolveSubtabSettingsLeaf(
     if (lb === 'users' || lb === 'user list' || lb === 'all users') return 'users'
     if (lb === 'roles' || lb === 'role' || lb === 'role list') return 'roles'
     if (lb === 'permission' || lb === 'permissions' || lb === 'access permission') return 'permission'
-    if (lb === 'modules' || lb === 'module list' || lb === 'customization modules') return 'modules'
+    if (lb === 'modules' || lb === 'module list' || lb === 'customization modules' || lb === 'modules and fields' || lb === 'modules & fields' || lb.startsWith('modules')) return 'modules'
     if (lb.includes('home page') || lb === 'customization home page') return 'home-page'
   }
 
@@ -165,7 +166,7 @@ function resolveSubtabSettingsLeaf(
     if (lb === 'permission' || lb === 'permissions' || lb === 'access permission') return 'permission'
   }
 
-  if (lb === 'modules' || lb === 'module list' || lb === 'customization modules') return 'modules'
+  if (lb === 'modules' || lb === 'module list' || lb === 'customization modules' || lb === 'modules and fields' || lb === 'modules & fields' || lb.startsWith('modules')) return 'modules'
   if (lb.includes('home page') || lb === 'customization home page') return 'home-page'
 
   return null

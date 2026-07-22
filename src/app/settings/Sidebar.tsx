@@ -36,6 +36,11 @@ function itemMatchesSettingsUrl(
     return is === effectiveSub
   }
   const s = (subtabFromUrl ?? '').trim().toLowerCase()
+  // Modules & Fields owns every module context: the listing (subtab=modules) AND any module
+  // detail / layout page (subtab=<ModuleName>) — i.e. any customization subtab that isn't home-page.
+  if (t === 'customization' && is === 'modules') {
+    return s !== '' && s !== 'home-page'
+  }
   if (!s) return false
   return is === s
 }

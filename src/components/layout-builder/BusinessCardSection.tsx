@@ -22,6 +22,8 @@ import {
     InputAdornment,
 } from '@mui/material';
 import { DragIndicator, InfoOutlined, Search, Close } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import { DotsSixVertical, Info as InfoIcon } from '@phosphor-icons/react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -32,6 +34,8 @@ import {
 
 const BusinessCardSection: React.FC = () => {
     const dispatch = useDispatch();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const { activeLayout, unusedFields } = useSelector(layoutSelector) as any;
 
     const enabled = activeLayout?.business_card_enabled ?? false;
@@ -114,47 +118,32 @@ const BusinessCardSection: React.FC = () => {
 
     return (
         <Box sx={{ mb: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: '0.5px' }}>
-                        BUSINESS CARD
-                    </Typography>
-                    <Switch
-                        size="small"
-                        checked={enabled}
-                        onChange={handleToggle}
-                        sx={{
-                            '& .MuiSwitch-switchBase.Mui-checked': {
-                                color: '#ffffff',
-                            },
-                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                                backgroundColor: '#2e7d32',
-                            },
-                        }}
-                    />
-                </Box>
-                {enabled && (
-                    <Link
-                        component="button"
-                        onClick={handleOpenDialog}
-                        underline="none"
-                        sx={{ fontSize: '0.85rem', fontWeight: 500, color: 'primary.main' }}
-                    >
-                        Customize
-                    </Link>
-                )}
-            </Box>
+            {/* Business Card — single card with header/toggle inside (reference) */}
+            <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-[#0A0A0A] border-[#27272A]' : 'bg-white border-[#E3ECFC]'}`}>
+                <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#27272A]' : 'border-[#E3ECFC]'}`}>
+                    <span className={`text-[13px] font-bold uppercase tracking-wider ${isDark ? 'text-[#9CA3AF]' : 'text-slate-500'}`}>Business Card</span>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => dispatch(setBusinessCardEnabled(!enabled))}
+                            aria-label="Toggle business card"
+                            className={`relative inline-flex w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0 ${enabled ? 'bg-[#10B981]' : isDark ? 'bg-[#3F3F46]' : 'bg-slate-200'}`}
+                        >
+                            <span className={`inline-block w-[14px] h-[14px] rounded-full bg-white shadow transform transition-transform duration-200 absolute top-[3px] ${enabled ? 'translate-x-[19px]' : 'translate-x-[3px]'}`} />
+                        </button>
+                        {enabled && (
+                            <button onClick={handleOpenDialog} className={`text-[15px] font-semibold hover:underline ${isDark ? 'text-[#60A5FA]' : 'text-[#1D4ED8]'}`}>
+                                Customize
+                            </button>
+                        )}
+                    </div>
+                </div>
 
-            {enabled ? (
-                <>
-                    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: 'hidden', borderColor: 'rgba(0,0,0,0.08)' }}>
+                {enabled ? (
+                    <>
                         <Droppable droppableId="business-card-canvas" type="BC_FIELD">
                             {(provided) => (
-                                <List
-                                    {...provided.droppableProps}
-                                    ref={provided.innerRef}
-                                    disablePadding
-                                >
+                                <List {...provided.droppableProps} ref={provided.innerRef} disablePadding>
                                     {businessCardFields.map((field: any, index) => {
                                         const fieldId = field.id || field.name || field.fieldname;
                                         if (!fieldId) return null;
@@ -164,25 +153,27 @@ const BusinessCardSection: React.FC = () => {
                                                     <ListItem
                                                         ref={dProvided.innerRef}
                                                         {...dProvided.draggableProps}
-                                                        divider={index < businessCardFields.length - 1}
+                                                        disablePadding
                                                         sx={{
-                                                            py: 1.5,
-                                                            px: 1.5,
-                                                            bgcolor: dSnapshot.isDragging ? 'action.hover' : 'background.paper',
                                                             display: 'flex',
                                                             alignItems: 'center',
+                                                            gap: 1.5,
+                                                            px: 2,
+                                                            py: 1.25,
+                                                            borderBottom: index < businessCardFields.length - 1 ? '1px solid' : 'none',
+                                                            borderColor: isDark ? '#27272A' : '#EFF6FF',
+                                                            bgcolor: dSnapshot.isDragging ? (isDark ? '#18181B' : '#fafcff') : 'transparent',
                                                         }}
                                                     >
-                                                        <Box {...dProvided.dragHandleProps} sx={{ mr: 1.5, display: 'flex', color: 'text.disabled' }}>
-                                                            <DragIndicator fontSize="small" />
+                                                        <Box {...dProvided.dragHandleProps} sx={{ display: 'flex', cursor: 'grab', color: isDark ? '#71717A' : '#94A3B8' }}>
+                                                            <DotsSixVertical size={14} weight="bold" />
                                                         </Box>
-                                                        <ListItemText
-                                                            primary={field.label || field.name || field.fieldname}
-                                                            secondary={field.type || field.fieldtype || 'Text'}
-                                                            primaryTypographyProps={{ variant: 'body2', color: 'text.secondary', sx: { width: 140, flexShrink: 0 } }}
-                                                            secondaryTypographyProps={{ variant: 'body2', color: 'text.disabled' }}
-                                                            sx={{ display: 'flex', alignItems: 'center', gap: 2, m: 0 }}
-                                                        />
+                                                        <span className={`text-[15px] flex-1 ${isDark ? 'text-[#D4D4D8]' : 'text-slate-700'}`}>
+                                                            {field.label || field.name || field.fieldname}
+                                                        </span>
+                                                        <span className={`text-[13px] ${isDark ? 'text-[#71717A]' : 'text-slate-500'}`}>
+                                                            {field.type || field.fieldtype || 'Text'}
+                                                        </span>
                                                     </ListItem>
                                                 )}
                                             </Draggable>
@@ -199,32 +190,17 @@ const BusinessCardSection: React.FC = () => {
                                 </List>
                             )}
                         </Droppable>
-                    </Paper>
-                    <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.secondary' }}>
-                        <InfoOutlined sx={{ fontSize: '1rem' }} />
-                        <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                            You can add up to <b>5 fields</b> to your Business Card.
-                        </Typography>
-                    </Box>
-                </>
-            ) : (
-                <Paper
-                    variant="outlined"
-                    sx={{
-                        p: 2.5,
-                        bgcolor: 'rgba(76, 111, 255, 0.04)',
-                        borderColor: 'rgba(76, 111, 255, 0.08)',
-                        borderRadius: 1
-                    }}
-                >
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        Business Card cannot be customized as it is hidden.
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Turn it on to customize the fields to be shown in details page.
-                    </Typography>
-                </Paper>
-            )}
+                        <div className={`flex items-center gap-1.5 px-4 py-2.5 border-t text-[13px] ${isDark ? 'border-[#EFF6FF]/10 text-[#9CA3AF] border-[#27272A]' : 'border-[#EFF6FF] text-slate-600'}`}>
+                            <InfoIcon size={11} weight="duotone" />
+                            You can add up to <span className={`font-bold mx-0.5 ${isDark ? 'text-[#D4D4D8]' : 'text-slate-700'}`}>5 fields</span> to your Business Card.
+                        </div>
+                    </>
+                ) : (
+                    <div className={`px-4 py-4 text-[13px] ${isDark ? 'text-[#9CA3AF]' : 'text-slate-600'}`}>
+                        Business Card cannot be customized as it is hidden. Turn it on to customize the fields to be shown in the details page.
+                    </div>
+                )}
+            </div>
 
             {/* Customize Dialog */}
             <Dialog

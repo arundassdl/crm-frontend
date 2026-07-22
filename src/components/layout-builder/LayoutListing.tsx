@@ -28,12 +28,32 @@ import {
     MenuItem,
     Divider,
     Switch,
+    Tooltip,
+    ListItemIcon,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import CloseIcon from "@mui/icons-material/Close";
+import FolderIcon from "@mui/icons-material/Folder";
+import { getMuiIconByName } from "@/utils/muiIconByName";
+import {
+    ArrowLeft,
+    MagnifyingGlass,
+    House,
+    CaretRight,
+    User as UserIcon,
+    DotsThreeVertical,
+    PencilSimple,
+    Rows,
+    CopySimple,
+    ShieldCheck,
+    ArrowsLeftRight,
+    Trash,
+    X,
+} from "@phosphor-icons/react";
 import { fetchRawDataGridListing } from "@/services/api/common-erpnext-api/listing-api-get";
 import { showToast } from "@/components/ToastNotificationNew";
 import CreateLayoutDialog from "./CreateLayoutDialog";
@@ -81,6 +101,13 @@ function pickDefaultLeadLayoutRow(rows: any[]): any | null {
 }
 
 const LAYOUT_DOCTYPE = "SDL Layout";
+
+/** Icon-chip accent colours, cycled per module (mirrors the reference MODULE_DEFS palette). */
+const ICON_PALETTE = ["#3B82F6", "#F59E0B", "#10B981", "#8B5CF6", "#06B6D4"];
+
+function getModuleIconComponent(iconName?: string) {
+    return getMuiIconByName(iconName, FolderIcon);
+}
 
 function LayoutStatusSwitchCell({
     row,
@@ -134,14 +161,23 @@ function LayoutStatusSwitchCell({
         [row, token, checked, onSuccess]
     );
 
+    const isDisabled = disabled || loading;
     return (
-        <Switch
-            checked={localChecked}
-            disabled={disabled || loading}
-            onChange={handleChange}
-            size="small"
-            color="success"
-        />
+        <button
+            type="button"
+            disabled={isDisabled}
+            onClick={() => handleChange(undefined as any, !localChecked)}
+            aria-label="Toggle layout status"
+            className={`relative inline-flex w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0 ${
+                localChecked ? "bg-[#10B981]" : "bg-slate-200 dark:bg-[#3F3F46]"
+            } ${isDisabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+        >
+            <span
+                className={`inline-block w-[14px] h-[14px] rounded-full bg-white shadow transform transition-transform duration-200 absolute top-[3px] ${
+                    localChecked ? "translate-x-[19px]" : "translate-x-[3px]"
+                }`}
+            />
+        </button>
     );
 }
 
@@ -153,6 +189,8 @@ const LayoutListing: React.FC<LayoutListingProps> = ({
 }) => {
     const router = useRouter();
     const pathname = usePathname();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
     const searchParams = useSearchParams();
     const tabFromUrl = embedInSettings
         ? searchParams?.get("moduleTab")
@@ -737,218 +775,160 @@ const LayoutListing: React.FC<LayoutListingProps> = ({
     }, [deleteConfirmRow, userToken?.access_token]);
 
     return (
-        <Box sx={{ display: "flex", minHeight: "calc(90vh - 120px)", bgcolor: "background.paper" }}>
-            {/* Left sidebar - Modules */}
-            <Box
-                sx={{
-                    width: 280,
-                    minWidth: 280,
-                    borderRight: 1,
-                    borderColor: "divider",
-                    display: "flex",
-                    flexDirection: "column",
-                    bgcolor: "background.paper",
-                }}
-            >
-                <Box
-                    sx={{
-                        p: 2,
-                        borderBottom: 1,
-                        borderColor: "divider",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                        bgcolor: "background.paper",
-                    }}
-                >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Link
-                            href={
-                                embedInSettings
-                                    ? `/settings?tab=customization&subtab=modules`
-                                    : "/setup/customization/modules"
-                            }
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                                color: "inherit",
-                                textDecoration: "none",
-                            }}
-                        >
-                            <ArrowBackIcon fontSize="small" />
-                            {!searchExpanded && (
-                                <Typography variant="body2" fontWeight={500} color="text.secondary">
-                                    Modules
-                                </Typography>
-                            )}
-                        </Link>
-                        <Box sx={{ ml: searchExpanded ? 0 : "auto", display: "flex", alignItems: "center", gap: 0.5, flex: searchExpanded ? 1 : "none" }}>
-                            {searchExpanded ? (
-                                <>
-                                    <TextField
-                                        size="small"
-                                        placeholder="Search"
-                                        value={moduleSearch}
-                                        onChange={(e) => setModuleSearch(e.target.value)}
-                                        autoFocus
-                                        fullWidth
-                                        InputProps={{
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <SearchIcon fontSize="small" sx={{ color: "action.disabled" }} />
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                        sx={{ minWidth: 0 }}
-                                    />
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => {
-                                            setSearchExpanded(false);
-                                            setModuleSearch("");
-                                        }}
-                                        aria-label="Close search"
-                                    >
-                                        <CloseIcon fontSize="small" />
-                                    </IconButton>
-                                </>
-                            ) : (
-                                <IconButton
-                                    size="small"
-                                    onClick={() => setSearchExpanded(true)}
-                                    aria-label="Search modules"
-                                >
-                                    <SearchIcon fontSize="small" sx={{ color: "action.active" }} />
-                                </IconButton>
-                            )}
-                        </Box>
-                    </Box>
-                </Box>
-                <Box sx={{ p: 1, flex: 1, overflow: "auto", bgcolor: "background.paper" }}>
-                    {modulesLoading ? (
-                        <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-                            <CircularProgress size={24} />
-                        </Box>
+        <div className={`flex h-full min-h-0 overflow-hidden ${isDark ? "bg-[#0A0A0A]" : "bg-white"}`} style={{ minHeight: "calc(90vh - 120px)" }}>
+            {/* Sub-sidebar - Modules */}
+            <div className={`w-[220px] flex-shrink-0 border-r flex flex-col ${isDark ? "border-[#27272A] bg-[#111113]" : "border-[#E3ECFC] bg-[#f9fbff]"}`}>
+                <div className={`flex items-center justify-between gap-1 px-3 py-3 border-b ${isDark ? "border-[#27272A]" : "border-[#E3ECFC]"}`}>
+                    {searchExpanded ? (
+                        <>
+                            <TextField
+                                size="small"
+                                placeholder="Search"
+                                value={moduleSearch}
+                                onChange={(e) => setModuleSearch(e.target.value)}
+                                autoFocus
+                                fullWidth
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon fontSize="small" sx={{ color: "action.disabled" }} />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={{ minWidth: 0 }}
+                            />
+                            <IconButton
+                                size="small"
+                                onClick={() => {
+                                    setSearchExpanded(false);
+                                    setModuleSearch("");
+                                }}
+                                aria-label="Close search"
+                            >
+                                <CloseIcon fontSize="small" />
+                            </IconButton>
+                        </>
                     ) : (
-                        filteredModuleRows.map((row: any) => {
+                        <>
+                            <Link
+                                href={
+                                    embedInSettings
+                                        ? `/settings?tab=customization&subtab=modules`
+                                        : "/setup/customization/modules"
+                                }
+                                style={{ textDecoration: "none" }}
+                            >
+                                <span className={`flex items-center gap-1 text-[13px] font-semibold transition-colors ${isDark ? "text-[#D4D4D8]" : "text-slate-600"}`}>
+                                    <ArrowLeft size={13} weight="bold" />
+                                    Modules
+                                </span>
+                            </Link>
+                            <IconButton
+                                size="small"
+                                onClick={() => setSearchExpanded(true)}
+                                aria-label="Search modules"
+                                sx={{ p: 0.4, color: "#94A3B8", "&:hover": { color: "#1D4ED8", bgcolor: isDark ? "#27272A" : "#EFF6FF" }, borderRadius: "6px" }}
+                            >
+                                <MagnifyingGlass size={13} weight="duotone" />
+                            </IconButton>
+                        </>
+                    )}
+                </div>
+                <div className="flex-1 overflow-y-auto py-1">
+                    {modulesLoading ? (
+                        <div className="flex justify-center py-6">
+                            <CircularProgress size={22} />
+                        </div>
+                    ) : (
+                        filteredModuleRows.map((row: any, idx: number) => {
                             const displayName = row.frontend_module ?? row.name ?? "";
                             const isSelected = selectedModule === row.name;
+                            const color = ICON_PALETTE[idx % ICON_PALETTE.length];
+                            const ModIcon = getModuleIconComponent(row.menu_icon);
                             return (
-                                <Box
+                                <button
                                     key={row.name}
                                     onClick={() => setSelectedModule(row.name)}
-                                    sx={{
-                                        px: 2.5,
-                                        py: 1.75,
-                                        mb: 0.75,
-                                        borderRadius: 999,
-                                        cursor: "pointer",
-                                        background: isSelected
-                                            ? "linear-gradient(270deg, var(--mui-palette-primary-main), rgb(139, 187, 247) 100%)"
-                                            : "transparent",
-                                        color: isSelected ? "primary.contrastText" : "text.primary",
-                                        "&:hover": {
-                                            background: isSelected
-                                                ? "linear-gradient(90deg, #1558b0 0%, #3b8bd9 100%)"
-                                                : "action.hover",
-                                        },
-                                        transition: "background 0.2s ease, color 0.2s ease",
-                                    }}
+                                    className={`flex items-center gap-2.5 w-full px-3 py-2.5 text-[15px] font-medium transition-colors min-h-[40px] ${
+                                        isSelected
+                                            ? "bg-[#1D4ED8] text-white"
+                                            : isDark
+                                                ? "text-[#D4D4D8] hover:bg-[#27272A]"
+                                                : "text-slate-600 hover:bg-[#EFF6FF]"
+                                    }`}
                                 >
-                                    <Typography
-                                        variant="body1"
-                                        fontSize={15}
-                                        fontWeight={isSelected ? 600 : 500}
-                                        sx={{ color: isSelected ? "primary.contrastText" : "text.primary", pl: 1 }}
-                                    >
-                                        {displayName}
-                                    </Typography>
-                                </Box>
+                                    <ModIcon sx={{ fontSize: 15, color: isSelected ? "#fff" : color }} />
+                                    <span className="truncate">{displayName}</span>
+                                </button>
                             );
                         })
                     )}
-                </Box>
-            </Box>
+                </div>
+            </div>
 
             {/* Main content area */}
             <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                 {selectedModule ? (
                     <>
-                        <Box sx={{ px: 3, pt: 3, pb: 1 }}>
-                            <Typography variant="h5" fontWeight={600} sx={{ mb: 2 }}>
-                                {selectedModuleDisplayName}
-                            </Typography>
-                            <Tabs
-                                value={activeTab}
-                                onChange={handleMainTabChange}
-                                sx={{
-                                    minHeight: 48,
-                                    bgcolor: "transparent !important",
-                                    borderBottom: 1,
-                                    borderColor: "divider",
-                                    mb: 2,
-                                    "& .MuiTabs-flexContainer": { gap: 1 },
-                                    "& .MuiTab-root": {
-                                        textTransform: "none",
-                                        minHeight: 48,
-                                        backgroundColor: "transparent !important",
-                                        boxShadow: "none !important",
-                                    },
-                                    "& .MuiTab-root:hover": {
-                                        backgroundColor: "transparent !important",
-                                        color: "#333333 !important",
-                                    },
-                                    "& .MuiTab-root.Mui-selected": {
-                                        backgroundColor: "transparent !important",
-                                        borderColor: "#C4BCE0 !important",
-                                        color: "#333333 !important",
-                                        fontWeight: 600,
-                                    },
-                                    "& .MuiTab-root.Mui-selected:hover": {
-                                        backgroundColor: "transparent !important",
-                                        color: "#333333 !important",
-                                    },
-                                    "& .MuiTabs-indicator": {
-                                        backgroundColor: "primary.main",
-                                        height: 3,
-                                    },
-                                }}
-                            >
-                                <Tab label="Layouts" value="layouts" />
-                                <Tab label="Fields" value="fields" />
-                            </Tabs>
+                        <div>
+                            {/* Breadcrumb */}
+                            <div className={`px-6 pt-5 pb-1 flex items-center gap-1.5 text-[12px] ${isDark ? "text-[#71717A]" : "text-slate-400"}`}>
+                                <House size={11} weight="duotone" />
+                                {["Setup", "Customization", "Modules"].map((crumb) => (
+                                    <span key={crumb} className="flex items-center gap-1.5">
+                                        <CaretRight size={9} weight="bold" />
+                                        <span className="hover:text-[#1D4ED8] cursor-pointer transition-colors">{crumb}</span>
+                                    </span>
+                                ))}
+                                <span className="flex items-center gap-1.5">
+                                    <CaretRight size={9} weight="bold" />
+                                    <span className={`font-semibold ${isDark ? "text-[#D4D4D8]" : "text-slate-600"}`}>{selectedModuleDisplayName}</span>
+                                </span>
+                            </div>
+
+                            {/* Title */}
+                            <div className="px-6 pt-2 pb-3">
+                                <div className={`text-[22px] font-extrabold ${isDark ? "text-[#F4F4F5]" : "text-slate-900"}`}>{selectedModuleDisplayName}</div>
+                            </div>
+
+                            {/* Tabs */}
+                            <div className={`px-6 border-b flex items-center gap-1 ${isDark ? "border-[#27272A]" : "border-[#E3ECFC]"}`}>
+                                {(["layouts", "fields"] as const).map((t) => (
+                                    <button
+                                        key={t}
+                                        onClick={() => handleMainTabChange(undefined as any, t)}
+                                        className={`px-4 py-2.5 text-[15px] font-semibold capitalize transition-all border-b-2 -mb-px ${
+                                            activeTab === t
+                                                ? "border-[#1D4ED8] text-[#1D4ED8]"
+                                                : isDark
+                                                    ? "border-transparent text-[#71717A] hover:text-[#A1A1AA]"
+                                                    : "border-transparent text-slate-400 hover:text-slate-600"
+                                        }`}
+                                    >
+                                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+
                             {activeTab === "layouts" &&
                                 !(showLeadConversionMapping && isLeadsModule) && (
-                                    <>
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                            sx={{ mb: 2, p: 2 }}
-                                        >
-                                            Design your own layouts to fit your business processes, then
-                                            assign them to your user accounts based on permission
-                                            profiles.
-                                        </Typography>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                justifyContent: "flex-end",
-                                                gap: 1,
-                                                mb: 2,
-                                            }}
-                                        >
+                                    <div className="px-6 pt-5">
+                                        <div className="text-[14px] text-[#1D4ED8] mb-4 leading-relaxed">
+                                            Design your own layouts to fit your business processes, then assign them to your user accounts based on permission profiles.
+                                        </div>
+                                        <div className="flex justify-end mb-4">
                                             <Button
                                                 variant="contained"
+                                                size="small"
                                                 onClick={handleAddNew}
-                                                size="medium"
+                                                sx={{ bgcolor: isDark ? "#27272A" : "#1D4ED8", color: isDark ? "#F4F4F5" : "white", borderRadius: "8px", textTransform: "none", fontWeight: 700, fontSize: "0.75rem", px: 2, py: 0.8, boxShadow: isDark ? "none" : "0 1px 6px #1D4ED833", "&:hover": { bgcolor: isDark ? "#3F3F46" : "#2563EB" } }}
                                             >
                                                 Create New Layout
                                             </Button>
-                                        </Box>
-                                    </>
+                                        </div>
+                                    </div>
                                 )}
-                        </Box>
+                        </div>
 
                         <Box sx={{ flex: 1, overflow: "auto", px: 3, pb: 3 }}>
                             {activeTab === "layouts" &&
@@ -981,53 +961,29 @@ const LayoutListing: React.FC<LayoutListingProps> = ({
                                 )}
                             {activeTab === "layouts" &&
                                 !(showLeadConversionMapping && isLeadsModule) && (
-                                <TableContainer
-                                    component={Paper}
-                                    sx={{
-                                        mt: 3,
-                                        pt: 2,
-                                        border: 1,
-                                        borderColor: "divider",
-                                    }}
-                                >
-                                    <Table
-                                        sx={{
-                                            minWidth: 650,
-                                            "& thead th": {
-                                                fontWeight: 600,
-                                                py: 1,
-                                            },
-                                            "& thead tr": {
-                                                borderBottomWidth: 2,
-                                                borderBottomStyle: "solid",
-                                                borderBottomColor: "divider",
-                                            },
-                                        }}
-                                        aria-label="layouts table"
-                                    >
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>Name</TableCell>
-                                                <TableCell>Shared To</TableCell>
-                                                <TableCell>Last Modified</TableCell>
-                                                <TableCell align="right">Status</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
+                                <div className={`mt-3 border rounded-xl overflow-hidden ${isDark ? "border-[#27272A]" : "border-[#E3ECFC]"}`}>
+                                    <table className="w-full border-collapse text-left">
+                                        <thead>
+                                            <tr className={isDark ? "bg-[#111113] border-b border-[#27272A]" : "bg-[#f9fbff] border-b border-[#E3ECFC]"}>
+                                                <th className={`px-4 py-3 text-[12.5px] font-bold uppercase tracking-wider ${isDark ? "text-[#71717A]" : "text-slate-500"}`}>Name</th>
+                                                <th className={`px-4 py-3 text-[12.5px] font-bold uppercase tracking-wider ${isDark ? "text-[#71717A]" : "text-slate-500"}`}>Shared To</th>
+                                                <th className={`px-4 py-3 text-[12.5px] font-bold uppercase tracking-wider ${isDark ? "text-[#71717A]" : "text-slate-500"}`}>Last Modified</th>
+                                                <th className={`px-4 py-3 text-[12.5px] font-bold uppercase tracking-wider text-right ${isDark ? "text-[#71717A]" : "text-slate-500"}`}>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
                                             {layoutsLoading ? (
-                                                <TableRow>
-                                                    <TableCell colSpan={4} align="center">
+                                                <tr>
+                                                    <td colSpan={4} className="px-4 py-8 text-center">
                                                         <CircularProgress size={24} />
-                                                    </TableCell>
-                                                </TableRow>
+                                                    </td>
+                                                </tr>
                                             ) : layoutRows.length === 0 ? (
-                                                <TableRow>
-                                                    <TableCell colSpan={4} align="center">
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            No records found.
-                                                        </Typography>
-                                                    </TableCell>
-                                                </TableRow>
+                                                <tr>
+                                                    <td colSpan={4} className={`px-4 py-8 text-center text-[15px] ${isDark ? "text-[#3F3F46]" : "text-slate-300"}`}>
+                                                        No records found.
+                                                    </td>
+                                                </tr>
                                             ) : (
                                                 layoutRows.map((row: any) => {
                                                     const modified = getRowVal(row, "modified");
@@ -1043,116 +999,118 @@ const LayoutListing: React.FC<LayoutListingProps> = ({
                                                     const docName = getRowVal(row, "name");
 
                                                     return (
-                                                        <TableRow
+                                                        <tr
                                                             key={docName}
-                                                            hover
-                                                            sx={{
-                                                                "&:last-child td, &:last-child th": { border: 0 },
-                                                                "&:hover .row-more-icon": { opacity: 1 },
-                                                            }}
+                                                            className={`border-b last:border-0 transition-colors ${isDark ? "border-[#18181B] hover:bg-[#111113]" : "border-[#EFF6FF] hover:bg-[#fafcff]"}`}
                                                         >
-                                                            <TableCell>
-                                                                <Box
-                                                                    sx={{
-                                                                        display: "flex",
-                                                                        alignItems: "center",
-                                                                        gap: 1,
-                                                                        pl: 2,
-                                                                    }}
+                                                            <td className="px-4 py-3">
+                                                                <Link
+                                                                    href={
+                                                                        embedInSettings
+                                                                            ? moduleSettingsLayoutEditPath(
+                                                                                  moduleVal,
+                                                                                  docName
+                                                                              )
+                                                                            : `/setup/customization/modules/${moduleVal}/layouts/edit/${encodeURIComponent(docName)}`
+                                                                    }
+                                                                    rel="noopener noreferrer"
+                                                                    style={{ textDecoration: "none" }}
                                                                 >
-                                                                    <Link
-                                                                        href={
-                                                                            embedInSettings
-                                                                                ? moduleSettingsLayoutEditPath(
-                                                                                      moduleVal,
-                                                                                      docName
-                                                                                  )
-                                                                                : `/setup/customization/modules/${moduleVal}/layouts/edit/${encodeURIComponent(docName)}`
-                                                                        }
-                                                                        rel="noopener noreferrer"
-                                                                        style={{
-                                                                            color: "var(--mui-palette-primary-main)",
-                                                                            fontWeight: 500,
-                                                                        }}
-                                                                    >
-                                                                        <Box component="span" sx={{ px: 1 }}>
-                                                                            {layoutName ?? docName}
-                                                                        </Box>
-                                                                    </Link>
-                                                                    <IconButton
-                                                                        size="small"
-                                                                        className="row-more-icon"
-                                                                        sx={{
-                                                                            p: 0,
-                                                                            ml: 2,
-                                                                            opacity: 0,
-                                                                            transition: "opacity 0.2s ease-in-out",
-                                                                            "&:hover": {
-                                                                                bgcolor: "action.hover",
-                                                                                "& svg": { color: "text.primary" },
-                                                                            },
-                                                                        }}
-                                                                        onClick={(e) => handleLayoutMenuOpen(e, row)}
-                                                                    >
-                                                                        <MoreHorizIcon
-                                                                            sx={{ fontSize: 22, color: "action.disabled" }}
-                                                                        />
-                                                                    </IconButton>
-                                                                </Box>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <Typography variant="body2">
-                                                                    {getRowVal(row, "shared_to_text") ?? "—"}
-                                                                </Typography>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                                                                    <PersonOutlineIcon
-                                                                        sx={{ fontSize: 18, color: "action.disabled" }}
-                                                                    />
+                                                                    <span className={`text-[15px] font-semibold hover:underline ${isDark ? "text-[#60A5FA]" : "text-[#1D4ED8]"}`}>
+                                                                        {layoutName ?? docName}
+                                                                    </span>
+                                                                </Link>
+                                                            </td>
+                                                            <td className={`px-4 py-3 text-[13px] ${isDark ? "text-[#71717A]" : "text-slate-500"}`}>
+                                                                {getRowVal(row, "shared_to_text") ?? "—"}
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <div className={`flex items-center gap-1.5 text-[13px] ${isDark ? "text-[#71717A]" : "text-slate-500"}`}>
+                                                                    <UserIcon size={12} weight="duotone" />
                                                                     <Typography variant="body2" color="text.secondary">
                                                                         {dateStr}
                                                                     </Typography>
-                                                                </Box>
-                                                            </TableCell>
-                                                            <TableCell align="right">
-                                                                <LayoutStatusSwitchCell
-                                                                    row={row}
-                                                                    token={userToken?.access_token ?? ""}
-                                                                    onSuccess={() => setRefreshKey((k) => k + 1)}
-                                                                />
-                                                            </TableCell>
-                                                        </TableRow>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right">
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <Tooltip title="More actions">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={(e) => handleLayoutMenuOpen(e, row)}
+                                                                            sx={{ p: 0.3, color: isDark ? "#9CA3AF" : "#94A3B8", "&:hover": { color: "#1D4ED8", bgcolor: isDark ? "#27272A" : "#EFF6FF" }, borderRadius: "6px" }}
+                                                                        >
+                                                                            <DotsThreeVertical size={15} weight="bold" />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                    <LayoutStatusSwitchCell
+                                                                        row={row}
+                                                                        token={userToken?.access_token ?? ""}
+                                                                        onSuccess={() => setRefreshKey((k) => k + 1)}
+                                                                    />
+                                                                </div>
+                                                            </td>
+                                                        </tr>
                                                     );
                                                 })
                                             )}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
+                                        </tbody>
+                                    </table>
+                                </div>
                             )}
 
                             <Menu
                                 anchorEl={layoutMenuAnchor}
                                 open={Boolean(layoutMenuAnchor)}
                                 onClose={handleLayoutMenuClose}
+                                transformOrigin={{ horizontal: "right", vertical: "top" }}
+                                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+                                PaperProps={{
+                                    elevation: 4,
+                                    sx: {
+                                        mt: 0.5,
+                                        borderRadius: "12px",
+                                        minWidth: 200,
+                                        border: isDark ? "1px solid #27272A" : "1px solid #E3ECFC",
+                                        bgcolor: isDark ? "#1C1C1E" : "#fff",
+                                        boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.5)" : "0 8px 32px rgba(12,36,114,0.10)",
+                                        "& .MuiMenuItem-root": {
+                                            fontSize: "14px",
+                                            py: 1.2,
+                                            px: 2.5,
+                                            gap: 1.25,
+                                            color: isDark ? "#D4D4D8" : "#334155",
+                                            "&:hover": { bgcolor: isDark ? "#27272A" : "#EFF6FF", color: isDark ? "#F4F4F5" : "#1D4ED8" },
+                                        },
+                                        "& .MuiListItemIcon-root": { minWidth: 0, color: "inherit" },
+                                    },
+                                }}
                             >
-                                <MenuItem onClick={handleLayoutMenuRename}>Rename</MenuItem>
-                                <MenuItem onClick={handleLayoutMenuEdit}>Edit Layout</MenuItem>
-                                <MenuItem onClick={handleLayoutMenuClone}>Clone Layout</MenuItem>
+                                <MenuItem onClick={handleLayoutMenuRename}>
+                                    <ListItemIcon><PencilSimple size={15} weight="duotone" /></ListItemIcon>
+                                    Rename
+                                </MenuItem>
+                                <MenuItem onClick={handleLayoutMenuEdit}>
+                                    <ListItemIcon><Rows size={15} weight="duotone" /></ListItemIcon>
+                                    Edit Layout
+                                </MenuItem>
+                                <MenuItem onClick={handleLayoutMenuClone}>
+                                    <ListItemIcon><CopySimple size={15} weight="duotone" /></ListItemIcon>
+                                    Clone Layout
+                                </MenuItem>
+                                <MenuItem onClick={handleLayoutMenuPermission}>
+                                    <ListItemIcon><ShieldCheck size={15} weight="duotone" /></ListItemIcon>
+                                    Layout Permission
+                                </MenuItem>
                                 {isLeadsModule && (
-                                    <>
-                                        <Divider />
-                                        <MenuItem onClick={handleLayoutMenuPermission}>Layout Permission</MenuItem>
-                                        <MenuItem onClick={handleLeadConversionMapping}>
-                                            Lead Conversion Mapping
-                                        </MenuItem>
-                                    </>
-                                )}
-                                {!isLeadsModule && (
-                                    <MenuItem onClick={handleLayoutMenuPermission}>Layout Permission</MenuItem>
+                                    <MenuItem onClick={handleLeadConversionMapping}>
+                                        <ListItemIcon><ArrowsLeftRight size={15} weight="duotone" /></ListItemIcon>
+                                        Lead Conversion Mapping
+                                    </MenuItem>
                                 )}
                                 {!getRowVal(layoutMenuRow, "is_core") && (
-                                    <MenuItem onClick={handleLayoutMenuDelete} sx={{ color: "error.main" }}>
+                                    <MenuItem onClick={handleLayoutMenuDelete} sx={{ color: "#EF4444 !important" }}>
+                                        <ListItemIcon><Trash size={15} weight="duotone" color="#EF4444" /></ListItemIcon>
                                         Delete Layout
                                     </MenuItem>
                                 )}
@@ -1164,23 +1122,13 @@ const LayoutListing: React.FC<LayoutListingProps> = ({
                         </Box>
                     </>
                 ) : (
-                    <Box
-                        sx={{
-                            flex: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "text.secondary",
-                        }}
-                    >
+                    <div className={`flex-1 flex items-center justify-center text-[14px] ${isDark ? "text-[#71717A]" : "text-slate-500"}`}>
                         {modulesLoading ? (
                             <CircularProgress />
                         ) : (
-                            <Typography variant="body2">
-                                Select a module from the left to view layouts.
-                            </Typography>
+                            <span>Select a module from the left to view layouts.</span>
                         )}
-                    </Box>
+                    </div>
                 )}
             </Box>
 
@@ -1254,7 +1202,7 @@ const LayoutListing: React.FC<LayoutListingProps> = ({
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </div>
     );
 };
 

@@ -440,6 +440,8 @@ const EditableField = ({
     return (
       <Box
         className="group"
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
         sx={{
           display: "flex",
           alignItems: "flex-start",
@@ -479,18 +481,22 @@ const EditableField = ({
             <IconButton
               onClick={() => setIsEditing(true)}
               size="small"
+              aria-label={`Edit ${label ?? "field"}`}
               sx={{
                 p: 0.4,
                 mt: 0.5,
                 borderRadius: "6px",
+                // Clearly visible on hover (the previous #E2E8F0 was near-invisible on the light card).
                 color: theme =>
-                  theme.palette.mode === "dark" ? "#3F3F46" : "#E2E8F0",
-                opacity: 0,
+                  theme.palette.mode === "dark" ? "#A1A1AA" : "#94A3B8",
+                // Reveal driven by React hover state so it is reliable regardless of the
+                // CSS `.group:hover` combinator; keep that selector as a fallback.
+                opacity: hover ? 1 : 0,
                 transition: "opacity 0.15s",
                 ".group:hover &": { opacity: 1 },
                 "&:hover": {
                   color: theme =>
-                    theme.palette.mode === "dark" ? "#71717A" : "#1D4ED8",
+                    theme.palette.mode === "dark" ? "#D4D4D8" : "#1D4ED8",
                   bgcolor: theme =>
                     theme.palette.mode === "dark" ? "#27272A" : "#EFF6FF",
                 },

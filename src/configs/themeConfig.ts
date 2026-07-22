@@ -32,7 +32,7 @@ const themeConfig: Config = {
   footerText: 'Social DNA Labs',
   settingsCookieName: 'sdl',
   mode: 'light', // 'light', 'dark'
-  layoutPadding: 20, // Common padding for header, content, footer layout components (in px)
+  layoutPadding: 0, // Common padding for header, content, footer layout components (in px)
   compactContentWidth: -1, // in px
   disableRipple: false, // true, false
   // Match `@fontsource/inter` (see `inter-fonts.ts`); not `next/font` (avoids build-time Google fetch)

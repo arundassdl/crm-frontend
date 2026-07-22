@@ -5,7 +5,7 @@ import PermissionMatrix from "@/components/roles/PermissionMatrix";
 
 const Permission = () => {
   return (
-    <div>
+    <div className="flex h-screen min-h-0 w-full flex-col overflow-hidden">
         <PermissionMatrix />
     </div>
   );

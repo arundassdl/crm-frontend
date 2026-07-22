@@ -108,7 +108,7 @@ function TableWidgetInner({ widget, loading: loadingProp }: TableWidgetProps) {
 
   return (
     <div className="flex h-full min-h-[160px] w-full flex-col overflow-hidden px-1 pb-1 pt-0">
-      <div className="ag-theme-alpine min-h-0 flex-1 text-[13px] [&_.ag-root-wrapper]:h-full [&_.ag-root-wrapper]:rounded-md [&_.ag-root-wrapper]:border [&_.ag-root-wrapper]:border-slate-200">
+      <div className="ag-theme-alpine min-h-0 flex-1 text-[13px] [&_.ag-root-wrapper]:h-full [&_.ag-root-wrapper]:rounded-xl [&_.ag-root-wrapper]:border [&_.ag-root-wrapper]:border-[#E3ECFC] dark:[&_.ag-root-wrapper]:!border-[#27272A] [&_.ag-header]:!bg-[#EFF6FF] dark:[&_.ag-header]:!bg-[#111113] [&_.ag-header]:!border-b-[#E3ECFC] dark:[&_.ag-header]:!border-b-[#27272A] [&_.ag-header-cell-text]:!text-[#0C2472] dark:[&_.ag-header-cell-text]:!text-[#9CA3AF] [&_.ag-header-cell-text]:!font-bold [&_.ag-header-cell-text]:!uppercase [&_.ag-header-cell-text]:!tracking-wider [&_.ag-row]:!border-[#EFF6FF] dark:[&_.ag-row]:!border-[#27272A] [&_.ag-cell]:!text-slate-700 dark:[&_.ag-cell]:!text-[#D4D4D8]">
         <DashboardAgGrid
           rowData={rowData}
           columnDefs={columnDefs}

@@ -1,11 +1,13 @@
 'use client'
 
 import { memo, useMemo } from 'react'
+import { useTheme } from '@mui/material/styles'
 
 import type { DashboardWidget } from '../types'
 import type { RuntimeFilterRow } from '../types/componentFilters'
 import { useInsightsQueryResult } from '../hooks/useInsightsQueryResult'
 import { extractKpiValue } from '../utils/extractKpiValue'
+import { kpiBodyBackground } from '../utils/kpiFill'
 import { isBasicKpiStyle, resolveKpiStyle } from '../utils/resolveKpiStyle'
 import { resolveWidgetQueryName } from '../utils/resolveWidgetQueryName'
 import { findCatalogItem } from '../utils/widgetCatalog'
@@ -16,10 +18,13 @@ type KpiWidgetProps = {
   runtimeFilters?: RuntimeFilterRow[]
 }
 
-function BasicKpiContent({ value }: { value: string }) {
+function BasicKpiContent({ value, background }: { value: string; background?: string }) {
   return (
-    <div className="flex h-full flex-col justify-start px-4 pb-4 pt-3">
-      <p className="text-[1.875rem] font-bold leading-none tracking-[-0.02em] text-slate-800">
+    <div
+      className="flex h-full flex-col justify-start px-5 pb-4 pt-4"
+      style={background ? { backgroundColor: background } : undefined}
+    >
+      <p className="text-[26px] font-extrabold leading-none tracking-tight text-[#0C2472] dark:text-white">
         {value}
       </p>
     </div>
@@ -27,6 +32,9 @@ function BasicKpiContent({ value }: { value: string }) {
 }
 
 function KpiWidgetInner({ widget, loading, runtimeFilters }: KpiWidgetProps) {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  const kpiBg = kpiBodyBackground(widget.catalogId ?? widget.title ?? widget.id, isDark)
   const catalog = widget.catalogId ? findCatalogItem(widget.catalogId) : undefined
   const kpiStyle = resolveKpiStyle(widget, catalog)
   const isBasic = isBasicKpiStyle(kpiStyle)
@@ -65,7 +73,7 @@ function KpiWidgetInner({ widget, loading, runtimeFilters }: KpiWidgetProps) {
   }
 
   if (isBasic) {
-    return <BasicKpiContent value={value} />
+    return <BasicKpiContent value={value} background={kpiBg} />
   }
 
   const renderKPI = () => {
@@ -132,8 +140,10 @@ function KpiWidgetInner({ widget, loading, runtimeFilters }: KpiWidgetProps) {
         return (
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
-              <p className="mt-1 text-sm font-medium text-slate-500">{label}</p>
+              <p className="text-[26px] font-extrabold leading-none tracking-tight text-[#0C2472] dark:text-white">
+                {value}
+              </p>
+              <p className="mt-1.5 text-[11px] font-semibold text-slate-400 dark:text-zinc-500">{label}</p>
             </div>
             {catalog?.icon ? (
               <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">

@@ -144,16 +144,38 @@ export function buildInsightsChartOption(
 
   if (chartKind === 'pie' || chartKind === 'donut') {
     return {
-      tooltip: { trigger: 'item' },
-      legend: { bottom: 0, textStyle: { fontSize: 11 } },
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: '#0F172A',
+        borderWidth: 0,
+        padding: [6, 10],
+        textStyle: { color: '#FFFFFF', fontSize: 11 },
+        extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,0.25);',
+        formatter: (params: unknown) => {
+          const p = params as { name?: string; value?: number }
+          return `<div style="font-size:11px;color:#CBD5E1;margin-bottom:2px;">${p?.name ?? ''}</div><div style="font-size:13px;font-weight:700;color:#fff;">${p?.value ?? ''}</div>`
+        },
+      },
+      legend: {
+        bottom: 0,
+        icon: 'circle',
+        itemWidth: 8,
+        itemHeight: 8,
+        itemGap: 14,
+        textStyle: { fontSize: 11, color: '#64748B' },
+      },
       series: [
         {
           type: 'pie',
-          radius: chartKind === 'donut' ? ['45%', '70%'] : '65%',
+          radius: chartKind === 'donut' ? ['48%', '72%'] : ['0%', '68%'],
+          center: ['50%', '44%'],
+          avoidLabelOverlap: false,
+          label: { show: false },
+          labelLine: { show: false },
           data: categories.map((name, i) => ({
             name,
             value: values[i] ?? 0,
-            itemStyle: { color: colors[i % colors.length] },
+            itemStyle: { color: colors[i % colors.length], borderRadius: 4 },
           })),
         },
       ],
@@ -218,30 +240,56 @@ export function buildInsightsChartOption(
     }
   }
 
-  // Horizontal bar chart (axes swapped relative to column).
+  // Horizontal bar chart (axes swapped relative to column) — styled to match the reference:
+  // clean gray category labels, hidden value axis, thin rounded bars, value labels at the bar
+  // ends, a dark rounded tooltip and a subtle hover band.
   if (chartKind === 'bar') {
     return {
       title: { text: title, show: false },
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      grid: { left: 80, right: 16, top: 16, bottom: 28 },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(148,163,184,0.12)' } },
+        backgroundColor: '#0F172A',
+        borderWidth: 0,
+        padding: [6, 10],
+        textStyle: { color: '#FFFFFF', fontSize: 11 },
+        extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,0.25);',
+        formatter: (params: unknown) => {
+          const arr = params as { name?: string; value?: number }[]
+          const p = Array.isArray(arr) ? arr[0] : (params as { name?: string; value?: number })
+          if (!p) return ''
+          return `<div style="font-size:11px;color:#CBD5E1;margin-bottom:2px;">${p.name ?? ''}</div><div style="font-size:13px;font-weight:700;color:#fff;">${p.value ?? ''}</div>`
+        },
+      },
+      grid: { left: 8, right: 28, top: 8, bottom: 8, containLabel: true },
       xAxis: {
         type: 'value',
-        name: properties?.yAxis ?? valueLabel,
-        nameTextStyle: { fontSize: 10 },
-        axisLabel: { fontSize: 10 },
+        show: false,
         minInterval: 1,
       },
       yAxis: {
         type: 'category',
-        name: properties?.xAxis ?? categoryLabel,
         data: categories,
-        axisLabel: { fontSize: 10 },
+        axisLabel: { fontSize: 11, color: '#64748B', fontWeight: 500 },
+        axisLine: { show: false },
+        axisTick: { show: false },
       },
       series: [
         {
           type: 'bar',
-          data: values.map((v, i) => ({ value: v, itemStyle: { color: colors[i % colors.length] } })),
-          barMaxWidth: 40,
+          data: values.map((v, i) => ({
+            value: v,
+            itemStyle: { color: colors[i % colors.length], borderRadius: [0, 6, 6, 0] },
+          })),
+          barMaxWidth: 12,
+          label: {
+            show: true,
+            position: 'right',
+            fontSize: 10,
+            color: '#94A3B8',
+            fontWeight: 600,
+            formatter: '{c}',
+          },
         },
       ],
     }
@@ -314,37 +362,88 @@ export function buildInsightsChartOption(
   }
 
   const isLine = chartKind === 'area' || chartKind === 'line' || chartKind === 'live'
-  const chartType = isLine ? 'line' : 'bar'
 
+  const darkTooltip = {
+    trigger: 'axis' as const,
+    axisPointer: { type: 'shadow' as const, shadowStyle: { color: 'rgba(148,163,184,0.12)' } },
+    backgroundColor: '#0F172A',
+    borderWidth: 0,
+    padding: [6, 10] as [number, number],
+    textStyle: { color: '#FFFFFF', fontSize: 11 },
+    extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,0.25);',
+    formatter: (params: unknown) => {
+      const arr = params as { name?: string; value?: number }[]
+      const p = Array.isArray(arr) ? arr[0] : (params as { name?: string; value?: number })
+      if (!p) return ''
+      return `<div style="font-size:11px;color:#CBD5E1;margin-bottom:2px;">${p.name ?? ''}</div><div style="font-size:13px;font-weight:700;color:#fff;">${p.value ?? ''}</div>`
+    },
+  }
+
+  // Line / area — clean gray x labels, hidden value axis with a dashed horizontal grid.
+  if (isLine) {
+    const accent = colors[0]
+    return {
+      title: { text: title, show: false },
+      tooltip: darkTooltip,
+      grid: { left: 8, right: 12, top: 12, bottom: 8, containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: categories,
+        boundaryGap: chartKind !== 'line',
+        axisLabel: { fontSize: 10, color: '#94A3B8', rotate: categories.length > 8 ? 30 : 0 },
+        axisLine: { show: false },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { show: false },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { show: true, lineStyle: { type: 'dashed', color: '#F0F2F5' } },
+      },
+      series: [
+        {
+          type: 'line',
+          data: values,
+          smooth: true,
+          symbol: 'none',
+          lineStyle: { color: accent, width: 2 },
+          itemStyle: { color: accent },
+          areaStyle: chartKind === 'area' || chartKind === 'live' ? { color: accent, opacity: 0.1 } : undefined,
+        },
+      ],
+    }
+  }
+
+  // Column (vertical bar) — rounded top bars, clean gray x labels, hidden value axis.
   return {
     title: { text: title, show: false },
-    tooltip: { trigger: 'axis' },
-    grid: { left: 48, right: 16, top: 16, bottom: 36 },
+    tooltip: darkTooltip,
+    grid: { left: 8, right: 12, top: 12, bottom: 8, containLabel: true },
     xAxis: {
       type: 'category',
-      name: properties?.xAxis ?? categoryLabel,
-      nameLocation: 'middle',
-      nameGap: 24,
       data: categories,
-      axisLabel: { fontSize: 10, rotate: categories.length > 6 ? 30 : 0 },
+      axisLabel: { fontSize: 10, color: '#94A3B8', rotate: categories.length > 8 ? 30 : 0 },
+      axisLine: { show: false },
+      axisTick: { show: false },
     },
     yAxis: {
       type: 'value',
-      name: properties?.yAxis ?? valueLabel,
-      nameTextStyle: { fontSize: 10 },
-      axisLabel: { fontSize: 10 },
       minInterval: 1,
+      axisLabel: { show: false },
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { show: false },
     },
     series: [
       {
-        type: chartType,
+        type: 'bar',
         data: values.map((v, i) => ({
           value: v,
-          itemStyle: { color: colors[i % colors.length] },
+          itemStyle: { color: colors[i % colors.length], borderRadius: [4, 4, 0, 0] },
         })),
-        barMaxWidth: 48,
-        smooth: isLine,
-        areaStyle: chartKind === 'area' || chartKind === 'live' ? { opacity: 0.12 } : undefined,
+        barMaxWidth: 36,
       },
     ],
   }

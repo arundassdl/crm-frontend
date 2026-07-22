@@ -32,6 +32,7 @@ import {
     InputAdornment,
     Divider,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useSelector, useDispatch } from 'react-redux';
 import { layoutSelector, saveLayoutData, setSharedTo, removeRelatedList, setLayoutName, fetchCustomizeFieldsData, updateRelatedListFields } from '@/store/slices/general_slices/layout-slice';
 import FieldPalette from './FieldPalette';
@@ -80,6 +81,8 @@ const LayoutCanvas = ({
     embedInSettings = false,
 }: LayoutCanvasProps) => {
     const dispatch = useDispatch();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const safeSearchParams = useSearchParams() ?? new URLSearchParams();
     const params = useParams();
     const router = useRouter();
@@ -598,22 +601,21 @@ const LayoutCanvas = ({
                 <Stack direction="row" spacing={1}>
                     <Button
                         variant="outlined"
-                        color="inherit"
                         size="small"
                         onClick={handleClose}
                         sx={{
-                            borderRadius: 2,
-                            fontSize: '0.8rem',
-                            lineHeight: 2,
-                            py: 0.5,
-                            px: 2,
+                            borderRadius: '8px',
+                            fontSize: '0.9rem',
+                            py: 0.7,
+                            px: 1.75,
                             textTransform: 'none',
-                            fontWeight: 500,
-                            borderColor: 'rgba(17,24,32,0.12)',
-                            bgcolor: 'background.paper',
+                            fontWeight: 600,
+                            color: isDark ? '#9CA3AF' : '#64748B',
+                            borderColor: isDark ? '#3F3F46' : '#E3ECFC',
+                            bgcolor: 'transparent',
                             '&:hover': {
-                                bgcolor: 'action.hover',
-                                borderColor: 'rgba(17,24,32,0.18)',
+                                bgcolor: isDark ? '#18181B' : '#F8FAFC',
+                                borderColor: isDark ? '#3F3F46' : '#E3ECFC',
                             },
                         }}
                     >
@@ -621,23 +623,22 @@ const LayoutCanvas = ({
                     </Button>
                     <Button
                         variant="outlined"
-                        color="inherit"
                         size="small"
                         onClick={handleSaveAndClose}
                         disabled={!hasChanges}
                         sx={{
-                            borderRadius: 2,
-                            fontSize: '0.8rem',
-                            lineHeight: 1.4,
-                            py: 0.5,
-                            px: 2.5,
+                            borderRadius: '8px',
+                            fontSize: '0.9rem',
+                            py: 0.7,
+                            px: 1.75,
                             textTransform: 'none',
-                            fontWeight: 500,
-                            borderColor: 'rgba(17,24,32,0.12)',
-                            bgcolor: 'background.paper',
+                            fontWeight: 600,
+                            color: isDark ? '#9CA3AF' : '#64748B',
+                            borderColor: isDark ? '#3F3F46' : '#E3ECFC',
+                            bgcolor: 'transparent',
                             '&:hover': {
-                                bgcolor: 'action.hover',
-                                borderColor: 'rgba(17,24,32,0.18)',
+                                bgcolor: isDark ? '#18181B' : '#F8FAFC',
+                                borderColor: isDark ? '#3F3F46' : '#E3ECFC',
                             },
                         }}
                     >
@@ -645,23 +646,21 @@ const LayoutCanvas = ({
                     </Button>
                     <Button
                         variant="contained"
-                        color="primary"
                         size="small"
                         onClick={handleSave}
                         disabled={!hasChanges}
                         sx={{
-                            borderRadius: 2,
-                            fontSize: '0.8rem',
-                            lineHeight: 1.4,
-                            py: 0.5,
-                            px: 3,
+                            borderRadius: '8px',
+                            fontSize: '0.9rem',
+                            py: 0.7,
+                            px: 2.5,
                             textTransform: 'none',
-                            fontWeight: 500,
-                            bgcolor: '#4c6fff',
-                            color: 'primary.contrastText',
+                            fontWeight: 700,
+                            bgcolor: '#1D4ED8',
+                            color: '#fff',
                             boxShadow: 'none',
                             '&:hover': {
-                                bgcolor: '#3957d5',
+                                bgcolor: '#60A5FA',
                                 boxShadow: 'none',
                             },
                         }}
@@ -716,7 +715,7 @@ const LayoutCanvas = ({
                 )}
                 <Box
                     sx={{
-                        width: '60%',
+                        width: '100%',
                         display: 'flex',
                         flexDirection: 'column',
                         overflow: 'hidden',
@@ -739,30 +738,37 @@ const LayoutCanvas = ({
                             value={canvasTab}
                             onChange={(_, v) => setCanvasTab(v)}
                             sx={{
-                                minHeight: 48,
-
+                                minHeight: 44,
                                 bgcolor: 'transparent !important',
-                                '& .MuiTabs-flexContainer': { gap: 1 },
+                                '& .MuiTabs-flexContainer': { gap: 0 },
                                 '& .MuiTab-root': {
                                     textTransform: 'none',
-                                    minHeight: 48,
+                                    minHeight: 44,
+                                    px: 2.5,
+                                    py: 1.25,
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
                                     backgroundColor: 'transparent !important',
                                     boxShadow: 'none !important',
+                                    color: isDark ? '#71717A' : '#94A3B8',
                                 },
                                 '& .MuiTab-root:hover': {
-                                    backgroundColor: 'action.hover !important',
+                                    backgroundColor: 'transparent !important',
+                                    color: isDark ? '#D4D4D8' : '#475569',
                                 },
                                 '& .MuiTab-root.Mui-selected': {
-                                    backgroundColor: '#fff !important',
-                                    color: '#000 !important',
+                                    backgroundColor: 'transparent !important',
+                                    color: `${isDark ? '#60A5FA' : '#1D4ED8'} !important`,
+                                    fontWeight: 700,
                                     boxShadow: 'none !important',
                                 },
                                 '& .MuiTab-root.Mui-selected:hover': {
-                                    backgroundColor: '#fff !important',
+                                    backgroundColor: 'transparent !important',
+                                    color: `${isDark ? '#60A5FA' : '#1D4ED8'} !important`,
                                 },
                                 '& .MuiTabs-indicator': {
-                                    backgroundColor: 'primary.main',
-                                    height: 3,
+                                    backgroundColor: isDark ? '#60A5FA' : '#1D4ED8',
+                                    height: 2,
                                 },
                             }}
                         >
@@ -840,7 +846,7 @@ const LayoutCanvas = ({
                             {canvasTab === 'detail' && (
                                 <Box sx={{ height: '100%', pr: 2, pb: 4, pt: 4, overflowY: 'auto', pl: 2 }}>
                                     {/* Business Card Section */}
-                                    <Box sx={{ mb: 4, width: '50%' }}>
+                                    <Box sx={{ mb: 4, width: '100%' }}>
                                         <BusinessCardSection />
                                     </Box>
 

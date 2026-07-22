@@ -1,6 +1,8 @@
 import { readAccessTokenString, readRoleProfileFromStorage } from '@/utils/accessTokenDataStorage'
 import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, FormControl, InputLabel, Select, MenuItem, Button, Radio, CircularProgress, TextField, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { MagnifyingGlass, CaretDown } from '@phosphor-icons/react';
 import SearchIcon from '@mui/icons-material/Search';
 import { getFieldPermissions, saveFieldPermissions } from '@/services/api/general_apis/permission-api';
 import { getCustomFields } from '@/services/api/general_apis/custom-field-api';
@@ -15,6 +17,8 @@ interface FieldPermissionTabProps {
 
 const FieldPermissionTab: React.FC<FieldPermissionTabProps> = ({ module, layoutRows: layoutRowsProp }) => {
     const router = useRouter();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const [roles, setRoles] = useState<any[]>([]);
     const [selectedRole, setSelectedRole] = useState('');
     const [fields, setFields] = useState<any[]>([]);
@@ -153,43 +157,43 @@ const FieldPermissionTab: React.FC<FieldPermissionTabProps> = ({ module, layoutR
 
     return (
         <Box>
-            <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 2 }}>
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    <FormControl size="small" sx={{ minWidth: 200 }}>
-                        <Select
-                            labelId="select-role-label"
-                            value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value)}
-                        >
-                            {roles.map(role => (
-                                <MenuItem key={role.label} value={role.label}>{role.label}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <TextField
-                        placeholder="Search Fields"
-                        size="small"
+            {/* Toolbar */}
+            <div className="flex items-center gap-3 mb-4">
+                <div className="relative">
+                    <select
+                        value={selectedRole}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className={`appearance-none pl-3 pr-8 py-2 text-[13px] border rounded-lg focus:outline-none focus:border-[#1D4ED8] cursor-pointer min-w-[160px] ${isDark ? 'border-[#3F3F46] bg-[#18181B] text-[#D4D4D8]' : 'border-[#E3ECFC] bg-white text-slate-700'}`}
+                    >
+                        {roles.map(role => (
+                            <option key={role.label} value={role.label}>{role.label}</option>
+                        ))}
+                    </select>
+                    <CaretDown size={10} weight="bold" color="#94A3B8" className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+                <div className="flex-1 relative">
+                    <MagnifyingGlass size={13} weight="duotone" color="#94A3B8" className="absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon />
-                                </InputAdornment>
-                            ),
-                        }}
-                        sx={{ width: 300 }}
+                        placeholder="Search Fields"
+                        className={`w-full pl-8 pr-3 py-2 text-[13px] border rounded-lg focus:outline-none focus:border-[#1D4ED8] ${isDark ? 'border-[#3F3F46] bg-[#18181B] text-[#D4D4D8] placeholder:text-[#71717A]' : 'border-[#E3ECFC] bg-white text-slate-700 placeholder:text-slate-400'}`}
                     />
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button variant="contained" onClick={handleSave} disabled={saving || !token}>
-                        {saving ? 'Saving...' : 'Save'}
-                    </Button>
-                    <Button variant="outlined" onClick={handleCreateAndEditFields}>
-                        Create and Edit Fields
-                    </Button>
-                </Box>
-            </Box>
+                </div>
+                <button
+                    onClick={handleSave}
+                    disabled={saving || !token}
+                    className="px-4 py-2 text-[13px] font-bold text-white bg-[#1D4ED8] rounded-lg hover:bg-[#2563EB] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    {saving ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                    onClick={handleCreateAndEditFields}
+                    className={`px-4 py-2 text-[13px] font-semibold border border-[#1D4ED8] rounded-lg transition-colors whitespace-nowrap ${isDark ? 'text-[#60A5FA] hover:bg-[#18181B]' : 'text-[#1D4ED8] hover:bg-[#EFF6FF]'}`}
+                >
+                    Create and Edit Fields
+                </button>
+            </div>
 
             <Dialog open={openLayoutDialog} onClose={() => setOpenLayoutDialog(false)} maxWidth="sm" fullWidth>
                 <DialogTitle sx={{ fontWeight: 600 }}>
@@ -224,25 +228,17 @@ const FieldPermissionTab: React.FC<FieldPermissionTabProps> = ({ module, layoutR
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>
             ) : (
-                <TableContainer
-                    component={Paper}
-                    sx={{
-                        mt: 2,
-                        border: 1,
-                        borderColor: 'divider',
-                        maxHeight: 600,
-                    }}
-                >
-                    <Table stickyHeader sx={{ minWidth: 500, tableLayout: 'fixed' }}>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell sx={{ fontWeight: 600, width: '25%' }}>Fields</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 600, width: '25%' }}>Read and Write</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 600, width: '25%' }}>Read Only</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 600, width: '25%' }}>Don't Show</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
+                <div className={`border rounded-xl overflow-hidden ${isDark ? 'border-[#27272A]' : 'border-[#E3ECFC]'}`}>
+                    <table className="w-full border-collapse text-left">
+                        <thead>
+                            <tr className={isDark ? 'bg-[#111113] border-b border-[#27272A]' : 'bg-[#f9fbff] border-b border-[#E3ECFC]'}>
+                                <th className={`px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider w-[40%] ${isDark ? 'text-[#71717A]' : 'text-slate-500'}`}>Fields</th>
+                                <th className={`px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-center ${isDark ? 'text-[#71717A]' : 'text-slate-500'}`}>Read and Write</th>
+                                <th className={`px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-center ${isDark ? 'text-[#71717A]' : 'text-slate-500'}`}>Read Only</th>
+                                <th className={`px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-center ${isDark ? 'text-[#71717A]' : 'text-slate-500'}`}>Don&apos;t Show</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                             {fields.filter((field) =>
                                 (field.label ?? field.fieldname ?? '')
                                     .toLowerCase()
@@ -251,42 +247,37 @@ const FieldPermissionTab: React.FC<FieldPermissionTabProps> = ({ module, layoutR
                                 const fieldname = field.fieldname ?? field.name;
                                 const fieldLabel = field.label ?? fieldname ?? '—';
                                 const mode = getMode(fieldname);
+                                const modes: { key: 'read_write' | 'read_only' | 'hidden' }[] = [
+                                    { key: 'read_write' }, { key: 'read_only' }, { key: 'hidden' },
+                                ];
                                 return (
-                                    <TableRow key={fieldname} hover>
-                                        <TableCell sx={{ width: '25%' }}>{fieldLabel}</TableCell>
-                                        <TableCell align="center" padding="checkbox" sx={{ width: '25%' }}>
-                                            <Radio
-                                                checked={mode === 'read_write'}
-                                                onChange={() => handlePermissionChange(fieldname, 'read_write')}
-                                                value="read_write"
-                                                name={`perm-${fieldname}`}
-                                                size="small"
-                                            />
-                                        </TableCell>
-                                        <TableCell align="center" padding="checkbox" sx={{ width: '25%' }}>
-                                            <Radio
-                                                checked={mode === 'read_only'}
-                                                onChange={() => handlePermissionChange(fieldname, 'read_only')}
-                                                value="read_only"
-                                                name={`perm-${fieldname}`}
-                                                size="small"
-                                            />
-                                        </TableCell>
-                                        <TableCell align="center" padding="checkbox" sx={{ width: '25%' }}>
-                                            <Radio
-                                                checked={mode === 'hidden'}
-                                                onChange={() => handlePermissionChange(fieldname, 'hidden')}
-                                                value="hidden"
-                                                name={`perm-${fieldname}`}
-                                                size="small"
-                                            />
-                                        </TableCell>
-                                    </TableRow>
+                                    <tr key={fieldname} className={`border-b last:border-0 transition-colors ${isDark ? 'border-[#18181B] hover:bg-[#111113]' : 'border-[#EFF6FF] hover:bg-[#fafcff]'}`}>
+                                        <td className={`px-4 py-3 text-[13px] ${isDark ? 'text-[#D4D4D8]' : 'text-slate-600'}`}>{fieldLabel}</td>
+                                        {modes.map(({ key }) => {
+                                            const selected = mode === key;
+                                            return (
+                                                <td key={key} className="px-4 py-3 text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handlePermissionChange(fieldname, key)}
+                                                        aria-label={`${fieldLabel} ${key}`}
+                                                        className="w-5 h-5 rounded-full border-2 flex items-center justify-center mx-auto transition-colors"
+                                                        style={{
+                                                            borderColor: selected ? '#1D4ED8' : (isDark ? '#3F3F46' : '#CBD5E1'),
+                                                            backgroundColor: selected ? '#1D4ED8' : 'transparent',
+                                                        }}
+                                                    >
+                                                        {selected && <span className="w-2 h-2 rounded-full bg-white block" />}
+                                                    </button>
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
                                 );
                             })}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                        </tbody>
+                    </table>
+                </div>
             )}
         </Box>
     );

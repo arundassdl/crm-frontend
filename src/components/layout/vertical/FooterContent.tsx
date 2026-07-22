@@ -26,7 +26,7 @@ const FooterContent = () => {
         verticalLayoutClasses.footerContent,
         'flex items-center justify-end flex-wrap gap-4 py-5 pr-4'
       )}
-      style={{ backgroundColor: isDark ? "#121212" : "#EFF6FF" }}
+      style={{ backgroundColor: isDark ? "#121212" : "#EBF3FE" }}
     >
       <p>
         <span>{`© ${new Date().getFullYear()}, ${themeConfig.footerText} - All rights reserved `}</span>

@@ -1,7 +1,9 @@
 'use client'
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { useTheme } from '@mui/material/styles'
 
+import { kpiBodyBackground } from '../utils/kpiFill'
 import type { DashboardWidget } from '../types'
 import type { RuntimeFilterRow } from '../types/componentFilters'
 import { useInsightsQueryResult } from '../hooks/useInsightsQueryResult'
@@ -38,6 +40,8 @@ function formatGrowth(value: number): string {
 }
 
 function KpiCardWidgetInner({ widget, loading, runtimeFilters }: KpiCardWidgetProps) {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const compareToRaw = readConfigString(widget, 'compare_to')
   const objectiveRaw = readConfigString(widget, 'objective')
   const hasComparisonConfig = Boolean(compareToRaw || objectiveRaw)
@@ -104,36 +108,35 @@ function KpiCardWidgetInner({ widget, loading, runtimeFilters }: KpiCardWidgetPr
   const isPositiveGrowth = growth != null && growth > 0
   const isNegativeGrowth = growth != null && growth < 0
   const isFavorable = objective === 'decrease_positive' ? isNegativeGrowth : isPositiveGrowth
-  const growthColor =
+  const growthPill =
     growth == null || growth === 0
-      ? 'text-slate-400 dark:text-zinc-500'
+      ? 'text-slate-400 bg-slate-100 dark:text-zinc-500 dark:bg-zinc-800'
       : isFavorable
-        ? 'text-emerald-500'
-        : 'text-red-500'
+        ? 'text-emerald-600 bg-[#D1FAE5] dark:text-emerald-400 dark:bg-emerald-500/15'
+        : 'text-red-500 bg-[#FEE2E2] dark:bg-red-500/15'
 
   const comparisonLabel = compareTo === 'Custom' ? 'Custom Period' : compareTo
 
   return (
-    <div className="flex h-full flex-col justify-center overflow-hidden px-4 py-3">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <p className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-zinc-50">
-            {data ? formatValue(data.currentValue) : fallbackValue ?? '—'}
-          </p>
-          {growth != null ? (
-            <span className={`flex items-center gap-0.5 text-xs font-semibold ${growthColor}`}>
-              {isPositiveGrowth ? <i className="ri-arrow-up-s-fill" aria-hidden /> : null}
-              {isNegativeGrowth ? <i className="ri-arrow-down-s-fill" aria-hidden /> : null}
-              {formatGrowth(growth)}
-            </span>
-          ) : null}
-        </div>
-        {data?.comparisonValue != null ? (
-          <p className="text-xs text-slate-400 dark:text-zinc-500">
-            {comparisonLabel}: {formatValue(data.comparisonValue)}
-          </p>
-        ) : null}
+    <div
+      className="flex h-full flex-col justify-center overflow-hidden px-5 py-4"
+      style={{ backgroundColor: kpiBodyBackground(widget.catalogId ?? widget.title ?? widget.id, isDark) }}
+    >
+      <div className="text-[26px] font-extrabold leading-none tracking-tight text-[#0C2472] dark:text-white">
+        {data ? formatValue(data.currentValue) : fallbackValue ?? '—'}
       </div>
+      {growth != null ? (
+        <span className={`mt-2 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${growthPill}`}>
+          {isPositiveGrowth ? <i className="ri-arrow-up-s-fill" aria-hidden /> : null}
+          {isNegativeGrowth ? <i className="ri-arrow-down-s-fill" aria-hidden /> : null}
+          {formatGrowth(growth)}
+        </span>
+      ) : null}
+      {data?.comparisonValue != null ? (
+        <p className="mt-1.5 text-[11px] font-semibold text-slate-400 dark:text-zinc-500">
+          {comparisonLabel}: {formatValue(data.comparisonValue)}
+        </p>
+      ) : null}
     </div>
   )
 }

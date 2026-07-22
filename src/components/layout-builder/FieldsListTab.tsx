@@ -25,8 +25,8 @@ import {
     DialogContent,
     DialogActions,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useTheme } from "@mui/material/styles";
+import { MagnifyingGlass, CaretDown } from "@phosphor-icons/react";
 import { getCustomFields } from "@/services/api/general_apis/custom-field-api";
 import { getLayoutList } from "@/services/api/general_apis/layout-api";
 import { getLayout } from "@/services/api/crm/crm-api";
@@ -49,6 +49,8 @@ function getFieldType(field: any): string {
 
 const FieldsListTab: React.FC<FieldsListTabProps> = ({ module, layoutRows: layoutRowsProp }) => {
     const router = useRouter();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
     const [fields, setFields] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [layoutFilter, setLayoutFilter] = useState<string>("all");
@@ -249,140 +251,95 @@ const FieldsListTab: React.FC<FieldsListTabProps> = ({ module, layoutRows: layou
         );
     };
 
+    const headTh = `px-4 py-3 text-[12.5px] font-bold uppercase tracking-wider ${isDark ? "text-[#71717A]" : "text-slate-500"}`;
+
     return (
-        <Box>
-            {/* Top control bar */}
-            <Box
-                sx={{
-                    mb: 2,
-                    display: "flex",
-                    flexWrap: "wrap",
-                    alignItems: "center",
-                    gap: 2,
-                    pb: 3
-                }}
-            >
-                <TextField
-                    placeholder="Search Fields or Data Types"
-                    size="small"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon />
-                            </InputAdornment>
-                        ),
-                    }}
-                    sx={{ width: 280 }}
-                />
-                <FormControl size="small" sx={{ minWidth: 180 }}>
-                    <InputLabel id="layout-filter-label">Layout</InputLabel>
-                    <Select
-                        labelId="layout-filter-label"
+        <div>
+            {/* Toolbar */}
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+                <div className="flex-1 relative min-w-[160px]">
+                    <MagnifyingGlass size={13} weight="duotone" color="#94A3B8" className="absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search Fields or Data Types"
+                        className={`w-full pl-8 pr-3 py-2 text-[13px] border rounded-lg focus:outline-none focus:border-[#1D4ED8] ${isDark ? "bg-[#18181B] border-[#3F3F46] text-[#D4D4D8] placeholder:text-[#71717A]" : "bg-white border-[#E3ECFC] text-slate-700 placeholder:text-slate-400"}`}
+                    />
+                </div>
+                <div className="relative">
+                    <select
                         value={layoutFilter}
-                        label="Layout"
                         onChange={(e) => setLayoutFilter(e.target.value)}
+                        className={`appearance-none pl-3 pr-8 py-2 text-[13px] border rounded-lg focus:outline-none focus:border-[#1D4ED8] cursor-pointer ${isDark ? "bg-[#18181B] border-[#3F3F46] text-[#D4D4D8]" : "bg-white border-[#E3ECFC] text-slate-700"}`}
                     >
                         {layouts.map((l) => (
-                            <MenuItem key={l.value} value={l.value}>
-                                {l.label}
-                            </MenuItem>
+                            <option key={l.value} value={l.value}>{l.label}</option>
                         ))}
-                    </Select>
-                </FormControl>
-                <Box sx={{ flexGrow: 1 }} />
-                <Button variant="contained" onClick={handleCreateAndEditFields}>
+                    </select>
+                    <CaretDown size={10} weight="bold" color="#94A3B8" className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+                <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleCreateAndEditFields}
+                    sx={{ bgcolor: "#1D4ED8", color: "white", borderRadius: "8px", textTransform: "none", fontWeight: 700, fontSize: "0.75rem", px: 2, py: 0.9, whiteSpace: "nowrap", boxShadow: "0 1px 6px #1D4ED833", "&:hover": { bgcolor: "#2563EB" } }}
+                >
                     Create and Edit Fields
                 </Button>
-            </Box>
+            </div>
 
             {/* Table */}
-            <TableContainer
-                component={Paper}
-                sx={{
-                    mt: 2,
-                    border: 1,
-                    borderColor: "divider",
-                }}
-            >
-                <Table
-                    sx={{
-                        minWidth: 650,
-                        "& thead th": { fontWeight: 600, py: 1 },
-                        "& thead tr": {
-                            borderBottomWidth: 2,
-                            borderBottomStyle: "solid",
-                            borderBottomColor: "divider",
-                        },
-                    }}
-                    aria-label="fields table"
-                >
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Fields</TableCell>
-                            <TableCell>Data Type</TableCell>
-                            <TableCell align="center">Custom Field</TableCell>
-                            <TableCell>Layouts</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
+            <div className={`border rounded-xl overflow-hidden ${isDark ? "border-[#27272A]" : "border-[#E3ECFC]"}`}>
+                <table className="w-full border-collapse text-left">
+                    <thead>
+                        <tr className={isDark ? "bg-[#111113] border-b border-[#27272A]" : "bg-[#f9fbff] border-b border-[#E3ECFC]"}>
+                            <th className={headTh}>Fields</th>
+                            <th className={headTh}>Data Type</th>
+                            <th className={headTh}>Custom Field</th>
+                            <th className={headTh}>Layouts</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                         {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={4} align="center">
+                            <tr>
+                                <td colSpan={4} className="px-4 py-10 text-center">
                                     <CircularProgress size={24} />
-                                </TableCell>
-                            </TableRow>
+                                </td>
+                            </tr>
                         ) : filteredFields.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} align="center">
-                                    <Typography variant="body2" color="text.secondary">
-                                        No records found.
-                                    </Typography>
-                                </TableCell>
-                            </TableRow>
+                            <tr>
+                                <td colSpan={4} className={`px-4 py-10 text-center text-[15px] ${isDark ? "text-[#3F3F46]" : "text-slate-300"}`}>
+                                    No fields found.
+                                </td>
+                            </tr>
                         ) : (
                             filteredFields.map((field) => {
                                 const id = field.fieldname ?? field.name ?? Math.random();
                                 const isCustom = !field.is_core && !field.core;
                                 return (
-                                    <TableRow
+                                    <tr
                                         key={id}
-                                        hover
-                                        sx={{
-                                            "&:last-child td, &:last-child th": { border: 0 },
-                                        }}
+                                        className={`border-b last:border-0 transition-colors ${isDark ? "border-[#18181B] hover:bg-[#111113]" : "border-[#EFF6FF] hover:bg-[#fafcff]"}`}
                                     >
-                                        <TableCell>
-                                            <Typography variant="body2">
-                                                {getFieldLabel(field)}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">
-                                                {getFieldType(field)}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            {isCustom ? (
-                                                <CheckCircleIcon
-                                                    sx={{ color: "green", fontSize: 20 }}
-                                                    titleAccess="Yes"
-                                                />
-                                            ) : null}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2" component="span">
-                                                {formatLayoutsCell(field)}
-                                            </Typography>
-                                        </TableCell>
-                                    </TableRow>
+                                        <td className={`px-4 py-3 text-[14px] font-medium ${isDark ? "text-[#D4D4D8]" : "text-slate-700"}`}>
+                                            {getFieldLabel(field)}
+                                        </td>
+                                        <td className={`px-4 py-3 text-[14px] ${isDark ? "text-[#A1A1AA]" : "text-slate-500"}`}>
+                                            {getFieldType(field)}
+                                        </td>
+                                        <td className={`px-4 py-3 text-[14px] ${isDark ? "text-[#71717A]" : "text-slate-400"}`}>
+                                            {isCustom ? "Yes" : ""}
+                                        </td>
+                                        <td className="px-4 py-3 text-[14px] font-semibold text-[#1D4ED8]">
+                                            {formatLayoutsCell(field)}
+                                        </td>
+                                    </tr>
                                 );
                             })
                         )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                    </tbody>
+                </table>
+            </div>
 
             <Dialog
                 open={openLayoutDialog}
@@ -430,7 +387,7 @@ const FieldsListTab: React.FC<FieldsListTabProps> = ({ module, layoutRows: layou
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </div>
     );
 };
 

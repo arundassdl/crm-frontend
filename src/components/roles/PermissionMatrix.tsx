@@ -1,46 +1,26 @@
 import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage'
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { Button, Tooltip, CircularProgress } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  Typography,
-  Switch,
-  Button,
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  Tabs,
-  Tab,
-  Grid,
-  IconButton,
-  Tooltip,
-  CircularProgress,
-  Alert,
-  Backdrop,
-} from "@mui/material";
-import {
-  Save as SaveIcon,
-  Visibility as EyeIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Print as PrintIcon,
-  FileUpload as ImportIcon,
-  FileDownload as ExportIcon,
-  Email as EmailIcon,
-  Public as PublicIcon,
-  Lock as LockIcon,
-} from "@mui/icons-material";
+  Square,
+  Plus,
+  Eye,
+  PencilSimple,
+  Trash,
+  Printer,
+  UploadSimple,
+  DownloadSimple,
+  Envelope,
+  Globe,
+  Lock,
+} from "@phosphor-icons/react";
 import { getPermissionsMatrix, savePermissionsMatrix, getAllRoles, getAllModules } from "@/services/api/permissions/permissions-api";
 import { showToast } from "@/components/ToastNotificationNew";
 
+// ─────────────────────────────────────────────
+//  Types (backend data model — preserved)
+// ─────────────────────────────────────────────
 interface Permission {
   fullAccess: boolean;
   create: boolean;
@@ -62,354 +42,126 @@ interface Modules {
   [moduleName: string]: ModulePermissions;
 }
 
+// ─────────────────────────────────────────────
+//  Presentation metadata (matches reference UI)
+// ─────────────────────────────────────────────
+type PermKey = "fullAccess" | "create" | "read" | "update" | "delete" | "print" | "import" | "export" | "email" | "dataSharingPublic";
+
+const PERM_PAIRS: [PermKey, PermKey][] = [
+  ["fullAccess", "create"],
+  ["read", "update"],
+  ["delete", "print"],
+  ["import", "export"],
+  ["email", "dataSharingPublic"],
+];
+
+const PERM_META: Record<PermKey, { label: string; icon: React.ElementType; color: string }> = {
+  fullAccess:        { label: "Full Access",           icon: Square,         color: "#10B981" },
+  create:            { label: "Create",                icon: Plus,           color: "#1D4ED8" },
+  read:              { label: "Read",                  icon: Eye,            color: "#06B6D4" },
+  update:            { label: "Update",                icon: PencilSimple,   color: "#F59E0B" },
+  delete:            { label: "Delete",                icon: Trash,          color: "#EF4444" },
+  print:             { label: "Print",                 icon: Printer,        color: "#64748B" },
+  import:            { label: "Import",                icon: UploadSimple,   color: "#8B5CF6" },
+  export:            { label: "Export",                icon: DownloadSimple, color: "#8B5CF6" },
+  email:             { label: "Email",                 icon: Envelope,       color: "#64748B" },
+  dataSharingPublic: { label: "Data Sharing (Public)", icon: Globe,          color: "#10B981" },
+};
+
+// Dynamic roles get colours cycled from this palette (reference uses fixed colours).
+const ROLE_COLORS = ["#3B82F6", "#8B5CF6", "#10B981", "#06B6D4", "#F59E0B", "#EF4444", "#EC4899", "#14B8A6"];
+const roleColor = (i: number) => ROLE_COLORS[i % ROLE_COLORS.length];
+
+const heavyWeight = (k: PermKey): "fill" | "duotone" => (k === "fullAccess" || k === "delete" ? "fill" : "duotone");
+
 const PermissionMatrix: React.FC = () => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+
   const [roles, setRoles] = useState<{ name: string }[]>([]);
   const [modules, setModules] = useState<{ name: string }[]>([]);
-
   const [permissions, setPermissions] = useState<Modules>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<"matrix" | "summary">("matrix");
 
-  const [tabValue, setTabValue] = useState(0);
-
-  const [userToken, setUserToken] = useState<any>(() => {
-    const initialValue = JSON.parse(
-      readAccessTokenDataRaw()
-    );
-    return initialValue || "";
+  const [userToken] = useState<any>(() => {
+    try {
+      return JSON.parse(readAccessTokenDataRaw()) || "";
+    } catch {
+      return "";
+    }
   });
 
-  // Ref to track the scroll container
-  const tableContainerRef = useRef<HTMLDivElement | null>(null);
-  const tableContainerInnerRef = useRef<HTMLDivElement | null>(null);
-  const topScrollbarRef = useRef<HTMLDivElement | null>(null);
-  const scrollPositionRef = useRef<number>(0);
-  const horizontalScrollRef = useRef<number>(0);
-  const isScrollingRef = useRef<boolean>(false);
-  
-  // Touch/swipe gesture state
-  const touchStartXRef = useRef<number>(0);
-  const touchStartYRef = useRef<number>(0);
-
-  // Function to find the actual scrollable element within the table container
-  const findScrollableElement = (): HTMLElement | null => {
-    // First try the inner TableContainer ref
-    if (tableContainerInnerRef.current) {
-      const style = window.getComputedStyle(tableContainerInnerRef.current);
-      if (style.overflow === 'auto' || style.overflowY === 'auto' || style.overflowX === 'auto' || 
-          style.overflow === 'scroll' || style.overflowY === 'scroll' || style.overflowX === 'scroll') {
-        return tableContainerInnerRef.current;
-      }
-    }
-    
-    // Fallback to checking tableContainerRef
-    if (!tableContainerRef.current) return null;
-    
-    // Check the container itself
-    const container = tableContainerRef.current;
-    const style = window.getComputedStyle(container);
-    if (style.overflow === 'auto' || style.overflowY === 'auto' || style.overflowX === 'auto' || 
-        style.overflow === 'scroll' || style.overflowY === 'scroll' || style.overflowX === 'scroll') {
-      return container;
-    }
-    
-    // Check children recursively
-    const checkElement = (element: HTMLElement): HTMLElement | null => {
-      const style = window.getComputedStyle(element);
-      if (style.overflow === 'auto' || style.overflowY === 'auto' || style.overflowX === 'auto' || 
-          style.overflow === 'scroll' || style.overflowY === 'scroll' || style.overflowX === 'scroll') {
-        return element;
-      }
-      for (let i = 0; i < element.children.length; i++) {
-        const child = element.children[i] as HTMLElement;
-        const found = checkElement(child);
-        if (found) return found;
-      }
-      return null;
-    };
-    
-    return checkElement(container);
-  };
-
-  // Sync scrollbars when main table scrolls
-  useEffect(() => {
-    if (loading || roles.length === 0) return;
-
-    let scrollableElement: HTMLElement | null = null;
-    let cleanup: (() => void) | null = null;
-
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      scrollableElement = findScrollableElement();
-      if (!scrollableElement || !topScrollbarRef.current) return;
-
-      const handleScroll = () => {
-        if (!isScrollingRef.current) {
-          isScrollingRef.current = true;
-          const scrollLeft = scrollableElement!.scrollLeft;
-          horizontalScrollRef.current = scrollLeft;
-          
-          // Sync top scrollbar
-          if (topScrollbarRef.current) {
-            topScrollbarRef.current.scrollLeft = scrollLeft;
-          }
-          
-          requestAnimationFrame(() => {
-            isScrollingRef.current = false;
-          });
-        }
-      };
-
-      scrollableElement.addEventListener('scroll', handleScroll, { passive: true });
-      
-      cleanup = () => {
-        scrollableElement?.removeEventListener('scroll', handleScroll);
-      };
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      if (cleanup) cleanup();
-    };
-  }, [permissions, roles.length, loading]);
-
-  // Sync top scrollbar when it's scrolled
-  useEffect(() => {
-    if (loading || roles.length === 0) return;
-
-    let topScrollbar: HTMLElement | null = null;
-    let cleanup: (() => void) | null = null;
-
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      topScrollbar = topScrollbarRef.current;
-      if (!topScrollbar) return;
-
-      const handleTopScroll = () => {
-        if (!isScrollingRef.current) {
-          isScrollingRef.current = true;
-          const scrollLeft = topScrollbar!.scrollLeft;
-          horizontalScrollRef.current = scrollLeft;
-          
-          // Sync main table scroll
-          const scrollableElement = findScrollableElement();
-          if (scrollableElement) {
-            scrollableElement.scrollLeft = scrollLeft;
-          }
-          
-          requestAnimationFrame(() => {
-            isScrollingRef.current = false;
-          });
-        }
-      };
-
-      topScrollbar.addEventListener('scroll', handleTopScroll, { passive: true });
-      
-      cleanup = () => {
-        topScrollbar?.removeEventListener('scroll', handleTopScroll);
-      };
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      if (cleanup) cleanup();
-    };
-  }, [permissions, roles.length, loading]);
-
-  // Restore scroll position after permissions update
-  useEffect(() => {
-    if (scrollPositionRef.current > 0 || horizontalScrollRef.current > 0) {
-      // Use requestAnimationFrame to ensure DOM has updated after state change
-      requestAnimationFrame(() => {
-        const scrollableElement = findScrollableElement();
-        if (scrollableElement) {
-          if (scrollPositionRef.current > 0) {
-            scrollableElement.scrollTop = scrollPositionRef.current;
-          }
-          if (horizontalScrollRef.current > 0) {
-            scrollableElement.scrollLeft = horizontalScrollRef.current;
-            // Sync top scrollbar
-            if (topScrollbarRef.current) {
-              topScrollbarRef.current.scrollLeft = horizontalScrollRef.current;
-            }
-          }
-        }
-      });
-    }
-  }, [permissions]);
-
-  // Touch/swipe handlers for horizontal scrolling
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartXRef.current = e.touches[0].clientX;
-    touchStartYRef.current = e.touches[0].clientY;
-    isScrollingRef.current = false;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStartXRef.current || !touchStartYRef.current) return;
-    
-    const touchCurrentX = e.touches[0].clientX;
-    const touchCurrentY = e.touches[0].clientY;
-    const diffX = touchStartXRef.current - touchCurrentX;
-    const diffY = touchStartYRef.current - touchCurrentY;
-    
-    // Determine if this is a horizontal or vertical scroll (with threshold)
-    const isHorizontalSwipe = Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10;
-    
-    if (isHorizontalSwipe) {
-      isScrollingRef.current = true;
-      const scrollableElement = findScrollableElement();
-      if (scrollableElement) {
-        const newScrollLeft = scrollableElement.scrollLeft + diffX;
-        scrollableElement.scrollLeft = newScrollLeft;
-        horizontalScrollRef.current = newScrollLeft;
-        touchStartXRef.current = touchCurrentX;
-        touchStartYRef.current = touchCurrentY;
-        // Prevent default only for horizontal swipes to allow smooth scrolling
-        e.preventDefault();
-      }
-    } else if (Math.abs(diffY) > 10) {
-      // Vertical scroll detected, allow normal scrolling
-      isScrollingRef.current = false;
-    }
-  };
-
-  const handleTouchEnd = () => {
-    touchStartXRef.current = 0;
-    touchStartYRef.current = 0;
-    isScrollingRef.current = false;
-  };
-
+  // ── Core permission update logic (preserved from original) ──
   const updatePermission = (module: string, role: string, action: keyof Permission, value: boolean) => {
-    // Store current scroll position (both vertical and horizontal) before state update
-    const scrollableElement = findScrollableElement();
-    if (scrollableElement) {
-      scrollPositionRef.current = scrollableElement.scrollTop;
-      horizontalScrollRef.current = scrollableElement.scrollLeft;
-    }
-    
     setPermissions(prev => {
-      const currentRolePerms = prev[module]?.[role] as Permission
+      const currentRolePerms = prev[module]?.[role] as Permission;
 
       if (action === 'fullAccess') {
         const updated: Permission = {
-          fullAccess: value,
-          create: value,
-          read: value,
-          update: value,
-          delete: value,
-          print: value,
-          import: value,
-          export: value,
-          email: value,
+          fullAccess: value, create: value, read: value, update: value,
+          delete: value, print: value, import: value, export: value, email: value,
           // Do not change Data Sharing when toggling Full Access
-          dataSharing: currentRolePerms?.dataSharing || 'Private'
-        }
-
-        return {
-          ...prev,
-          [module]: {
-            ...prev[module],
-            [role]: updated
-          }
-        }
+          dataSharing: currentRolePerms?.dataSharing || 'Private',
+        };
+        return { ...prev, [module]: { ...prev[module], [role]: updated } };
       }
 
       if (action === 'dataSharing') {
         const updated: Permission = {
           ...currentRolePerms,
           dataSharing: value ? 'Public' : 'Private',
-          // Do not alter fullAccess when only dataSharing changes
-          fullAccess: currentRolePerms.fullAccess
-        }
-
-        return {
-          ...prev,
-          [module]: {
-            ...prev[module],
-            [role]: updated
-          }
-        }
+          fullAccess: currentRolePerms.fullAccess,
+        };
+        return { ...prev, [module]: { ...prev[module], [role]: updated } };
       }
 
       const updated: Permission = {
         ...currentRolePerms,
         [action]: value,
-        fullAccess: value ? currentRolePerms.fullAccess : false
-      }
-
-      return {
-        ...prev,
-        [module]: {
-          ...prev[module],
-          [role]: updated
-        }
-      }
+        fullAccess: value ? currentRolePerms.fullAccess : false,
+      };
+      return { ...prev, [module]: { ...prev[module], [role]: updated } };
     });
+    setSaved(false);
   };
 
-  const getPermissionIcon = (hasPermission: boolean, action: keyof Permission) => {
-    const onColor: any = {
-      fullAccess: 'success.main',
-      create: 'success.main',
-      read: 'info.main',
-      update: 'warning.main',
-      delete: 'error.main',
-      print: 'text.secondary',
-      import: 'text.secondary',
-      export: 'text.secondary',
-      email: 'text.secondary'
-    }[action]
-
-    const offColor = 'action.disabled'
-
-    const sx = { fontSize: 16, color: hasPermission ? onColor : offColor }
-
-    const iconMap = {
-      fullAccess: <SaveIcon sx={sx} />,
-      create: <AddIcon sx={sx} />,
-      read: <EyeIcon sx={sx} />,
-      update: <EditIcon sx={sx} />,
-      delete: <DeleteIcon sx={sx} />,
-      print: <PrintIcon sx={sx} />,
-      import: <ImportIcon sx={sx} />,
-      export: <ExportIcon sx={sx} />,
-      email: <EmailIcon sx={sx} />
-    }
-
-    return iconMap[action]
+  // Boolean view of a permission key (maps dataSharingPublic ⇄ dataSharing === 'Public').
+  const getBool = (module: string, role: string, key: PermKey): boolean => {
+    const p = permissions[module]?.[role];
+    if (!p) return false;
+    if (key === "dataSharingPublic") return p.dataSharing === "Public";
+    return !!p[key];
   };
 
-  const getActionLabel = (action: keyof Permission) => {
-    const map = {
-      fullAccess: 'Full Access',
-      create: 'Create',
-      read: 'Read',
-      update: 'Update',
-      delete: 'Delete',
-      print: 'Print',
-      import: 'Import',
-      export: 'Export',
-      email: 'Email',
-      dataSharing: 'Data Sharing'
-    } as const
-    return map[action]
-  }
+  const buildRoleState = (module: string, role: string): Record<PermKey, boolean> => ({
+    fullAccess: getBool(module, role, "fullAccess"),
+    create: getBool(module, role, "create"),
+    read: getBool(module, role, "read"),
+    update: getBool(module, role, "update"),
+    delete: getBool(module, role, "delete"),
+    print: getBool(module, role, "print"),
+    import: getBool(module, role, "import"),
+    export: getBool(module, role, "export"),
+    email: getBool(module, role, "email"),
+    dataSharingPublic: getBool(module, role, "dataSharingPublic"),
+  });
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  const onToggle = (module: string, role: string, key: PermKey) => {
+    const next = !getBool(module, role, key);
+    if (key === "dataSharingPublic") updatePermission(module, role, "dataSharing" as keyof Permission, next);
+    else updatePermission(module, role, key as keyof Permission, next);
   };
 
-
-  // Load roles, modules, and permissions matrix on component mount
+  // ── Data loading (preserved) ──
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Load roles and modules in parallel
         const [rolesResponse, modulesResponse, permissionsResponse] = await Promise.all([
           getAllRoles(userToken?.access_token).catch((err: any) => {
             console.error('Error loading roles:', err);
@@ -422,62 +174,40 @@ const PermissionMatrix: React.FC = () => {
           getPermissionsMatrix(userToken?.access_token).catch((err: any) => {
             console.error('Error loading permissions:', err);
             throw new Error(`Failed to load permissions: ${err.message || 'Unknown error'}`);
-          })
+          }),
         ]);
-        
-        // Transform roles data - handle both array of strings and array of objects
-        const rolesData = rolesResponse.map(role => {
-          // If role is a string, use it directly
-          if (typeof role === 'string') {
-            return { name: role };
-          }
-          // If role is an object, extract name
-          return { name: role.role_name || role.name };
-        });
-        
-        // Transform modules data - handle both array of strings and array of objects
-        const modulesData = modulesResponse.map(module => {
-          // If module is a string, use it directly
-          if (typeof module === 'string') {
-            return { name: module };
-          }
-          // If module is an object, extract name
-          return { name: module.module_name || module.name };
-        });
-        console.log(rolesData, 'rolesData');
-        console.log(modulesData, 'modulesData');
-        console.log(permissionsResponse, 'permissionsResponse');
+
+        const rolesData = rolesResponse.map(role =>
+          typeof role === 'string' ? { name: role } : { name: role.role_name || role.name }
+        );
+        const modulesData = modulesResponse.map(module =>
+          typeof module === 'string' ? { name: module } : { name: module.module_name || module.name }
+        );
+
         setRoles(rolesData);
         setModules(modulesData);
         setPermissions(permissionsResponse.matrix || {});
       } catch (err: any) {
         console.error('Error loading data:', err);
-        console.error('Error details:', {
-          message: (err as any).message,
-          status: (err as any).response?.status,
-          data: (err as any).response?.data
-        });
-        setError(`Failed to load data: ${(err as any).message || 'Unknown error'}`);
-        showToast(`Failed to load data: ${(err as any).message || 'Unknown error'}`, 'error');
+        setError(`Failed to load data: ${err.message || 'Unknown error'}`);
+        showToast(`Failed to load data: ${err.message || 'Unknown error'}`, 'error');
       } finally {
         setLoading(false);
       }
     };
-
     loadData();
   }, []);
 
+  // ── Save (preserved) ──
   const handleSave = async () => {
     try {
       setSaving(true);
       setError(null);
       const response = await savePermissionsMatrix(userToken?.access_token, permissions);
-      
-      // Check if the response indicates success
       if (response && response.message && response.message.msg === 'success') {
         showToast('Permissions saved successfully', 'success');
+        setSaved(true);
       } else {
-        // If response doesn't indicate success, treat as error
         const errorMessage = response?.message?.error || 'Unknown error occurred';
         setError(errorMessage);
         showToast(`Failed to save permissions: ${errorMessage}`, 'error');
@@ -492,410 +222,211 @@ const PermissionMatrix: React.FC = () => {
     }
   };
 
-  const TabPanel = ({ children, value, index, ...other }: any) => {
+  // ─────────────────────────────────────────────
+  //  Sub-components (match reference)
+  // ─────────────────────────────────────────────
+  const MiniToggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+    <button onClick={onChange}
+      className={`relative inline-flex w-[28px] h-[15px] rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0 ${checked ? "bg-[#10B981]" : isDark ? "bg-[#3F3F46]" : "bg-slate-200"}`}>
+      <span className={`inline-block w-[11px] h-[11px] rounded-full bg-white shadow-sm transform transition-transform duration-200 absolute top-[2px] ${checked ? "translate-x-[15px]" : "translate-x-[2px]"}`} />
+    </button>
+  );
+
+  const PermCell = ({ module, role }: { module: string; role: string }) => {
+    const state = buildRoleState(module, role);
     return (
-      <div
-        role="tabpanel"
-        hidden={value !== index}
-        id={`permission-tabpanel-${index}`}
-        aria-labelledby={`permission-tab-${index}`}
-        {...other}
-      >
-        {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      <div className="px-3 py-2 space-y-1.5 min-w-[120px]">
+        {PERM_PAIRS.map(([p1, p2]) => {
+          const M1 = PERM_META[p1], M2 = PERM_META[p2];
+          const off = isDark ? "#3F3F46" : "#E2E8F0";
+          return (
+            <div key={p1} className="flex items-center gap-2.5">
+              <Tooltip title={M1.label}>
+                <div className="flex items-center gap-0.5">
+                  <MiniToggle checked={state[p1]} onChange={() => onToggle(module, role, p1)} />
+                  <M1.icon size={10} color={state[p1] ? M1.color : off} weight={heavyWeight(p1)} />
+                </div>
+              </Tooltip>
+              <Tooltip title={M2.label}>
+                <div className="flex items-center gap-0.5">
+                  <MiniToggle checked={state[p2]} onChange={() => onToggle(module, role, p2)} />
+                  <M2.icon size={10} color={state[p2] ? M2.color : off} weight={heavyWeight(p2)} />
+                </div>
+              </Tooltip>
+            </div>
+          );
+        })}
       </div>
     );
   };
 
+  // ─────────────────────────────────────────────
+  //  Render
+  // ─────────────────────────────────────────────
   return (
-    <Box sx={{ p: 3 }}>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-      
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Permissions
-          </Typography>
-        </Box>
-        
-        <Button
-          variant="contained"
-          startIcon={saving ? <CircularProgress size={20} sx={{ color: 'inherit' }} /> : <SaveIcon />}
+    <div className={`flex-1 flex flex-col overflow-hidden ${isDark ? "bg-[#0A0A0A]" : "bg-white"}`}>
+      {/* Header */}
+      <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "bg-[#111113] border-[#27272A]" : "bg-[#f9fbff] border-[#E3ECFC]"}`}>
+        <div className={`text-[18px] font-extrabold tracking-tight ${isDark ? "text-[#D4D4D8]" : "text-slate-900"}`}>Permissions</div>
+        <Button variant="contained" size="small"
           onClick={handleSave}
           disabled={saving || loading}
-          sx={{ minWidth: 150 }}
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
+          startIcon={saving ? <CircularProgress size={14} sx={{ color: "inherit" }} /> : undefined}
+          sx={{ bgcolor: saved ? "#10B981" : (isDark ? "#27272A" : "#1D4ED8"), color: saved ? "#fff" : (isDark ? "#D4D4D8" : "white"), borderRadius: "9px", textTransform: "none", fontWeight: 700, fontSize: "0.75rem", px: 2, py: 0.8, boxShadow: isDark ? "none" : "0 1px 6px #1D4ED833", "&:hover": { bgcolor: saved ? "#059669" : (isDark ? "#3F3F46" : "#2563EB") }, "&.Mui-disabled": { color: isDark ? "#71717A" : "#fff", opacity: 0.7 } }}>
+          {saving ? "Saving..." : saved ? "Saved!" : "Save Changes"}
         </Button>
-      </Box>
+      </div>
 
-      {/* Loading backdrop when saving */}
-      <Backdrop
-        sx={{ 
-          color: '#fff', 
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: 'rgba(0, 0, 0, 0.3)'
-        }}
-        open={saving}
-      >
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <CircularProgress color="inherit" size={60} />
-          <Typography variant="h6" sx={{ color: 'white' }}>
-            Saving permissions...
-          </Typography>
-        </Box>
-      </Backdrop>
+      {/* Error banner */}
+      {error && (
+        <div className="mx-6 mt-4 flex items-start justify-between gap-3 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-2.5 text-[13px] text-[#B91C1C]">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="font-bold text-[#B91C1C] hover:opacity-70">×</button>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 px-6 pt-4 pb-0">
+        {(["matrix", "summary"] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-4 py-1.5 rounded-t-xl text-[14px] font-semibold transition-all border border-b-0 ${
+              tab === t
+                ? isDark ? "bg-[#1C1C1E] border-[#27272A] text-[#D4D4D8]" : "bg-white border-[#E3ECFC] text-slate-900"
+                : isDark ? "bg-transparent border-transparent text-[#9CA3AF] hover:text-[#A1A1AA]" : "bg-transparent border-transparent text-slate-400 hover:text-slate-600"
+            }`}>
+            {t === "matrix" ? "Permission Matrix" : "Summary View"}
+          </button>
+        ))}
+      </div>
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-          <CircularProgress size={60} />
-        </Box>
+        <div className="flex-1 flex items-center justify-center">
+          <CircularProgress size={44} />
+        </div>
       ) : (
         <>
-          <Card>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="permission tabs">
-            <Tab label="Permission Matrix" />
-            <Tab label="Summary View" />
-          </Tabs>
-        </Box>
-
-        <TabPanel value={tabValue} index={0}>
-          <CardContent>
-            {/* Top horizontal scrollbar */}
-            {!loading && roles.length > 0 && (
-              <Box
-                ref={topScrollbarRef}
-                sx={{
-                  overflowX: 'auto',
-                  overflowY: 'hidden',
-                  height: '17px',
-                  marginBottom: '4px',
-                  cursor: 'grab',
-                  '&:active': {
-                    cursor: 'grabbing',
-                  },
-                  '&::-webkit-scrollbar': {
-                    height: 8,
-                  },
-                  '&::-webkit-scrollbar-track': {
-                    backgroundColor: 'rgba(0,0,0,0.1)',
-                  },
-                  '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    borderRadius: 4,
-                    '&:hover': {
-                      backgroundColor: 'rgba(0,0,0,0.5)',
-                    },
-                  },
-                }}
-              >
-                <Box 
-                  sx={{ 
-                    height: '1px',
-                    minWidth: `calc(200px + ${roles.length * 200}px)`,
-                    width: `calc(200px + ${roles.length * 200}px)`
-                  }} 
-                />
-              </Box>
-            )}
-            
-            <Box
-              ref={tableContainerRef}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-              sx={{ 
-                overflowX: 'auto',
-                overflowY: 'auto',
-                WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-x pan-y',
-                width: '100%',
-                position: 'relative'
-              }}
-            >
-              <TableContainer 
-                ref={tableContainerInnerRef}
-                component={Paper} 
-                sx={{ 
-                  maxHeight: 600,
-                  overflowX: 'auto',
-                  overflowY: 'auto',
-                  '&::-webkit-scrollbar': {
-                    height: 8,
-                    width: 8,
-                  },
-                  '&::-webkit-scrollbar-track': {
-                    backgroundColor: 'rgba(0,0,0,0.1)',
-                  },
-                  '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    borderRadius: 4,
-                  },
-                }}
-              >
-              <Table stickyHeader sx={{ minWidth: 400 }}>
-                <TableHead sx={{ backgroundColor: 'common.white' }}>
-                  <TableRow sx={{ backgroundColor: 'common.white' }}>
-                    <TableCell 
-                      sx={{ 
-                        fontWeight: 'bold', 
-                        minWidth: 120, 
-                        width: 200, 
-                        backgroundColor: 'common.white',
-                        position: 'sticky',
-                        left: 0,
-                        zIndex: 3,
-                        boxShadow: '2px 0 4px rgba(0,0,0,0.1)'
-                      }}
-                    >
+          {/* Matrix */}
+          {tab === "matrix" && (
+            <div className={`flex-1 overflow-auto mx-6 mb-4 rounded-b-2xl rounded-tr-2xl border shadow-sm ${isDark ? "bg-[#1C1C1E] border-[#27272A]" : "bg-white border-[#E3ECFC]"}`}>
+              <table className="w-full border-collapse text-left" style={{ minWidth: 900 }}>
+                <thead>
+                  <tr className={`border-b ${isDark ? "bg-[#111113] border-[#27272A]" : "bg-[#f9fbff] border-[#E3ECFC]"}`}>
+                    <th className={`sticky left-0 z-10 px-5 py-3 text-[11px] font-bold uppercase tracking-wider w-[160px] border-r ${isDark ? "bg-[#111113] text-[#9CA3AF] border-[#27272A]" : "bg-[#f9fbff] text-slate-600 border-[#E3ECFC]"}`}>
                       Module
-                    </TableCell>
-                    {roles.map(role => (
-                      <TableCell key={role.name} align="center" sx={{ minWidth: 200, width: 200, backgroundColor: 'common.white', whiteSpace: 'nowrap' }}>
-                        <Chip 
-                          label={role.name}
-                          color="primary"
-                          size="small"
-                          variant="filled"
-                          sx={{ color: 'common.white' }}
-                        />
-                      </TableCell>
+                    </th>
+                    {roles.map((role, ri) => (
+                      <th key={role.name} className="px-3 py-3 text-center min-w-[140px]">
+                        <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold text-white" style={{ backgroundColor: roleColor(ri) }}>
+                          {role.name}
+                        </span>
+                      </th>
                     ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {modules.map(module => (
-                    <TableRow key={module.name} hover>
-                      <TableCell 
-                        sx={{ 
-                          fontWeight: 'medium', 
-                          minWidth: 120, 
-                          width: 200,
-                          position: 'sticky',
-                          left: 0,
-                          zIndex: 2,
-                          backgroundColor: 'background.paper',
-                          boxShadow: '2px 0 4px rgba(0,0,0,0.1)'
-                        }}
-                      >
-                        {module.name}
-                      </TableCell>
+                  </tr>
+                </thead>
+                <tbody>
+                  {modules.map((mod, i) => (
+                    <tr key={mod.name} className={`border-b ${isDark ? `border-[#27272A] ${i % 2 === 0 ? "bg-[#1C1C1E]" : "bg-[#18181B]"}` : `border-[#E3ECFC] ${i % 2 === 0 ? "bg-white" : "bg-[#f9fbff]"}`}`}>
+                      <td className={`sticky left-0 z-10 px-5 py-2 border-r font-semibold text-[14px] bg-inherit align-middle whitespace-nowrap ${isDark ? "text-[#A1A1AA] border-[#27272A]" : "text-slate-700 border-[#E3ECFC]"}`}>
+                        {mod.name}
+                      </td>
                       {roles.map(role => (
-                        <TableCell key={role.name} align="center" sx={{ width: 200, minWidth: 200 }}>
-                          <Grid container spacing={1} sx={{ width: '100%' }}>
-                            {(["fullAccess", "create", "read", "update", "delete", "print", "import", "export", "email", "dataSharing"] as const).map((action, index) => {
-                              const row = Math.floor(index / 2);
-                              const col = index % 2;
-                              
-                              return (
-                                <Grid item xs={6} key={action} sx={{ display: 'flex', justifyContent: 'center' }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                                    {action === 'dataSharing' ? (
-                                      <>
-                                        <Tooltip title={`Toggle Data Sharing for ${role.name} on ${module.name}`} arrow>
-                                          <Switch
-                                            checked={permissions[module.name]?.[role.name]?.dataSharing === 'Public'}
-                                            onChange={(e) =>
-                                              updatePermission(module.name, role.name, 'dataSharing' as any, e.target.checked)
-                                            }
-                                            size="small"
-                                          />
-                                        </Tooltip>
-                                        <Tooltip
-                                          title={`Data Sharing: ${permissions[module.name]?.[role.name]?.dataSharing}`}
-                                          arrow
-                                        >
-                                          <span>
-                                            {permissions[module.name]?.[role.name]?.dataSharing === 'Public' ? (
-                                              <PublicIcon sx={{ fontSize: 16, color: 'success.main' }} />
-                                            ) : (
-                                              <LockIcon sx={{ fontSize: 16, color: 'action.disabled' }} />
-                                            )}
-                                          </span>
-                                        </Tooltip>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Tooltip title={`Toggle ${getActionLabel(action)} for ${role.name} on ${module.name}`} arrow>
-                                          <Switch
-                                            checked={permissions[module.name]?.[role.name]?.[action] || false}
-                                            onChange={(e) => 
-                                              updatePermission(module.name, role.name, action, e.target.checked)
-                                            }
-                                            size="small"
-                                          />
-                                        </Tooltip>
-                                        <Tooltip
-                                          title={`${getActionLabel(action)}: ${permissions[module.name]?.[role.name]?.[action] ? 'Enabled' : 'Disabled'}`}
-                                          arrow
-                                        >
-                                          <span>
-                                            {getPermissionIcon(permissions[module.name]?.[role.name]?.[action] || false, action)}
-                                          </span>
-                                        </Tooltip>
-                                      </>
-                                    )}
-                                  </Box>
-                                </Grid>
-                              );
-                            })}
-                          </Grid>
-                        </TableCell>
+                        <td key={role.name} className={`border-r last:border-r-0 align-top ${isDark ? "border-[#27272A]" : "border-[#E3ECFC]"}`}>
+                          <PermCell module={mod.name} role={role.name} />
+                        </td>
                       ))}
-                    </TableRow>
+                    </tr>
                   ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            </Box>
-          </CardContent>
-        </TabPanel>
+                </tbody>
+              </table>
+            </div>
+          )}
 
-        <TabPanel value={tabValue} index={1}>
-          <CardContent>
-            <Grid container spacing={3}>
-              {roles.map(role => (
-                <Grid item xs={12} sm={6} md={4} key={role.name}>
-                  <Card variant="outlined">
-                    <CardHeader
-                      title={
-                        <Chip 
-                          label={role.name}
-                          color="primary"
-                          variant="filled"
-                          sx={{ color: 'common.white' }}
-                        />
-                      }
-                    />
-                    <CardContent>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {modules.map(module => {
-                          const rolePerms = permissions[module.name]?.[role.name];
-                          const permCount = rolePerms ? 
-                            Object.values(rolePerms).filter(Boolean).length : 0;
-                          
-                          return (
-                            <Box key={module.name} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="body2">{module.name}</Typography>
-                              <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                {rolePerms?.fullAccess && <SaveIcon sx={{ fontSize: 16, color: "success.main" }} />}
-                                {rolePerms?.create && <AddIcon sx={{ fontSize: 16, color: "success.main" }} />}
-                                {rolePerms?.read && <EyeIcon sx={{ fontSize: 16, color: "info.main" }} />}
-                                {rolePerms?.update && <EditIcon sx={{ fontSize: 16, color: "warning.main" }} />}
-                                {rolePerms?.delete && <DeleteIcon sx={{ fontSize: 16, color: "error.main" }} />}
-                                {rolePerms?.print && <PrintIcon sx={{ fontSize: 16, color: 'text.secondary' }} />}
-                                {rolePerms?.import && <ImportIcon sx={{ fontSize: 16, color: 'text.secondary' }} />}
-                                {rolePerms?.export && <ExportIcon sx={{ fontSize: 16, color: 'text.secondary' }} />}
-                                {rolePerms?.email && <EmailIcon sx={{ fontSize: 16, color: 'text.secondary' }} />}
-                                <Tooltip title={`Data Sharing: ${rolePerms?.dataSharing || 'Private'}`} arrow>
-                                  <span>
-                                    {rolePerms?.dataSharing === 'Public' ? (
-                                      <PublicIcon sx={{ fontSize: 16, color: 'success.main' }} />
-                                    ) : (
-                                      <LockIcon sx={{ fontSize: 16, color: 'action.disabled' }} />
-                                    )}
-                                  </span>
-                                </Tooltip>
-                                {permCount === 0 && (
-                                  <Typography variant="caption" color="text.secondary">
-                                    None
-                                  </Typography>
-                                )}
-                              </Box>
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </CardContent>
-        </TabPanel>
-      </Card>
+          {/* Summary */}
+          {tab === "summary" && (
+            <div className="flex-1 overflow-auto px-6 py-5 space-y-5">
+              <div className="grid grid-cols-3 gap-4">
+                {roles.map((role, ri) => (
+                  <div key={role.name} className={`rounded-2xl border shadow-sm overflow-hidden ${isDark ? "bg-[#1C1C1E] border-[#27272A]" : "bg-white border-[#E3ECFC]"}`}>
+                    <div className={`px-4 py-3 border-b ${isDark ? "border-[#27272A]" : "border-[#EFF6FF]"}`}>
+                      <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold text-white" style={{ backgroundColor: roleColor(ri) }}>
+                        {role.name}
+                      </span>
+                    </div>
+                    <div className={`divide-y ${isDark ? "divide-[#27272A]" : "divide-[#F8FAFF]"}`}>
+                      {modules.map(mod => {
+                        const state = buildRoleState(mod.name, role.name);
+                        const activePerms = (Object.entries(state) as [PermKey, boolean][]).filter(([, v]) => v).map(([k]) => k);
+                        const hasAny = activePerms.length > 0;
+                        return (
+                          <div key={mod.name} className={`flex items-center justify-between px-4 py-2 transition-colors ${isDark ? "hover:bg-[#27272A]" : "hover:bg-[#fafcff]"}`}>
+                            <span className={`text-[14px] font-medium ${isDark ? "text-[#A1A1AA]" : "text-slate-600"}`}>{mod.name}</span>
+                            {hasAny ? (
+                              <div className="flex items-center gap-0.5">
+                                {activePerms.map(perm => {
+                                  const meta = PERM_META[perm];
+                                  const Icon = meta.icon;
+                                  return (
+                                    <Tooltip key={perm} title={meta.label}>
+                                      <span className="flex items-center justify-center w-5 h-5">
+                                        <Icon size={12} color={meta.color} weight={heavyWeight(perm)} />
+                                      </span>
+                                    </Tooltip>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <Lock size={12} color={isDark ? "#3F3F46" : "#E2E8F0"} weight="duotone" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-      {/* Legend */}
-      <Card sx={{ mt: 3 }}>
-        <CardHeader title="Permission Legend" />
-        <CardContent>
-          <Grid container spacing={3}>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <SaveIcon sx={{ color: 'success.main' }} />
-                <Typography variant="body2">Full Access</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AddIcon sx={{ color: "success.main" }} />
-                <Typography variant="body2">Create</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <EyeIcon sx={{ color: "info.main" }} />
-                <Typography variant="body2">Read</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <EditIcon sx={{ color: "warning.main" }} />
-                <Typography variant="body2">Update</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <DeleteIcon sx={{ color: "error.main" }} />
-                <Typography variant="body2">Delete</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PrintIcon sx={{ color: 'text.secondary' }} />
-                <Typography variant="body2">Print</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <ImportIcon sx={{ color: 'text.secondary' }} />
-                <Typography variant="body2">Import</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <ExportIcon sx={{ color: 'text.secondary' }} />
-                <Typography variant="body2">Export</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <EmailIcon sx={{ color: 'text.secondary' }} />
-                <Typography variant="body2">Email</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PublicIcon sx={{ color: 'success.main' }} />
-                <Typography variant="body2">Data Sharing (Public)</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LockIcon sx={{ color: 'action.disabled' }} />
-                <Typography variant="body2">Data Sharing (Private)</Typography>
-              </Box>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+              {/* Legend */}
+              <div className={`rounded-2xl border px-5 py-4 ${isDark ? "bg-[#1C1C1E] border-[#27272A]" : "bg-white border-[#E3ECFC]"}`}>
+                <div className={`text-[11px] font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#9CA3AF]" : "text-slate-500"}`}>Permission Legend</div>
+                <div className="grid grid-cols-4 gap-x-8 gap-y-2">
+                  {(Object.entries(PERM_META) as [PermKey, typeof PERM_META[PermKey]][]).map(([key, meta]) => {
+                    const Icon = meta.icon;
+                    return (
+                      <div key={key} className="flex items-center gap-2">
+                        <Icon size={13} color={meta.color} weight={heavyWeight(key)} />
+                        <span className={`text-[12px] ${isDark ? "text-[#A1A1AA]" : "text-slate-600"}`}>{meta.label}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="flex items-center gap-2">
+                    <Lock size={13} color={isDark ? "#3F3F46" : "#E2E8F0"} weight="duotone" />
+                    <span className={`text-[12px] ${isDark ? "text-[#A1A1AA]" : "text-slate-600"}`}>Data Sharing (Private)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Matrix legend */}
+          {tab === "matrix" && (
+            <div className={`mx-6 mb-5 rounded-2xl border px-5 py-3 ${isDark ? "bg-[#1C1C1E] border-[#27272A]" : "bg-white border-[#E3ECFC]"}`}>
+              <div className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${isDark ? "text-[#9CA3AF]" : "text-slate-500"}`}>Permission Legend</div>
+              <div className="grid grid-cols-4 gap-x-6 gap-y-1.5">
+                {(Object.entries(PERM_META) as [PermKey, typeof PERM_META[PermKey]][]).map(([key, meta]) => {
+                  const Icon = meta.icon;
+                  return (
+                    <div key={key} className="flex items-center gap-1.5">
+                      <Icon size={12} color={meta.color} weight={heavyWeight(key)} />
+                      <span className={`text-[11.5px] ${isDark ? "text-[#71717A]" : "text-slate-600"}`}>{meta.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </>
       )}
-    </Box>
+    </div>
   );
 };
 

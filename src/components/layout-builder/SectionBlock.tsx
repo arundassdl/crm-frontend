@@ -3,6 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import { Paper, Box, Typography, Grid, IconButton, Stack, Menu, MenuItem, InputBase, Divider, ListSubheader } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { DotsSixVertical, Gear } from '@phosphor-icons/react';
 import {
     DragIndicator as DragIcon,
     Delete as DeleteIcon,
@@ -67,6 +69,8 @@ const getFieldTypeLabel = (type: string) =>
 
 const SectionBlock: React.FC<SectionBlockProps> = ({ section, index }) => {
     const dispatch = useDispatch();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const [fieldMenuAnchor, setFieldMenuAnchor] = useState<null | HTMLElement>(null);
     const [fieldMenuContext, setFieldMenuContext] = useState<{ sectionId: string; field: any } | null>(null);
     const [addressSubFieldMenuAnchor, setAddressSubFieldMenuAnchor] = useState<null | HTMLElement>(null);
@@ -238,17 +242,36 @@ const SectionBlock: React.FC<SectionBlockProps> = ({ section, index }) => {
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     elevation={0}
-                    sx={{ mb: 3, p: 2, position: 'relative', border: '1px dashed', borderColor: 'divider', boxShadow: 'none' }}
+                    sx={{
+                        mb: 2,
+                        p: 0,
+                        position: 'relative',
+                        borderRadius: '12px',
+                        border: '1px solid',
+                        borderColor: isDark ? '#27272A' : '#E3ECFC',
+                        overflow: 'hidden',
+                        boxShadow: 'none',
+                        bgcolor: isDark ? '#0A0A0A' : '#fff',
+                    }}
                 >
                     <Stack
                         {...(!isTitleEditing ? provided.dragHandleProps : {})}
                         direction="row"
                         alignItems="center"
-                        spacing={2}
-                        mb={2}
-                        sx={{ cursor: isTitleEditing ? 'default' : 'grab', '&:active': { cursor: isTitleEditing ? 'default' : 'grabbing' } }}
+                        spacing={1.25}
+                        sx={{
+                            px: 2,
+                            py: 1.25,
+                            borderBottom: '1px solid',
+                            borderColor: isDark ? '#27272A' : '#E3ECFC',
+                            bgcolor: isDark ? '#111113' : '#fafcff',
+                            cursor: isTitleEditing ? 'default' : 'grab',
+                            '&:active': { cursor: isTitleEditing ? 'default' : 'grabbing' },
+                        }}
                     >
-                        <DragIcon color="action" />
+                        <Box sx={{ display: 'flex', color: isDark ? '#71717A' : '#94A3B8' }}>
+                            <DotsSixVertical size={14} weight="bold" />
+                        </Box>
                         {isTitleEditing ? (
                             <InputBase
                                 inputRef={titleInputRef}
@@ -259,9 +282,9 @@ const SectionBlock: React.FC<SectionBlockProps> = ({ section, index }) => {
                                 onClick={(e) => e.stopPropagation()}
                                 sx={{
                                     flexGrow: 1,
-                                    fontSize: '0.90rem',
-                                    fontWeight: 600,
-                                    color: '#000000',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 700,
+                                    color: isDark ? '#D4D4D8' : '#334155',
                                     px: 0.5,
                                     '& input': { padding: 0 },
                                 }}
@@ -269,15 +292,18 @@ const SectionBlock: React.FC<SectionBlockProps> = ({ section, index }) => {
                         ) : (
                             <Typography
                                 flexGrow={1}
-                                color="#000000"
                                 onClick={(e) => { e.stopPropagation(); setTitleDraft(section.title); setIsTitleEditing(true); }}
-                                sx={{ cursor: 'text', fontSize: '0.90rem', fontWeight: 600 }}
+                                sx={{ cursor: 'text', fontSize: '0.8125rem', fontWeight: 700, color: isDark ? '#D4D4D8' : '#334155' }}
                             >
                                 {section.title}
                             </Typography>
                         )}
-                        <IconButton size="small" onClick={handleSectionMenuOpen}>
-                            <SettingsIcon fontSize="small" />
+                        <IconButton
+                            size="small"
+                            onClick={handleSectionMenuOpen}
+                            sx={{ p: 0.3, color: isDark ? '#71717A' : '#94A3B8', '&:hover': { color: isDark ? '#60A5FA' : '#1D4ED8' }, borderRadius: '6px' }}
+                        >
+                            <Gear size={13} weight="duotone" />
                         </IconButton>
                     </Stack>
 
@@ -290,14 +316,13 @@ const SectionBlock: React.FC<SectionBlockProps> = ({ section, index }) => {
                                 ref={fieldProvided.innerRef}
                                 {...fieldProvided.droppableProps}
                                 sx={{
-                                    minHeight: '100px',
+                                    minHeight: '80px',
                                     display: 'grid',
-                                    gridTemplateColumns: '1fr 1fr',
-                                    gap: 2,
-                                    bgcolor: snapshot.isDraggingOver ? 'action.hover' : 'transparent',
+                                    gridTemplateColumns: isSingle ? '1fr' : '1fr 1fr',
+                                    gap: 1.5,
+                                    bgcolor: snapshot.isDraggingOver ? (isDark ? '#111113' : '#f8faff') : 'transparent',
                                     transition: 'background-color 0.2s ease',
-                                    borderRadius: 1,
-                                    p: 1,
+                                    p: 1.5,
                                 }}
                             >
                                     {section.fields?.map((field: any, fieldIndex: number) =>

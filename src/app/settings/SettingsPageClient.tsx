@@ -96,6 +96,9 @@ export default function SettingsPageClient() {
       viewFromUrl === 'dashboard-edit' ||
       viewFromUrl === 'home-create' ||
       viewFromUrl === 'home-edit')
+  /** Layout editor (create/edit) runs full-width: the left settings menu is hidden while it is open. */
+  const isLayoutEditorUrl =
+    viewFromUrl === 'layout-edit' || viewFromUrl === 'layout-create'
 
   useEffect(() => {
     if (menu.length === 0) {
@@ -366,16 +369,19 @@ export default function SettingsPageClient() {
         : 'ready'
 
   return (
-    <div className="flex min-h-[calc(100vh-7rem)] w-full items-stretch overflow-hidden rounded-xl border border-[#E3ECFC] bg-[#EFF6FF] shadow-sm dark:border-[#27272A] dark:bg-[#000000]">
-      <Sidebar menu={menu} activeTab={activeTab} onSelectTab={onSelectTab} />
+    <div className="flex min-h-[calc(100vh-7rem)] w-full items-stretch overflow-hidden   border border-[#E3ECFC] bg-[#EFF6FF] shadow-sm dark:border-[#27272A] dark:bg-[#000000]">
+      {!isLayoutEditorUrl && !isHomePageBuilderUrl && (
+        <Sidebar menu={menu} activeTab={activeTab} onSelectTab={onSelectTab} />
+      )}
 
       <div
         className={
           mainState === 'ready' &&
           (activeTab === 'user-users' ||
             activeTab === 'user-roles' ||
-            isHomePageBuilderUrl)
-            ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#EFF6FF] dark:bg-[#0A0A0A]'
+            isHomePageBuilderUrl ||
+            isLayoutEditorUrl)
+            ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#EFF6FF] dark:bg-[#0A0A0A]' 
             : 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[#EFF6FF] dark:bg-[#0A0A0A]'
         }
       >

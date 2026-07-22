@@ -13,20 +13,20 @@ const ModuleDetailTabs = dynamic(() =>
   import('@/app/setup/customization/modules/[module_name]/ModuleDetailTabs').then(m => m.default)
 )
 
-/** Same shell as `UserUsersSettingsPanel` list view */
+/** Modules & Fields listing: full-height white column so ModuleListing (its own toolbar/table) matches the reference. */
 const moduleListShell =
-  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#EFF6FF] pt-[2.4rem] dark:bg-[#0A0A0A]'
+  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-[#0A0A0A]'
 
-/** Customization Home Page: Insights Dashboard listing */
+/** Customization Home Page: Insights Dashboard listing (full-height white, matches reference) */
 const homePageShell =
-  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#EFF6FF] pt-[2.4rem] dark:bg-[#0A0A0A]'
+  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-[#0A0A0A]'
 
 /** Same shell as `UserUsersSettingsPanel` detail view */
 const moduleDetailShell =
-  'relative flex h-full min-h-0 flex-1 flex-col overflow-y-auto bg-[#EFF6FF] pt-[2.4rem] dark:bg-[#0A0A0A] px-4 pb-8 sm:px-6 md:px-8'
+  'relative flex h-full min-h-0 flex-1 flex-col overflow-y-auto bg-[#EFF6FF] dark:bg-[#0A0A0A]'
 
 const layoutBuilderShell =
-  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#EFF6FF] pt-[2.4rem] dark:bg-[#0A0A0A] px-2 pb-4 sm:px-4 md:px-6'
+  'relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#EFF6FF]  dark:bg-[#0A0A0A] '
 
 const CUSTOMIZATION_HOME_SUBTAB = 'home-page'
 const CUSTOMIZATION_MODULES_SUBTAB = 'modules'

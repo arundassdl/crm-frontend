@@ -1,6 +1,17 @@
 'use client'
 
 import { memo, useState } from 'react'
+import { Tooltip } from '@mui/material'
+import {
+  ChartBar,
+  ChartPie,
+  ChartLineUp,
+  Table as TableIcon,
+  SquaresFour,
+  Info,
+  FileText,
+  ArrowSquareOut,
+} from '@phosphor-icons/react'
 
 import type { DashboardWidget } from '../types'
 import type { RuntimeFilterRow } from '../types/componentFilters'
@@ -8,6 +19,27 @@ import { widgetCardClass, widgetHeaderClass } from '../styles/classes'
 import { ComponentFiltersButton, readComponentFilters } from './ComponentFiltersControl'
 import { WidgetRenderer } from './WidgetRenderer'
 import { WidgetToolbar } from './WidgetToolbar'
+
+/** UI-only: pick a leading icon + accent colour from the widget's existing type/chartKind. */
+function widgetVisual(widget: DashboardWidget): { Icon: React.ElementType; accent: string } {
+  const t = `${widget.type ?? ''} ${widget.chartKind ?? ''}`.toLowerCase()
+  if (t.includes('pie') || t.includes('donut')) return { Icon: ChartPie, accent: '#8B5CF6' }
+  if (t.includes('table') || t.includes('pivot')) return { Icon: TableIcon, accent: '#10B981' }
+  if (t.includes('line') || t.includes('area')) return { Icon: ChartLineUp, accent: '#06B6D4' }
+  if (t.includes('bar') || t.includes('column') || t.includes('chart')) return { Icon: ChartBar, accent: '#06B6D4' }
+  return { Icon: SquaresFour, accent: '#1D4ED8' }
+}
+
+/** Source report label already carried on the widget's config (read-only — no data logic added). */
+function readSourceReportName(widget: DashboardWidget): string | undefined {
+  const cfg = widget.config as Record<string, unknown> | undefined
+  const props = widget.properties as Record<string, unknown> | undefined
+  for (const key of ['reportName', 'savedReportName', 'queryName']) {
+    const v = cfg?.[key] ?? props?.[key]
+    if (typeof v === 'string' && v.trim()) return v.trim()
+  }
+  return undefined
+}
 
 type WidgetCardProps = {
   widget: DashboardWidget
@@ -34,6 +66,8 @@ function WidgetCardInner({
 }: WidgetCardProps) {
   const [runtimeFilters, setRuntimeFilters] = useState<RuntimeFilterRow[]>([])
   const componentFilterFields = readComponentFilters(widget)
+  const { Icon, accent } = widgetVisual(widget)
+  const sourceReportName = readSourceReportName(widget)
 
   return (
     <div
@@ -46,18 +80,25 @@ function WidgetCardInner({
           readOnly ? '' : ' widget-header-drag cursor-grab active:cursor-grabbing'
         }`}
       >
-        {!readOnly ? (
-          <span
-            className="widget-drag-grip -ml-0.5 flex h-6 w-4 shrink-0 items-center justify-center text-slate-300 dark:text-zinc-700 transition-colors group-hover:text-slate-500 dark:group-hover:text-zinc-400"
-            aria-hidden
-            title="Drag to move"
-          >
-            <i className="ri-draggable text-base leading-none" />
-          </span>
-        ) : null}
-        <span className="truncate font-heading text-[11.5px] font-semibold uppercase tracking-[0.1em] text-[#4A5675] dark:text-[#94A3B8]">
-          {widget.title}
+        <span
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+          style={{ backgroundColor: `${accent}1F` }}
+          aria-hidden
+        >
+          <Icon size={14} color={accent} weight="duotone" />
         </span>
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+          <Tooltip title={widget.title}>
+            <span className="truncate text-[13px] font-bold text-[#0C2472] dark:text-white">
+              {widget.title}
+            </span>
+          </Tooltip>
+          {widget.description ? (
+            <Tooltip title={widget.description}>
+              <Info size={13} weight="bold" color="#94A3B8" className="flex-shrink-0 cursor-help" />
+            </Tooltip>
+          ) : null}
+        </div>
         <div className="widget-no-drag ml-auto flex items-center gap-1">
           {componentFilterFields.length > 0 ? (
             <ComponentFiltersButton
@@ -80,6 +121,13 @@ function WidgetCardInner({
       <div className="min-h-0 flex-1 overflow-hidden">
         <WidgetRenderer widget={widget} loading={loading} runtimeFilters={runtimeFilters} />
       </div>
+      {sourceReportName ? (
+        <div className="flex w-full items-center justify-center gap-1.5 border-t border-[#E3ECFC] px-5 py-2 text-[11px] font-semibold text-[#4A5675] dark:border-[#27272A] dark:text-[#71717A]">
+          <FileText size={12} weight="duotone" className="flex-shrink-0" />
+          <span className="truncate">Source Report: {sourceReportName}</span>
+          <ArrowSquareOut size={11} weight="bold" className="flex-shrink-0" />
+        </div>
+      ) : null}
     </div>
   )
 }

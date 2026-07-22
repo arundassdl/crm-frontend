@@ -13,6 +13,8 @@ import {
     IconButton,
     Badge
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { CaretUp, CaretDown, Plus } from '@phosphor-icons/react';
 import {
     CropLandscape,
     ExpandMore,
@@ -104,6 +106,9 @@ const fieldItemSx = {
 
 const FieldPalette: React.FC = () => {
     const dispatch = useDispatch();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+    const paletteBlue = isDark ? '#93C5FD' : '#0C2472';
     const { unusedFields, availableFields, activeLayout, module: stateModule } = useSelector(layoutSelector) as any;
     const [newFieldsExpanded, setNewFieldsExpanded] = useState(true);
     const [unusedExpanded, setUnusedExpanded] = useState(true);
@@ -162,61 +167,63 @@ const FieldPalette: React.FC = () => {
         _provided: unknown,
         disabled?: boolean,
         endIcon?: React.ReactNode
-    ) => (
-        <Paper
-            variant={snapshot.isDragging ? 'elevation' : 'outlined'}
-            elevation={snapshot.isDragging ? 4 : 0}
-            sx={{
-                ...fieldItemSx,
-                cursor: disabled ? 'not-allowed' : 'grab',
-                borderColor: snapshot.isDragging ? 'primary.main' : 'divider',
-                opacity: disabled ? 0.6 : 1,
-                pointerEvents: disabled ? 'none' : 'auto'
-            }}
-        >
-            <ListItemIcon sx={{ minWidth: 'auto', color: disabled ? 'text.disabled' : 'primary.main' }}>
-                {icon}
-            </ListItemIcon>
-            <ListItemText
-                primary={label}
-                primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-            />
-            {endIcon && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, ml: 'auto' }}>
-                    {endIcon}
-                </Box>
-            )}
-        </Paper>
-    );
+    ) => {
+        // "New Section" renders as the dashed full-width button (reference).
+        if (label === 'NEW SECTION') {
+            return (
+                <div
+                    className={`flex items-center justify-center gap-1.5 w-full px-3 py-2 border border-dashed rounded-lg text-[12.5px] font-bold transition-colors ${
+                        isDark
+                            ? 'border-[#60A5FA] text-[#60A5FA] hover:bg-[#18181B]'
+                            : 'border-[#4A7AE8] text-[#1D4ED8] hover:bg-[#EFF6FF]'
+                    } ${snapshot.isDragging ? 'opacity-90' : ''}`}
+                    style={{ cursor: disabled ? 'not-allowed' : 'grab' }}
+                >
+                    <Plus size={11} weight="bold" /> NEW SECTION
+                </div>
+            );
+        }
+        const sizedIcon = React.isValidElement(icon)
+            ? React.cloneElement(icon as React.ReactElement<any>, {
+                  sx: { fontSize: 14, color: disabled ? undefined : paletteBlue, ...(icon as React.ReactElement<any>).props?.sx },
+              })
+            : icon;
+        return (
+            <div
+                className={`flex items-center gap-1.5 w-full px-2 py-1.5 border rounded-lg transition-colors text-[15px] font-medium whitespace-nowrap overflow-hidden ${
+                    disabled ? 'opacity-60' : ''
+                } ${
+                    snapshot.isDragging
+                        ? isDark
+                            ? 'border-[#60A5FA] bg-[#1E293B]'
+                            : 'border-[#1D4ED8] bg-[#EFF6FF]'
+                        : isDark
+                            ? 'border-[#3F3F46] bg-[#18181B] hover:border-[#60A5FA] hover:bg-[#1E293B]'
+                            : 'border-[#E3ECFC] bg-white hover:border-[#1D4ED8] hover:bg-[#EFF6FF]'
+                }`}
+                style={{ color: paletteBlue, cursor: disabled ? 'not-allowed' : 'grab', pointerEvents: disabled ? 'none' : 'auto' }}
+            >
+                <span className="flex-shrink-0 flex items-center">{sizedIcon}</span>
+                <span className="truncate">{label}</span>
+                {endIcon && <span className="ml-auto flex items-center">{endIcon}</span>}
+            </div>
+        );
+    };
 
     let fieldIndex = 0;
 
     return (
-        <Box sx={{ width: 300, p: 2, borderRight: 1, borderColor: 'divider', height: '100%', bgcolor: 'background.paper' }}>
-            {/* <Typography variant="h6" fontWeight="600" mb={2}>
-                Field Palette
-            </Typography> */}
-
+        <Box sx={{ width: 300, height: '100%', overflowY: 'auto', bgcolor: isDark ? '#0A0A0A' : '#f9fbff' }}>
             {/* New Fields section */}
-            <Box sx={{ mb: 2 }}>
-                <Box
+            <Box>
+                <button
                     onClick={() => setNewFieldsExpanded(!newFieldsExpanded)}
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        py: 0.5,
-                        '&:hover': { bgcolor: 'action.hover' },
-                        borderRadius: 1
-                    }}
+                    className={`flex items-center justify-between w-full px-4 py-2.5 text-[13px] font-bold uppercase tracking-wider ${isDark ? 'hover:bg-[#18181B]' : 'hover:bg-[#EFF6FF]'}`}
+                    style={{ color: paletteBlue }}
                 >
-                    <IconButton size="small" sx={{ p: 0.25 }}>
-                        {newFieldsExpanded ? <ExpandMore /> : <ChevronRight />}
-                    </IconButton>
-                    <Typography variant="body2" fontWeight="600" color="text.primary" sx={{ textTransform: 'none' }}>
-                        New Fields
-                    </Typography>
-                </Box>
+                    <span>New Fields</span>
+                    {newFieldsExpanded ? <CaretUp size={9} weight="bold" /> : <CaretDown size={9} weight="bold" />}
+                </button>
 
                 {newFieldsExpanded && (
                     <>
@@ -229,9 +236,10 @@ const FieldPalette: React.FC = () => {
                                     sx={{
                                         display: 'grid',
                                         gridTemplateColumns: '1fr 1fr',
-                                        gap: 1,
-                                        mt: 1,
-                                        mb: 1
+                                        gap: 1.5,
+                                        px: 1.5,
+                                        pt: 1,
+                                        pb: 1.5,
                                     }}
                                 >
                                     {filteredStandardFieldTypes.map((field) => (
@@ -277,7 +285,7 @@ const FieldPalette: React.FC = () => {
                                 <List
                                     {...provided.droppableProps}
                                     ref={provided.innerRef}
-                                    sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
+                                    sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 1.5, pb: 1.5, pt: 0 }}
                                 >
                                     <Draggable key="add-section" draggableId="palette-add-section" index={0}>
                                         {(aProvided, aSnapshot) => (
@@ -302,33 +310,26 @@ const FieldPalette: React.FC = () => {
             </Box>
 
             {/* Unused Items section */}
-            <Box sx={{ mt: 2 }}>
-                <Box
+            <Box>
+                <button
                     onClick={() => setUnusedExpanded(!unusedExpanded)}
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        py: 0.5,
-                        '&:hover': { bgcolor: 'action.hover' },
-                        borderRadius: 1
-                    }}
+                    className={`flex items-center justify-between w-full px-4 py-2.5 text-[13px] font-bold uppercase tracking-wider ${isDark ? 'hover:bg-[#18181B]' : 'hover:bg-[#EFF6FF]'}`}
+                    style={{ color: paletteBlue }}
                 >
-                    <IconButton size="small" sx={{ p: 0.25 }}>
-                        {unusedExpanded ? <ExpandMore /> : <ChevronRight />}
-                    </IconButton>
-                    <Typography variant="body2" fontWeight="600" color="text.primary" sx={{ textTransform: 'none', mr: 1 }}>
+                    <span className="flex items-center gap-2">
                         Unused Items
-                    </Typography>
-                    <Badge
-                        badgeContent={unusedFields.length}
-                        color="primary"
-                        sx={{ '& .MuiBadge-badge': { fontSize: '0.7rem', minWidth: 18, height: 18 } }}
-                    />
-                </Box>
-                {/* <Typography variant="caption" color="primary.main" sx={{ display: 'block', pl: 3.5, pt: 0.5 }}>
-                    Custom Fields Left: {customFieldsLeft}
-                </Typography> */}
+                        {unusedFields.length > 0 && (
+                            <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-bold text-white bg-[#1D4ED8]">
+                                {unusedFields.length}
+                            </span>
+                        )}
+                    </span>
+                    {unusedExpanded ? <CaretUp size={9} weight="bold" /> : <CaretDown size={9} weight="bold" />}
+                </button>
+
+                {unusedExpanded && unusedFields.length === 0 && (
+                    <div className={`px-4 pb-2 text-[13px] ${isDark ? 'text-[#9CA3AF]' : 'text-slate-600'}`}>No unused items.</div>
+                )}
 
                 {unusedExpanded && unusedFields.length > 0 && (
                     <Droppable droppableId="palette-unused" type="FIELD">
@@ -336,7 +337,7 @@ const FieldPalette: React.FC = () => {
                             <List
                                 {...provided.droppableProps}
                                 ref={provided.innerRef}
-                                sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, mb: 2 }}
+                                sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 1.5, pt: 1, pb: 2 }}
                             >
                                 {unusedFields.map((field, index) => (
                                     <Draggable key={field.id} draggableId={`unused-${field.id}`} index={index}>

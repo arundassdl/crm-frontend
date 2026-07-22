@@ -139,22 +139,21 @@ function DashboardBuilderShellInner({
         <Stack direction="row" spacing={1}>
           <Button
             variant="outlined"
-            color="inherit"
             size="small"
             onClick={onCancel}
             sx={{
-              borderRadius: 2,
-              fontSize: '0.8rem',
-              lineHeight: 2,
-              py: 0.5,
-              px: 2,
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              py: 0.7,
+              px: 1.75,
               textTransform: 'none',
-              fontWeight: 500,
-              borderColor: 'rgba(17,24,32,0.12)',
-              bgcolor: 'background.paper',
+              fontWeight: 600,
+              color: theme => (theme.palette.mode === 'dark' ? '#9CA3AF' : '#64748B'),
+              borderColor: theme => (theme.palette.mode === 'dark' ? '#3F3F46' : '#E3ECFC'),
+              bgcolor: 'transparent',
               '&:hover': {
-                bgcolor: 'action.hover',
-                borderColor: 'rgba(17,24,32,0.18)',
+                bgcolor: theme => (theme.palette.mode === 'dark' ? '#18181B' : '#F8FAFC'),
+                borderColor: theme => (theme.palette.mode === 'dark' ? '#3F3F46' : '#E3ECFC'),
               },
             }}
           >
@@ -162,23 +161,22 @@ function DashboardBuilderShellInner({
           </Button>
           <Button
             variant="outlined"
-            color="inherit"
             size="small"
             onClick={onSaveAndClose}
             disabled={!hasChanges || saving}
             sx={{
-              borderRadius: 2,
-              fontSize: '0.8rem',
-              lineHeight: 1.4,
-              py: 0.5,
-              px: 2.5,
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              py: 0.7,
+              px: 1.75,
               textTransform: 'none',
-              fontWeight: 500,
-              borderColor: 'rgba(17,24,32,0.12)',
-              bgcolor: 'background.paper',
+              fontWeight: 600,
+              color: theme => (theme.palette.mode === 'dark' ? '#9CA3AF' : '#64748B'),
+              borderColor: theme => (theme.palette.mode === 'dark' ? '#3F3F46' : '#E3ECFC'),
+              bgcolor: 'transparent',
               '&:hover': {
-                bgcolor: 'action.hover',
-                borderColor: 'rgba(17,24,32,0.18)',
+                bgcolor: theme => (theme.palette.mode === 'dark' ? '#18181B' : '#F8FAFC'),
+                borderColor: theme => (theme.palette.mode === 'dark' ? '#3F3F46' : '#E3ECFC'),
               },
             }}
           >
@@ -186,25 +184,20 @@ function DashboardBuilderShellInner({
           </Button>
           <Button
             variant="contained"
-            color="primary"
             size="small"
             onClick={onSave}
             disabled={!hasChanges || saving}
             sx={{
-              borderRadius: 2,
-              fontSize: '0.8rem',
-              lineHeight: 1.4,
-              py: 0.5,
-              px: 3,
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              py: 0.7,
+              px: 2.5,
               textTransform: 'none',
-              fontWeight: 500,
-              bgcolor: '#4c6fff',
-              color: 'primary.contrastText',
+              fontWeight: 700,
+              bgcolor: '#1D4ED8',
+              color: '#fff',
               boxShadow: 'none',
-              '&:hover': {
-                bgcolor: '#3957d5',
-                boxShadow: 'none',
-              },
+              '&:hover': { bgcolor: '#60A5FA', boxShadow: 'none' },
             }}
           >
             {saving ? 'Saving…' : 'Save'}

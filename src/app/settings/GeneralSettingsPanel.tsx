@@ -51,7 +51,7 @@ export default function GeneralSettingsPanel() {
 
   if (!currentUserName) {
     return (
-      <div className='relative flex min-h-[240px] items-center justify-center bg-[#EFF6FF] px-8 pb-8 pt-[2.4rem] text-slate-500 dark:bg-[#0A0A0A]'>
+      <div className='relative flex min-h-[240px] items-center justify-center bg-[#EFF6FF]  text-slate-500 dark:bg-[#0A0A0A]'>
         Loading profile…
       </div>
     )
