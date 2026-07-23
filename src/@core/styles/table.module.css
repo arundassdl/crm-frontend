@@ -11,11 +11,11 @@
     text-align: center;
   }
 
-  thead {
+  & thead {
     text-transform: uppercase;
     color: var(--mui-palette-text-primary);
 
-    th {
+    & th {
       font-weight: 500;
       font-size: 0.8125rem;
       letter-spacing: 0.2px;
@@ -43,11 +43,11 @@
     }
   }
 
-  tbody {
+  & tbody {
     color: var(--mui-palette-text-secondary);
 
-    th,
-    td {
+    & th,
+    & td {
       font-size: 0.9375rem;
       line-height: 1.4667;
       block-size: 50px;
@@ -70,7 +70,7 @@
       }
     }
 
-    tr:not(:last-child) {
+    & tr:not(:last-child) {
       border-block-end: 1px solid var(--border-color);
     }
   }
