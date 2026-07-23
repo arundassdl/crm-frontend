@@ -6,10 +6,12 @@ import themeConfig from '@configs/themeConfig'
 
 type StyledMainProps = {
   isContentCompact: boolean
+  /** Per-route override for the content padding. Falls back to the themeConfig default (15px). */
+  layoutPadding?: number
 }
 
 const StyledMain = styled.main<StyledMainProps>`
-  padding: ${themeConfig.layoutPadding}px;
+  padding: ${({ layoutPadding }) => layoutPadding ?? themeConfig.layoutPadding}px;
   ${({ isContentCompact }) =>
     isContentCompact &&
     `

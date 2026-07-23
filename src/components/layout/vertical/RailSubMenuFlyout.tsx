@@ -57,6 +57,7 @@ const RailSubMenuFlyout = ({ label, icon, collapsed, children }: RailSubMenuFlyo
         justifyContent: collapsed ? 'center' : 'flex-start',
         inlineSize: collapsed ? 40 : '100%',
         blockSize: collapsed ? 40 : 'auto',
+        minBlockSize: 40,
         marginInline: collapsed ? 'auto' : 0,
         paddingInline: collapsed ? 0 : 1.5,
         paddingBlock: collapsed ? 0 : 1.25,
@@ -72,7 +73,20 @@ const RailSubMenuFlyout = ({ label, icon, collapsed, children }: RailSubMenuFlyo
         '& svg': { flexShrink: 0 }
       }}
     >
-      {icon}
+      {/* Match the leaf MenuItem icon column: StyledMenuIcon reserves an extra
+          10px (margin-inline-end) beyond the row gap, so labels line up. */}
+      <Box
+        component='span'
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          marginInlineEnd: collapsed ? 0 : '10px'
+        }}
+      >
+        {icon}
+      </Box>
       {!collapsed && <Box component='span'>{label}</Box>}
     </Box>
   )

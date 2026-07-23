@@ -116,6 +116,8 @@ const FieldPalette: React.FC = () => {
     const customFieldsLeft = typeof availableFields?.length === 'number' ? availableFields.length : 218;
     const moduleLower = String(stateModule ?? "").toLowerCase();
     const isTasksModule = moduleLower.includes("tasks");
+    // Stage is a Deals-only field type — never offered in other modules' layouts.
+    const isDealsModule = moduleLower.includes("deal");
 
     // Only show core standard tiles if the layout doesn't already contain them.
     const existingLayoutFields = (activeLayout?.sections ?? []).flatMap((s: any) => s?.fields ?? []);
@@ -152,6 +154,7 @@ const FieldPalette: React.FC = () => {
 
     const filteredStandardFieldTypes = STANDARD_FIELD_TYPES.filter((ft) => {
         if ((ft.type === "ContactLead" || ft.type === "Relatedto" || ft.type === "Reminder") && !isTasksModule) return false;
+        if (ft.type === "stage" && !isDealsModule) return false;
         if (ft.type === "firstname" && hasFirstNameField) return false;
         if (ft.type === "stage" && hasStageField) return false;
         if (ft.type === "ContactLead" && hasContactLeadField) return false;

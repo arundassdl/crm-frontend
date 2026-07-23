@@ -37,6 +37,8 @@ const LayoutContent = ({ children }: ChildrenType) => {
   /** Settings + user detail under `/user/users/detail/*` use the same embedded chrome; drop Card vertical padding (was 1.25rem 0). */
   const isSettingsRoute =
     pathname.startsWith('/settings') || pathname.startsWith('/user/users/detail')
+  /** Settings module only: use full available width by zeroing the layout content padding (default stays 15px elsewhere). */
+  const isSettingsModuleRoute = pathname === '/settings' || pathname.startsWith('/settings/')
   const notProtectedRoutes = ['/my-company', '/my-account', '/rewards/detail', '/rewards', '/users/sales-partner/detail/'];
   const isNotProtectedRoute = notProtectedRoutes.some((route) =>
     pathname.startsWith(route)
@@ -57,6 +59,7 @@ const LayoutContent = ({ children }: ChildrenType) => {
   return (
     <StyledMain
       isContentCompact={isWideAddonMainChrome ? false : true}
+      layoutPadding={isSettingsModuleRoute ? 0 : undefined}
       className={classnames(
         verticalLayoutClasses.content,
         verticalLayoutClasses.contentCompact,

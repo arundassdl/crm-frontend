@@ -5,6 +5,7 @@ import { Box, CircularProgress, Typography } from '@mui/material'
 import { useQueryClient } from '@tanstack/react-query'
 
 import DashboardPageHeader from '@/components/Dashboard/DashboardPageHeader'
+import WelcomeBanner from '@/components/Dashboard/WelcomeBanner'
 import { DashboardViewGrid } from '@/modules/dashboard-builder/components/DashboardViewGrid'
 import {
   dashboardKeys,
@@ -102,6 +103,9 @@ function DashboardPageContent() {
         width: '100%',
         maxWidth: '100%',
         boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: { xs: 2, sm: 3 },
       }}
     >
       <DashboardPageHeader
@@ -110,6 +114,8 @@ function DashboardPageContent() {
         onDashboardChange={setSelectedDashboardId}
         onRefresh={handleRefreshDashboard}
       />
+
+      <WelcomeBanner />
 
       {dashboardLoading || dashboardFetching ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>

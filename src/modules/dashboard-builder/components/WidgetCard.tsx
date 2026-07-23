@@ -67,7 +67,8 @@ function WidgetCardInner({
   const [runtimeFilters, setRuntimeFilters] = useState<RuntimeFilterRow[]>([])
   const componentFilterFields = readComponentFilters(widget)
   const { Icon, accent } = widgetVisual(widget)
-  const sourceReportName = readSourceReportName(widget)
+  // Source report is a builder-only affordance — hidden from the end-user dashboard view.
+  const sourceReportName = readOnly ? undefined : readSourceReportName(widget)
 
   return (
     <div

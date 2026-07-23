@@ -656,8 +656,28 @@ const UserOverview = (slug) => {
     );
   }, [roleLabel, profile, customerData, roleOptions, slug?.detail]);
 
-  /** Super Admin role must never be changed from this UI (listing + personal settings). */
-  const roleFieldEditable = isEditPermission && !isSuperAdminRoleUser;
+  /** True when the viewed profile belongs to the currently signed-in user. */
+  const isOwnProfile = useMemo(() => {
+    const loggedIn = String(userToken?.email ?? userToken?.username ?? "")
+      .trim()
+      .toLowerCase();
+    const viewed = String(
+      profile?.email ??
+        (customerData as Record<string, unknown>)?.email ??
+        (customerData as Record<string, unknown>)?.name ??
+        (slug?.detail as Record<string, unknown> | undefined)?.email ??
+        ""
+    )
+      .trim()
+      .toLowerCase();
+    return Boolean(loggedIn) && Boolean(viewed) && loggedIn === viewed;
+  }, [userToken, profile?.email, customerData, slug?.detail]);
+
+  /**
+   * Super Admin role must never be changed from this UI, and a user cannot edit
+   * their own Role (listing detail + personal settings share this overview).
+   */
+  const roleFieldEditable = isEditPermission && !isSuperAdminRoleUser && !isOwnProfile;
 
   const headerEmail = String(
     profile?.email ?? (customerData as Record<string, unknown>)?.email ?? ""
@@ -794,7 +814,8 @@ const UserOverview = (slug) => {
               type="email"
               value={profile?.email}
               onSave={handleSave}
-              isEditpermission={isEditPermission}
+              // Email is the login identifier — read-only here (no edit icon / inline editing).
+              isEditpermission={false}
             />
             <EditableField
               kvLayout

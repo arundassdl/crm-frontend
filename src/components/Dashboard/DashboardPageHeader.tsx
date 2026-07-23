@@ -1,14 +1,18 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Box,
-  FormControl,
+  Button,
+  Divider,
+  ListItemText,
+  Menu,
   MenuItem,
-  Select,
   Typography,
-  type SelectChangeEvent,
 } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
+import { CaretDown, Check, GearSix, PencilSimple, SquaresFour } from '@phosphor-icons/react'
 
 import {
   SETTINGS_HOME_PAGE_SUBTAB,
@@ -16,45 +20,12 @@ import {
   dashboardEditPath,
 } from '@/app/settings/utils/moduleSettingsRoutes'
 import type { DashboardListItem } from '@/modules/dashboard-builder/types'
-import { readAccessTokenDataParsed } from '@/utils/accessTokenDataStorage'
-import { readUserProfileDataJsonString } from '@/utils/userProfileDataStorage'
-
-import OptionMenu from './option-menu'
-import type { OptionMenuItemType } from './option-menu/types'
 
 type DashboardPageHeaderProps = {
   dashboards: DashboardListItem[]
   selectedDashboardId: string | null
   onDashboardChange: (dashboardId: string) => void
   onRefresh?: () => void
-}
-
-function resolveWelcomeName(): string {
-  const token = readAccessTokenDataParsed<{ full_name?: string; username?: string }>()
-  const candidates = [token.full_name]
-
-  try {
-    const profileRaw = readUserProfileDataJsonString()
-    if (profileRaw) {
-      const profile = JSON.parse(profileRaw) as { full_name?: string }
-      candidates.push(profile.full_name)
-    }
-  } catch {
-    /* ignore */
-  }
-
-  candidates.push(token.username)
-
-  for (const value of candidates) {
-    if (typeof value !== 'string' || !value.trim()) continue
-    const trimmed = value.trim()
-    if (trimmed.includes('@')) {
-      return trimmed.split('@')[0] || trimmed
-    }
-    return trimmed.split(/\s+/)[0] || trimmed
-  }
-
-  return 'there'
 }
 
 function homePageSettingsPath(): string {
@@ -67,41 +38,22 @@ export default function DashboardPageHeader({
   onDashboardChange,
   onRefresh,
 }: DashboardPageHeaderProps) {
-  const welcomeName = useMemo(() => resolveWelcomeName(), [])
-  const selectedDashboard = dashboards.find(d => d.id === selectedDashboardId)
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  const router = useRouter()
 
-  const menuOptions = useMemo((): OptionMenuItemType[] => {
-    const items: OptionMenuItemType[] = []
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
+  const closeMenu = () => setMenuAnchor(null)
 
-    if (selectedDashboardId) {
-      items.push({
-        text: 'Edit dashboard',
-        icon: <i className="ri-edit-line" />,
-        href: dashboardEditPath(selectedDashboardId),
-      })
-    }
+  const selectedDashboard = useMemo(
+    () => dashboards.find(d => d.id === selectedDashboardId),
+    [dashboards, selectedDashboardId]
+  )
+  const triggerLabel = selectedDashboard?.title ?? 'Select Dashboard'
 
-    items.push({
-      text: 'Manage home pages',
-      icon: <i className="ri-layout-grid-line" />,
-      href: homePageSettingsPath(),
-    })
-
-    if (onRefresh) {
-      items.push({
-        text: 'Refresh',
-        icon: <i className="ri-refresh-line" />,
-        menuItemProps: {
-          onClick: () => onRefresh(),
-        },
-      })
-    }
-
-    return items
-  }, [onRefresh, selectedDashboardId])
-
-  const handleDashboardChange = (event: SelectChangeEvent<string>) => {
-    onDashboardChange(event.target.value)
+  const handleSelect = (dashboardId: string) => {
+    onDashboardChange(dashboardId)
+    closeMenu()
   }
 
   return (
@@ -109,66 +61,54 @@ export default function DashboardPageHeader({
       component="header"
       aria-label="Dashboard header"
       sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        justifyContent: 'space-between',
+        columnGap: { xs: 1.5, sm: 2 },
+        rowGap: 2,
         width: '100%',
         maxWidth: '100%',
         boxSizing: 'border-box',
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        columnGap: { xs: 1.5, sm: 2 },
-        rowGap: { xs: 1.5, sm: 2 },
-        pb: { xs: 2, md: 2.5 },
-        mb: { xs: 2, md: 3 },
-        borderBottom: 1,
-        borderColor: 'divider',
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: { xs: 1.25, sm: 1.75 },
-          minWidth: 0,
-          flex: '1 1 200px',
-        }}
-      >
+      {/* ── Left: icon + title + subtitle ── */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: { xs: 36, sm: 40 },
-            height: { xs: 36, sm: 40 },
-            borderRadius: 1.5,
-            bgcolor: 'primary.lightOpacity',
-            color: 'primary.main',
+            width: 36,
+            height: 36,
+            borderRadius: '12px',
+            bgcolor: isDark ? 'rgba(29,78,216,0.15)' : '#EFF6FF',
             flexShrink: 0,
           }}
         >
-          <i className="ri-dashboard-line text-xl" aria-hidden />
+          <SquaresFour size={18} weight="duotone" color="#1D4ED8" />
         </Box>
-
         <Box sx={{ minWidth: 0 }}>
           <Typography
-            variant="h6"
             component="h1"
             sx={{
-              fontWeight: 600,
-              fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
-              lineHeight: 1.3,
-              color: 'text.primary',
+              m: 0,
+              fontSize: '20px',
+              fontWeight: 800,
+              lineHeight: 1.15,
+              letterSpacing: '-0.01em',
+              color: isDark ? '#F4F4F5' : '#0C2472',
             }}
           >
-            Welcome, {welcomeName}
+            Dashboard
           </Typography>
           <Typography
-            variant="body2"
-            color="text.secondary"
             sx={{
-              display: { xs: 'none', sm: 'block' },
+              m: 0,
               mt: 0.25,
-              lineHeight: 1.4,
+              fontSize: '12px',
+              lineHeight: 1.2,
+              color: isDark ? '#9CA3AF' : '#64748B',
             }}
           >
             {selectedDashboard?.title ?? 'Your dashboard overview'}
@@ -176,56 +116,121 @@ export default function DashboardPageHeader({
         </Box>
       </Box>
 
-      <Box
+      {/* ── Right: dashboard switcher ── */}
+      <Button
+        onClick={e => setMenuAnchor(e.currentTarget)}
+        variant="outlined"
+        endIcon={<CaretDown size={13} weight="bold" />}
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          gap: { xs: 0.75, sm: 1 },
-          flex: '0 0 auto',
+          textTransform: 'none',
+          fontWeight: 700,
+          fontSize: '13px',
+          borderRadius: '9px',
+          color: isDark ? '#D4D4D8' : '#0C2472',
+          borderColor: isDark ? '#27272A' : '#E3ECFC',
+          bgcolor: isDark ? '#18181B' : '#fff',
+          '&:hover': {
+            bgcolor: isDark ? '#27272A' : '#EFF6FF',
+            borderColor: isDark ? '#27272A' : '#E3ECFC',
+          },
           width: { xs: '100%', sm: 'auto' },
-          ml: { xs: 0, sm: 'auto' },
         }}
       >
-        <FormControl
-          size="small"
-          sx={{
-            minWidth: { xs: 0, sm: 220, md: 260 },
-            flex: { xs: '1 1 auto', sm: '0 1 260px' },
-            maxWidth: { xs: '100%', sm: 320 },
-          }}
-        >
-          <Select
-            value={selectedDashboardId ?? ''}
-            onChange={handleDashboardChange}
-            displayEmpty
-            renderValue={() => selectedDashboard?.title ?? 'Select Dashboard'}
-            aria-label="Dashboard selector"
-            sx={{
-              bgcolor: 'background.paper',
-              '& .MuiSelect-select': {
-                py: 1,
-              },
-            }}
-          >
-            {dashboards.map(dashboardOption => (
-              <MenuItem key={dashboardOption.id} value={dashboardOption.id}>
-                {dashboardOption.title}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        {triggerLabel}
+      </Button>
 
-        <OptionMenu
-          iconClassName="ri-more-2-line text-xl"
-          iconButtonProps={{
-            sx: { p: 0.75, flexShrink: 0 },
-            'aria-label': 'Dashboard actions',
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={closeMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{
+          sx: {
+            mt: 0.75,
+            borderRadius: '12px',
+            minWidth: 220,
+            py: 0.5,
+            bgcolor: isDark ? '#18181B' : '#fff',
+            border: `1px solid ${isDark ? '#27272A' : '#E3ECFC'}`,
+            boxShadow: isDark
+              ? '0 8px 24px rgba(0,0,0,0.45)'
+              : '0 8px 24px rgba(15,23,42,0.12)',
+          },
+        }}
+      >
+        {dashboards.map(dashboardOption => {
+          const isSelected = dashboardOption.id === selectedDashboardId
+          return (
+            <MenuItem
+              key={dashboardOption.id}
+              onClick={() => handleSelect(dashboardOption.id)}
+              selected={isSelected}
+              sx={{
+                py: 1,
+                px: 1.75,
+                mx: 0.5,
+                borderRadius: '8px',
+                '&.Mui-selected': { bgcolor: isDark ? '#27272A' : '#EFF6FF' },
+              }}
+            >
+              <ListItemText
+                primaryTypographyProps={{
+                  fontSize: 13.5,
+                  fontWeight: isSelected ? 700 : 500,
+                  color: isSelected ? '#1D4ED8' : undefined,
+                }}
+              >
+                {dashboardOption.title}
+              </ListItemText>
+              {isSelected && <Check size={15} weight="bold" color="#1D4ED8" />}
+            </MenuItem>
+          )
+        })}
+
+        <Divider sx={{ my: 0.5, borderColor: isDark ? '#27272A' : '#E3ECFC' }} />
+
+        {selectedDashboardId && (
+          <MenuItem
+            onClick={() => {
+              closeMenu()
+              router.push(dashboardEditPath(selectedDashboardId))
+            }}
+            sx={{ py: 1, px: 1.75, mx: 0.5, borderRadius: '8px' }}
+          >
+            <PencilSimple size={16} weight="duotone" className="mr-2.5" />
+            <ListItemText primaryTypographyProps={{ fontSize: 13.5 }}>
+              Edit dashboard
+            </ListItemText>
+          </MenuItem>
+        )}
+
+        <MenuItem
+          onClick={() => {
+            closeMenu()
+            router.push(homePageSettingsPath())
           }}
-          options={menuOptions}
-          leftAlignMenu={false}
-        />
-      </Box>
+          sx={{ py: 1, px: 1.75, mx: 0.5, borderRadius: '8px' }}
+        >
+          <GearSix size={16} weight="duotone" className="mr-2.5" />
+          <ListItemText primaryTypographyProps={{ fontSize: 13.5 }}>
+            Manage Dashboards
+          </ListItemText>
+        </MenuItem>
+
+        {onRefresh && (
+          <MenuItem
+            onClick={() => {
+              closeMenu()
+              onRefresh()
+            }}
+            sx={{ py: 1, px: 1.75, mx: 0.5, borderRadius: '8px' }}
+          >
+            <i className="ri-refresh-line mr-2.5 text-[16px]" />
+            <ListItemText primaryTypographyProps={{ fontSize: 13.5 }}>Refresh</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
     </Box>
   )
 }
