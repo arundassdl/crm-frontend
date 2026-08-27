@@ -29,13 +29,15 @@ import { Badge, InputBase, Button } from "@mui/material";
 import {
   List, GridFour, GitFork, MagnifyingGlass, FunnelSimple, Columns, SortAscending, Plus,
   User, IdentificationBadge, UserCircle, CalendarBlank,
-  Envelope, Phone, DeviceMobile, Pulse, Buildings, Globe, Briefcase, Tag,
+  Envelope, Phone, DeviceMobile, Pulse, Buildings, Globe, Briefcase,
   House, CaretRight, CaretDown, Kanban, TrendUp
 } from "@phosphor-icons/react";
 
 import LeadGridView from "@/components/Leads/LeadGridView";
 import LeadKanbanView from "@/components/Leads/LeadKanbanView";
 import { getAvatarColor as avatarColor } from "@/@core/utils/avatarColor";
+import { StatusBadge, buildStatusStyleMap, type StatusOption } from "./statusBadge";
+import { useHorizontalScroll } from "@/hooks/GeneralHooks/useHorizontalScroll";
 
 // Utility function to format header names dynamically
 const formatHeaderName = (field: string) => {
@@ -55,7 +57,7 @@ const getHeaderIcon = (field: string) => {
   if (f === "email" || f === "email_id") return Envelope;
   if (f === "mobile_no" || f === "mobile") return DeviceMobile;
   if (f === "phone" || f === "customer_phone" || f === "phone_no") return Phone;
-  if (f === "status" || f === "lead_status") return Tag;
+  if (f === "status" || f.endsWith("_status")) return Pulse;
   if (f === "creation" || f === "modified" || f === "due_date" || f === "close_date") return CalendarBlank;
   if (f === "organization" || f === "company" || f === "organization_name") return Buildings;
   if (f === "website") return Globe;
@@ -65,39 +67,29 @@ const getHeaderIcon = (field: string) => {
   return null;
 };
 
-// Premium Status Badges config
-const STATUS_CFG: Record<string, { bg: string; text: string; dot: string; bgDark: string; textDark: string }> = {
-  "New": { bg: "#EFF6FF", text: "#0C2472", dot: "#3B82F6", bgDark: "rgba(96, 165, 250, 0.15)", textDark: "#60A5FA" },
-  "Contacted": { bg: "#E3ECFC", text: "#0C2472", dot: "#3B82F6", bgDark: "rgba(96, 165, 250, 0.15)", textDark: "#60A5FA" },
-  "Nurture": { bg: "#EFF6FF", text: "#007adb", dot: "#007adb", bgDark: "rgba(0, 122, 219, 0.15)", textDark: "#60A5FA" },
-  "Qualified": { bg: "#DCFCE7", text: "#166534", dot: "#16A34A", bgDark: "rgba(16, 185, 129, 0.15)", textDark: "#34D399" },
-  "Unqualified": { bg: "#F1F5F9", text: "#475569", dot: "#94A3B8", bgDark: "rgba(168, 85, 247, 0.15)", textDark: "#A855F7" },
-  "Junk": { bg: "#FEF2F2", text: "#991B1B", dot: "#EF4444", bgDark: "rgba(244, 63, 94, 0.15)", textDark: "#F87171" },
-  "In Progress": { bg: "#E3ECFC", text: "#0C2472", dot: "#1D4ED8", bgDark: "rgba(251, 191, 36, 0.15)", textDark: "#FBBF24" },
-  "Lost": { bg: "#FEF2F2", text: "#991B1B", dot: "#EF4444", bgDark: "rgba(244, 63, 94, 0.15)", textDark: "#F87171" },
-  // Deal stages
-  "Qualification": { bg: "#F1F5F9", text: "#334155", dot: "#64748B", bgDark: "rgba(148, 163, 184, 0.15)", textDark: "#94A3B8" },
-  "Demo/Making": { bg: "#FFF7ED", text: "#9A3412", dot: "#EA580C", bgDark: "rgba(251, 146, 60, 0.15)", textDark: "#FB923C" },
-  "Proposal/Quotation": { bg: "#EFF6FF", text: "#0C2472", dot: "#007BE0", bgDark: "rgba(0, 123, 224, 0.15)", textDark: "#60A5FA" },
-  "Negotiation": { bg: "#FEFCE8", text: "#854D0E", dot: "#CA8A04", bgDark: "rgba(234, 179, 8, 0.15)", textDark: "#FBBF24" },
-  "Ready to Close": { bg: "#F5F3FF", text: "#5B21B6", dot: "#8642C2", bgDark: "rgba(167, 139, 250, 0.15)", textDark: "#A78BFA" },
-  "Won": { bg: "#DCFCE7", text: "#166534", dot: "#16A34A", bgDark: "rgba(16, 185, 129, 0.15)", textDark: "#34D399" },
+// Status badge colours/labels come from the module's Component Pick List
+// configuration — see `statusBadge.tsx`. Nothing about the status set is
+// hardcoded here.
+
+/** A probability column is the field itself, or a namespaced variant (`stage_probability`). */
+const isProbabilityField = (field: string) => {
+  const f = field.toLowerCase();
+  return f === "probability" || f.endsWith("_probability");
 };
 
-const renderStatusCell = (status: string, isDark: boolean) => {
-  const cfg = STATUS_CFG[status] || { bg: "#F1F5F9", text: "#475569", dot: "#94A3B8", bgDark: "rgba(168, 85, 247, 0.15)", textDark: "#A855F7" };
-  const bg = isDark ? cfg.bgDark : cfg.bg;
-  const text = isDark ? cfg.textDark : cfg.text;
-
-  return (
-    <div
-      style={{ backgroundColor: bg, color: text }}
-      className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded-full text-[13px] font-medium leading-none transition-colors"
-    >
-      <span className="w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ backgroundColor: isDark ? text : cfg.dot }} />
-      {status}
-    </div>
-  );
+/**
+ * Coerce a stored probability to a 0-100 percentage.
+ *
+ * Returns `null` when there is no value to show and `NaN` when the value isn't
+ * numeric — callers fall back to the empty placeholder and to plain text
+ * respectively, so a non-numeric value is never silently hidden. Note that 0 is
+ * a real probability (an untouched "Qualification" deal), not an empty cell.
+ */
+const toPercent = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const n = typeof value === "number" ? value : Number(String(value).replace("%", "").trim());
+  if (Number.isNaN(n)) return NaN;
+  return Math.min(Math.max(Math.round(n), 0), 100);
 };
 
 // Avatar color helper comes from the shared theme-aligned palette (imported at top).
@@ -147,8 +139,14 @@ interface DynamicDataGridProps {
   statusCounts?: Record<string, number>;
   /** Field key the status pick list resolved on (e.g. "lead_status"); used for tab filtering. */
   statusField?: string;
+  /**
+   * Status pick list options straight from the backend (value/label/color).
+   * Drives the status badge in the list so configured labels and colours are
+   * reflected without any hardcoding.
+   */
+  statusOptions?: StatusOption[];
   /** Optional grid-view renderer; defaults to LeadGridView. Receives the fetched rows. */
-  gridViewComponent?: React.ComponentType<{ rows: any[]; statusField?: string }>;
+  gridViewComponent?: React.ComponentType<{ rows: any[]; statusField?: string; statusOptions?: StatusOption[] }>;
   /** Optional kanban-view renderer; defaults to LeadKanbanView. Must accept the same props. */
   kanbanViewComponent?: React.ComponentType<any>;
   /** Extra props forwarded to the grid/kanban view components (e.g. a resolved field name). */
@@ -201,6 +199,7 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
   stages,
   statusCounts,
   statusField,
+  statusOptions,
   gridViewComponent: GridViewComponent,
   kanbanViewComponent: KanbanViewComponent,
   viewProps,
@@ -550,6 +549,28 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
     setPaginationModel(prev => ({ ...prev, page: 0 }));
   };
 
+  // ── Status filter strip: horizontal scroll arrows ──
+  // The strip stays horizontally scrollable (touch/trackpad still work); the
+  // arrows are an extra affordance shown only when the tabs actually overflow.
+  // `stages`/`statusCounts` change the strip's content width.
+  const statusScroll = useHorizontalScroll<HTMLDivElement>([stages, statusCounts]);
+
+  // Configured status labels/colours, keyed by value. Rebuilt whenever the pick
+  // list changes, so added/renamed/removed statuses show up on the next load.
+  const statusStyleMap = useMemo(() => buildStatusStyleMap(statusOptions), [statusOptions]);
+
+  /**
+   * A column holds a status when it is the field the pick list resolved on
+   * (e.g. "lead_status"), or a conventionally named status column. Matching on
+   * the resolved field is what makes this work for modules that don't store the
+   * value under a literal `status` column.
+   */
+  const resolvedStatusField = (statusField || "").toLowerCase();
+  const isStatusColumn = (field: string) => {
+    const f = field.toLowerCase();
+    return f === resolvedStatusField || f === "status" || f.endsWith("_status");
+  };
+
   // Generate columns dynamically
   const columns: GridColDef[] = colFields.map(({ doctype, field, headerName, subFieldAlias }) => {
     const fieldKey = `${doctype}.${field}`;
@@ -624,12 +645,34 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
           );
         }
       } : {}),
+      // Generic Probability rendering: progress bar + percentage
+      ...(baseDef.renderCell ? {} : isProbabilityField(field) ? {
+        renderCell: (params) => {
+          const pct = toPercent(params.value);
+          if (pct === null) return <span className={isDark ? "text-[#52525B]" : "text-slate-300"}>—</span>;
+          // Not a number (unexpected content): show it as-is rather than hide it.
+          if (Number.isNaN(pct)) return <span className="text-[13px]/[16px] truncate">{String(params.value)}</span>;
+          return (
+            <div className="flex items-center gap-1.5">
+              <div className={`w-14 h-1 rounded-full overflow-hidden flex-shrink-0 ${isDark ? "bg-[#27272A]" : "bg-[#E3ECFC]"}`}>
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${pct}%`, backgroundColor: isDark ? "#60A5FA" : "#0C2472" }}
+                />
+              </div>
+              <span className={`text-[13px]/[16px] font-medium ${isDark ? "text-[#A1A1AA]" : "text-slate-500"}`}>
+                {pct}%
+              </span>
+            </div>
+          );
+        }
+      } : {}),
       // Generic Pill Status Badge rendering
-      ...(baseDef.renderCell ? {} : field.toLowerCase() === "status" ? {
+      ...(baseDef.renderCell ? {} : isStatusColumn(field) ? {
         renderCell: (params) => {
           const val = params.value;
           if (!val) return <span className={isDark ? "text-[#52525B]" : "text-slate-300"}>—</span>;
-          return renderStatusCell(String(val), isDark);
+          return <StatusBadge value={String(val)} statusMap={statusStyleMap} isDark={isDark} />;
         }
       } : {}),
       ...(hasCustomValueGetter
@@ -774,7 +817,7 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
             <h1 className={`font-sans text-[22px]/[28px] font-semibold tracking-tight m-0 ${isDark ? "text-[#F4F4F5]" : "text-slate-900"}`}>
               {moduleHeading}
             </h1>
-            <span className={`text-[13px]/[16px] font-medium border px-2.5 py-1 rounded-full shadow-sm flex items-center ${isDark ? "bg-[#0A0A0A] border-[#27272A] text-[#E4E4E7]" : "bg-[#f9fbff] border-[#E3ECFC] text-slate-400"}`}>
+            <span className={`text-[13px]/[16px] font-medium border px-2.5 py-1 rounded-full flex items-center ${isDark ? "bg-[#0A0A0A] border-[#27272A] text-[#E4E4E7]" : "bg-[#f9fbff] border-[#E3ECFC] text-slate-400"}`}>
               {rowCount} total
             </span>
             {summary && summaryTotal !== null && (
@@ -854,8 +897,34 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
       </div>
 
       {/* ── Status Tabs ── */}
-      {stages && stages.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 px-2 scrollbar-hide">
+      {stages && stages.length > 0 && (() => {
+        // Arrows are filled like the Filters/Columns/Sort buttons rather than like a
+        // tab, so they read as controls against the strip. 36px keeps them a
+        // comfortable target while still sitting level with the ~34px tabs.
+        const arrowBase =
+          "flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-xl border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60A5FA]";
+        const arrowTheme = isDark
+          ? "bg-[#18181B] text-[#E4E4E7] border-[#3F3F46] hover:bg-[#27272A] hover:text-white"
+          : "bg-[#E3ECFC] text-[#0C2472] border-[#CBDCF9] hover:bg-[#DCE6FB] hover:border-[#1D4ED8]";
+
+        const arrow = (direction: -1 | 1, disabled: boolean) => (
+          <button
+            type="button"
+            onClick={() => statusScroll.scrollByDirection(direction)}
+            disabled={disabled}
+            aria-label={direction === -1 ? "Scroll status filters left" : "Scroll status filters right"}
+            className={`${arrowBase} ${arrowTheme} ${disabled ? "opacity-40 pointer-events-none" : ""}`}
+          >
+            {/* CaretRight mirrored for the left arrow, so both carets stay visually identical. */}
+            <CaretRight size={16} weight="bold" className={direction === -1 ? "rotate-180" : undefined} />
+          </button>
+        );
+
+        return (
+        <div className="flex items-center gap-2 pb-1 px-2">
+          {/* Arrows appear only when the tabs overflow, so narrow status sets look unchanged. */}
+          {statusScroll.overflowing && arrow(-1, statusScroll.atStart)}
+          <div ref={statusScroll.ref} className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 min-w-0">
           <button
             onClick={() => handleStatusTabChange("All")}
             className={`flex items-center gap-1.5 px-3 py-[7px] rounded-xl text-[14px]/[18px] font-medium whitespace-nowrap transition-all border ${currentStatusTab === "All"
@@ -889,13 +958,18 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
               </button>
             );
           })}
+          </div>
+          {statusScroll.overflowing && arrow(1, statusScroll.atEnd)}
         </div>
-      )}
+        );
+      })()}
 
       {/* ── Action Toolbar (Search + Popover Buttons) ── */}
       <div className="flex items-center gap-2.5 flex-wrap px-2 mb-3">
         {/* Search Input */}
-        <div className={`flex items-center gap-2 border rounded-xl px-3 py-1.5 w-72 focus-within:border-[#60A5FA] focus-within:border-2 focus-within:shadow-[0_0_0_2px_#60A5FA] transition-all ${isDark ? "bg-[#0A0A0A] border-[#27272A]" : "bg-[#f9fbff] border-[#E3ECFC]"}`}>
+        {/* Grows into the free space left by the action buttons; `min-w` keeps it
+            usable once the toolbar wraps on narrow viewports. */}
+        <div className={`flex items-center gap-2 border rounded-xl px-3 py-1.5 min-h-[44px] flex-1 min-w-[240px] focus-within:border-[#60A5FA] focus-within:border-2 focus-within:shadow-[0_0_0_2px_#60A5FA] transition-all ${isDark ? "bg-[#0A0A0A] border-[#27272A]" : "bg-[#f9fbff] border-[#E3ECFC]"}`}>
           <MagnifyingGlass size={15} color="#94A3B8" weight="duotone" />
           <InputBase
             placeholder="Search by name, company, email…"
@@ -920,10 +994,10 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
           startIcon={
             activeFilters.length > 0 ? (
               <Badge badgeContent={activeFilters.length} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: "10px", height: 14, minWidth: 14 } }}>
-                <FunnelSimple size={14} weight="duotone" />
+                <FunnelSimple size={16} weight="duotone" />
               </Badge>
             ) : (
-              <FunnelSimple size={14} weight="duotone" />
+              <FunnelSimple size={16} weight="duotone" />
             )
           }
           onClick={e => setFiltersAnchor(e.currentTarget)}
@@ -931,11 +1005,15 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
             borderColor: activeFilters.length > 0 ? "#1D4ED8" : isDark ? "#27272A" : "#E3ECFC",
             color: activeFilters.length > 0 ? "#fff" : isDark ? "#E4E4E7" : "#0C2472",
             bgcolor: activeFilters.length > 0 ? "#1D4ED8" : isDark ? "#0F0F0F" : "#E3ECFC",
-            borderRadius: "9px",
+            borderRadius: "12px",
             textTransform: "none",
             fontWeight: 500,
             fontSize: "14px",
-            py: 0.85,
+            px: 2.25,
+            py: 1,
+            // Shared control height across the toolbar (search / buttons / count
+            // chip) so the row stays aligned, and a comfortable 44px hit target.
+            minHeight: 44,
             "&:hover": {
               borderColor: activeFilters.length > 0 ? "#1640B8" : "#1D4ED8",
               color: activeFilters.length > 0 ? "#fff" : "#0C2472",
@@ -950,17 +1028,21 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
         <Button
           variant="outlined"
           size="small"
-          startIcon={<Columns size={14} weight="duotone" />}
+          startIcon={<Columns size={16} weight="duotone" />}
           onClick={() => setColumnsDrawerOpen(true)}
           sx={{
             borderColor: isDark ? "#27272A" : "#E3ECFC",
             color: isDark ? "#E4E4E7" : "#0C2472",
             bgcolor: isDark ? "#0F0F0F" : "#E3ECFC",
-            borderRadius: "9px",
+            borderRadius: "12px",
             textTransform: "none",
             fontWeight: 500,
             fontSize: "14px",
-            py: 0.85,
+            px: 2.25,
+            py: 1,
+            // Shared control height across the toolbar (search / buttons / count
+            // chip) so the row stays aligned, and a comfortable 44px hit target.
+            minHeight: 44,
             "&:hover": {
               borderColor: "#1D4ED8",
               color: isDark ? "#E4E4E7" : "#0C2472",
@@ -978,23 +1060,27 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
           startIcon={
             activeSorts.length > 0 ? (
               <Badge badgeContent={activeSorts.length} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: "10px", height: 14, minWidth: 14 } }}>
-                <SortAscending size={14} weight="duotone" />
+                <SortAscending size={16} weight="duotone" />
               </Badge>
             ) : (
-              <SortAscending size={14} weight="duotone" />
+              <SortAscending size={16} weight="duotone" />
             )
           }
-          endIcon={<CaretDown size={11} weight="duotone" />}
+          endIcon={<CaretDown size={12} weight="duotone" />}
           onClick={e => setSortAnchor(e.currentTarget)}
           sx={{
             borderColor: isDark ? "#27272A" : "#E3ECFC",
             color: isDark ? "#E4E4E7" : "#0C2472",
             bgcolor: isDark ? "#0F0F0F" : "#E3ECFC",
-            borderRadius: "9px",
+            borderRadius: "12px",
             textTransform: "none",
             fontWeight: 500,
             fontSize: "14px",
-            py: 0.85,
+            px: 2.25,
+            py: 1,
+            // Shared control height across the toolbar (search / buttons / count
+            // chip) so the row stays aligned, and a comfortable 44px hit target.
+            minHeight: 44,
             "&:hover": {
               borderColor: "#1D4ED8",
               color: isDark ? "#E4E4E7" : "#0C2472",
@@ -1005,8 +1091,9 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
           Sort{activeSorts.length > 0 ? ` (${activeSorts.length})` : ""}
         </Button>
 
-        {/* Record count indicator */}
-        <div className={`ml-auto text-[13px] ${isDark ? "text-[#71717A]" : "text-slate-400"}`}>
+        {/* Record count indicator — chip styling mirrors the search field and
+            action buttons so the toolbar reads as one row of controls. */}
+        <div className={`ml-auto flex-shrink-0 inline-flex items-center whitespace-nowrap border rounded-xl px-3 min-h-[32px] text-[13px]/[16px] ${isDark ? "bg-[#0F0F0F] border-[#27272A] text-[#71717A]" : "bg-[#f9fbff] border-[#E3ECFC] text-slate-400"}`}>
           {effectiveView === "list" ? (
             `${paginationModel.page * paginationModel.pageSize + 1} – ${Math.min((paginationModel.page + 1) * paginationModel.pageSize, rowCount)} of ${rowCount} records`
           ) : (
@@ -1040,8 +1127,8 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
 
       {effectiveView === "grid" && (
         GridViewComponent
-          ? <GridViewComponent rows={data} statusField={statusField || "status"} {...(viewProps || {})} />
-          : <LeadGridView leads={data} statusField={statusField || "status"} />
+          ? <GridViewComponent rows={data} statusField={statusField || "status"} statusOptions={statusOptions} {...(viewProps || {})} />
+          : <LeadGridView leads={data} statusField={statusField || "status"} statusOptions={statusOptions} />
       )}
 
       {effectiveView === "kanban" && (() => {
@@ -1051,7 +1138,10 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
             leads={data}
             onUpdateLeadStatus={handleUpdateLeadStatus}
             onAddNewLead={onAddNew}
-            statuses={stages?.map((s) => ({ value: s.label, label: s.label, color: s.bgColor }))}
+            // Prefer the raw pick list options: `stages[].bgColor` has already had a
+            // default substituted, which would hide "no colour configured" from the
+            // shared resolver and paint those statuses differently than the list does.
+            statuses={statusOptions ?? stages?.map((s) => ({ value: s.label, label: s.label, color: s.bgColor }))}
             statusField={statusField || "status"}
             {...(viewProps || {})}
           />

@@ -3,16 +3,20 @@
 import { memo } from 'react'
 
 import type { DashboardWidget } from '../types'
-import { KpiWidget } from './KpiWidget'
+import type { RuntimeFilterRow } from '../types/componentFilters'
+import { KpiCardWidget } from './KpiCardWidget'
 
 type NumberCardWidgetProps = {
   widget: DashboardWidget
   loading?: boolean
+  runtimeFilters?: RuntimeFilterRow[]
+  paletteIndex?: number
+  showBodyTitle?: boolean
 }
 
-/** Number cards reuse KPI styling with emphasis on single metric. */
+/** Number cards are single-metric count cards — same reference card as the KPI counts. */
 function NumberCardWidgetInner(props: NumberCardWidgetProps) {
-  return <KpiWidget {...props} />
+  return <KpiCardWidget {...props} />
 }
 
 export const NumberCardWidget = memo(NumberCardWidgetInner)

@@ -15,10 +15,12 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   FetchCountryList,
   FetchStateForCountry,
 } from "@/services/api/general_apis/customer-form-data-api";
+import { getFormFieldSx } from "@/@core/styles/formFieldStyles";
 
 const ADDRESS_SUB_FIELDS = [
   "Country / Region",
@@ -78,6 +80,10 @@ const AddressField: React.FC<AddressFieldProps> = ({
   helperText,
   addressAvailableFields,
 }) => {
+  const theme = useTheme();
+  // Same canonical field styling as the rest of the form, so the address
+  // sub-fields don't render as default white outlined inputs beside them.
+  const fieldSx = getFormFieldSx(theme.palette.mode === "dark");
   const [countryOptions, setCountryOptions] = useState<CountryOption[]>([]);
   const [stateOptionsByCountry, setStateOptionsByCountry] = useState<
     Record<string, string[]>
@@ -239,9 +245,9 @@ const AddressField: React.FC<AddressFieldProps> = ({
               <FormControl
                 key={lbl}
                 fullWidth
-                size="small"
                 disabled={disabled}
                 error={error}
+                sx={fieldSx}
               >
                 <InputLabel>{lbl}</InputLabel>
                 <Select
@@ -271,9 +277,9 @@ const AddressField: React.FC<AddressFieldProps> = ({
               <FormControl
                 key={lbl}
                 fullWidth
-                size="small"
                 disabled={disabled || !selectedCountry}
                 error={error}
+                sx={fieldSx}
               >
                 <InputLabel>{lbl}</InputLabel>
                 <Select
@@ -302,13 +308,13 @@ const AddressField: React.FC<AddressFieldProps> = ({
             <TextField
               key={lbl}
               fullWidth
-              size="small"
               label={lbl}
               value={fieldValue}
               onChange={(e) => handleAddressChange(key, e.target.value)}
               disabled={disabled}
               error={error}
               helperText={helperText}
+              sx={fieldSx}
             />
           );
         })}
@@ -322,13 +328,13 @@ const AddressField: React.FC<AddressFieldProps> = ({
               <Grid item xs={6} key={lbl}>
                 <TextField
                   fullWidth
-                  size="small"
                   label={lbl}
                   value={fieldValue}
                   onChange={(e) => handleAddressChange(key, e.target.value)}
                   disabled={disabled}
                   error={error}
                   helperText={helperText}
+                  sx={fieldSx}
                 />
               </Grid>
             );

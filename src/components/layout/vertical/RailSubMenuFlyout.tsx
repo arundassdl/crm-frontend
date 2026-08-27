@@ -53,14 +53,18 @@ const RailSubMenuFlyout = ({ label, icon, collapsed, children }: RailSubMenuFlyo
         display: 'flex',
         alignItems: 'center',
         cursor: 'pointer',
-        gap: collapsed ? 0 : 1.5,
+        // These mirror `menuItemStyles.button` and are written in explicit pixels on purpose:
+        // this app's theme redefines the spacing unit as 4px (`@core/theme/spacing.ts`), so an
+        // sx factor of 1.5 resolves to 6px, not the 12px a leaf MenuItem uses — which is what
+        // pulled this row's icon and label left of every other item.
+        gap: collapsed ? 0 : '12px',
         justifyContent: collapsed ? 'center' : 'flex-start',
         inlineSize: collapsed ? 40 : '100%',
         blockSize: collapsed ? 40 : 'auto',
         minBlockSize: 40,
         marginInline: collapsed ? 'auto' : 0,
-        paddingInline: collapsed ? 0 : 1.5,
-        paddingBlock: collapsed ? 0 : 1.25,
+        paddingInline: collapsed ? 0 : '12px',
+        paddingBlock: collapsed ? 0 : '10px',
         borderRadius: '8px',
         fontSize: 16,
         fontWeight: 500,
@@ -87,7 +91,25 @@ const RailSubMenuFlyout = ({ label, icon, collapsed, children }: RailSubMenuFlyo
       >
         {icon}
       </Box>
-      {!collapsed && <Box component='span'>{label}</Box>}
+      {!collapsed && (
+        <Box component='span' sx={{ flexGrow: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+          {label}
+        </Box>
+      )}
+      {/* Same active dot a leaf MenuItem renders via its `suffix`, so an active submenu row
+          and an active leaf row look identical rather than differing by a missing marker. */}
+      {!collapsed && isActive && (
+        <Box
+          component='span'
+          sx={{
+            flexShrink: 0,
+            inlineSize: 6,
+            blockSize: 6,
+            borderRadius: '50%',
+            backgroundColor: 'var(--nav-chrome-active-text)'
+          }}
+        />
+      )}
     </Box>
   )
 

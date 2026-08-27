@@ -330,6 +330,15 @@ html.dark ::-webkit-scrollbar-track { background: #18181B; }
 html.dark ::-webkit-scrollbar-thumb { background: #52525B; }
 html.dark ::-webkit-scrollbar-thumb:hover { background: #71717A; }
 
+/* Opt-in: hide the bar on strips that expose their own navigation (e.g. the
+   status filter's left/right arrows). Only the bar is hidden — the container
+   still scrolls via wheel, trackpad, touch and keyboard. */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE / legacy Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
 /* ── Recharts ───────────────────────────────── */
 .recharts-tooltip-wrapper { outline: none !important; }
 

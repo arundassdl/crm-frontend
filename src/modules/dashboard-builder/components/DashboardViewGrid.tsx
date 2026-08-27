@@ -12,6 +12,7 @@ import {
   GRID_COLS,
   generateViewResponsiveLayouts,
 } from '../utils/layoutHelpers'
+import { buildKpiPaletteIndex } from '../utils/kpiPaletteIndex'
 import { WidgetCard } from './WidgetCard'
 
 type DashboardViewGridProps = {
@@ -23,6 +24,7 @@ function DashboardViewGridInner({ widgets, layout }: DashboardViewGridProps) {
   const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true })
   const gridContainerRef = containerRef as RefObject<HTMLDivElement>
   const widgetMap = useMemo(() => new Map(widgets.map(w => [String(w.id), w])), [widgets])
+  const kpiPaletteIndex = useMemo(() => buildKpiPaletteIndex(widgets), [widgets])
   const responsiveLayouts = useMemo(
     () => generateViewResponsiveLayouts(layout, widgets),
     [layout, widgets]
@@ -81,7 +83,11 @@ function DashboardViewGridInner({ widgets, layout }: DashboardViewGridProps) {
 
             return (
               <div key={item.i} data-grid={item} className="relative h-full">
-                <WidgetCard widget={widget} readOnly />
+                <WidgetCard
+                  widget={widget}
+                  paletteIndex={kpiPaletteIndex.get(widget.id)}
+                  readOnly
+                />
               </div>
             )
           })}

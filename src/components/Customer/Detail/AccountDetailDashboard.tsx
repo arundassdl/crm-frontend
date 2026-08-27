@@ -52,7 +52,7 @@ import { getFormFields, getRelatedList, getLayoutList } from "@/services/api/gen
 import AddEditTaskDrawer from "@/components/Tasks/CreateEdit";
 import AddEditCustomerDrawer from "@/components/Customer/Createcustomer";
 import DynamicRelatedSection from "@/components/Common/RelatedList/DynamicRelatedSection";
-import { getRelatedListKind, getRelatedListMeta } from "@/components/Common/RelatedList/relatedListMeta";
+import { getRelatedListKind, getRelatedListMeta, isDedicatedRelatedList } from "@/components/Common/RelatedList/relatedListMeta";
 import AttachmentsSection from "@/components/Common/Upload/AttachmentsSection";
 import { showToast } from "@/components/ToastNotificationNew";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
@@ -261,10 +261,14 @@ export default function AccountDetailDashboard({ name }: { name: string }) {
     setRelatedCounts((prev) => (prev[id] === count ? prev : { ...prev, [id]: count }));
   }, []);
 
-  // Related lists that render as their own dashboard sections (Tasks keeps its
-  // dedicated inline section below, so it is excluded here).
+  // Related lists that render as their own dashboard sections.
+  // Tasks have a dedicated inline section, and Notes / Attachments have
+  // dedicated cards — exclude all of them so the config-driven sections below
+  // do not render the same content a second time.
   const sectionRelatedLists = relatedLists.filter(
-    (rl) => getRelatedListKind(rl.main_doctype_name, rl.label) !== "task"
+    (rl) =>
+      getRelatedListKind(rl.main_doctype_name, rl.label) !== "task" &&
+      !isDedicatedRelatedList(rl.main_doctype_name, rl.label)
   );
 
   // ── Actions ──

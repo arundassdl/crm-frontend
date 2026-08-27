@@ -74,6 +74,7 @@ import AttachmentsSection from "@/components/Common/Upload/AttachmentsSection";
 import { showToast } from "@/components/ToastNotificationNew";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
 import { useComponentPicklist } from "@/hooks/GeneralHooks/useComponentPicklist";
+import { useHorizontalScroll } from "@/hooks/GeneralHooks/useHorizontalScroll";
 
 // ─────────────────────────────────────────────
 // Status color helpers (colors come from the backend Component Pick List API)
@@ -186,6 +187,11 @@ export default function LeadDetailDashboard({ name }: { name: string }) {
     token: userToken?.access_token,
     roleProfile: userToken?.role_profile,
   });
+
+  // Drives the stage strip's left/right navigation arrows. Must stay above the
+  // `loading` / `!recordData` early returns below — a hook skipped on one render
+  // and called on the next changes the hook order.
+  const stageScroll = useHorizontalScroll<HTMLDivElement>([statusOptions]);
 
   // Fetch record details
   const fetchRecord = useCallback(async () => {
@@ -461,7 +467,7 @@ export default function LeadDetailDashboard({ name }: { name: string }) {
         onConfirm={handleDeleteLead}
       />
 
-      <div className="max-w-[1600px] mx-auto space-y-4 bg-[#EBF3FE]">
+      <div className="max-w-[1600px] mx-auto space-y-4">
         {/* ══ Breadcrumbs ══ */}
         <div className={`flex items-center gap-1.5 text-[13.5px] ${isDark ? "text-[#ABABAD]" : "text-slate-400"}`}>
           <House size={16} weight="duotone" />
@@ -706,7 +712,25 @@ export default function LeadDetailDashboard({ name }: { name: string }) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 flex-1 overflow-x-auto pb-1.5 pipeline-scroll">
+                  {/* Arrows render only while the stages overflow, so a short
+                      pipeline keeps the existing full-width layout. */}
+                  {stageScroll.overflowing && (
+                    <button
+                      type="button"
+                      onClick={() => stageScroll.scrollByDirection(-1)}
+                      disabled={stageScroll.atStart}
+                      title="Scroll stages left"
+                      aria-label="Scroll stages left"
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60A5FA]
+                        ${isDark ? "bg-[#18181B] text-[#E4E4E7] border-[#3F3F46] hover:bg-[#27272A] hover:text-white" : "bg-[#E3ECFC] text-[#0C2472] border-[#CBDCF9] hover:bg-[#DCE6FB] hover:border-[#1D4ED8]"}
+                        ${stageScroll.atStart ? "opacity-40 pointer-events-none" : ""}`}
+                    >
+                      <CaretRight size={16} weight="bold" className="rotate-180" />
+                    </button>
+                  )}
+                  {/* Scrollbar hidden — the arrows above are the navigation affordance.
+                      Wheel / trackpad / touch scrolling still reach every stage. */}
+                  <div ref={stageScroll.ref} className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto pb-1.5 scrollbar-hide">
                   {statusOptions.map((stage, i) => {
                     const isDone = i < pipelineIdx;
                     const isActive = i === pipelineIdx;
@@ -739,6 +763,20 @@ export default function LeadDetailDashboard({ name }: { name: string }) {
                     );
                   })}
                   </div>
+                  {stageScroll.overflowing && (
+                    <button
+                      type="button"
+                      onClick={() => stageScroll.scrollByDirection(1)}
+                      disabled={stageScroll.atEnd}
+                      title="Scroll stages right"
+                      aria-label="Scroll stages right"
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60A5FA]
+                        ${isDark ? "bg-[#18181B] text-[#E4E4E7] border-[#3F3F46] hover:bg-[#27272A] hover:text-white" : "bg-[#E3ECFC] text-[#0C2472] border-[#CBDCF9] hover:bg-[#DCE6FB] hover:border-[#1D4ED8]"}
+                        ${stageScroll.atEnd ? "opacity-40 pointer-events-none" : ""}`}
+                    >
+                      <CaretRight size={16} weight="bold" />
+                    </button>
+                  )}
 
                   {/* Won / Lost buttons */}
                   {(wonStatus || lostStatus) && (

@@ -6,6 +6,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { useTheme } from "@mui/material/styles";
 import { Phone, Envelope, TrendUp, Star, Buildings, DotsThreeVertical } from "@phosphor-icons/react";
 import { getAvatarColor } from "@/@core/utils/avatarColor";
+import { StatusBadge, buildStatusStyleMap, type StatusOption } from "@/components/Common/DataGrid/statusBadge";
 
 interface Lead {
   name: string;
@@ -49,12 +50,15 @@ interface Props {
   leads: Lead[];
   /** Data field the status value lives under (e.g. "lead_status"). Defaults to "status". */
   statusField?: string;
+  /** Status pick list options from the backend, so badges match the configured label/colour. */
+  statusOptions?: StatusOption[];
 }
 
-export default function LeadGridView({ leads, statusField = "status" }: Props) {
+export default function LeadGridView({ leads, statusField = "status", statusOptions }: Props) {
   const router = useRouter();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
+  const statusStyleMap = React.useMemo(() => buildStatusStyleMap(statusOptions), [statusOptions]);
 
   if (!leads || leads.length === 0) {
     return (
@@ -129,11 +133,16 @@ export default function LeadGridView({ leads, statusField = "status" }: Props) {
                 </div>
               </div>
 
-              {/* Status badge */}
-              <span className={`inline-flex items-center gap-1.5 text-[11.5px] font-bold px-2.5 py-0.5 rounded-full mb-3 ${isDark ? "bg-white/10 text-[#A1A1AA]" : "bg-[#f9fbff]/70 text-[#0C2472]"}`}>
-                <span className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: cardT.deep }} />
-                {(lead as any)[statusField] ?? lead.status}
-              </span>
+              {/* Status badge — label and colour come from the status pick list */}
+              {(() => {
+                const statusVal = String((lead as any)[statusField] ?? lead.status ?? "").trim();
+                if (!statusVal) return null;
+                return (
+                  <div className="mb-3">
+                    <StatusBadge value={statusVal} statusMap={statusStyleMap} isDark={isDark} />
+                  </div>
+                );
+              })()}
 
               {/* Contact info */}
               <div className="space-y-1.5">

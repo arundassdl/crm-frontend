@@ -16,6 +16,7 @@ import {
 import type { DashboardWidget } from '../types'
 import type { RuntimeFilterRow } from '../types/componentFilters'
 import { widgetCardClass, widgetHeaderClass } from '../styles/classes'
+import { usesKpiCardLayout } from '../utils/usesKpiCardLayout'
 import { ComponentFiltersButton, readComponentFilters } from './ComponentFiltersControl'
 import { WidgetRenderer } from './WidgetRenderer'
 import { WidgetToolbar } from './WidgetToolbar'
@@ -43,6 +44,8 @@ function readSourceReportName(widget: DashboardWidget): string | undefined {
 
 type WidgetCardProps = {
   widget: DashboardWidget
+  /** Count card's position among the dashboard's count cards — picks its palette entry. */
+  paletteIndex?: number
   selected?: boolean
   loading?: boolean
   readOnly?: boolean
@@ -55,6 +58,7 @@ type WidgetCardProps = {
 
 function WidgetCardInner({
   widget,
+  paletteIndex,
   selected,
   loading,
   readOnly = false,
@@ -70,12 +74,21 @@ function WidgetCardInner({
   // Source report is a builder-only affordance — hidden from the end-user dashboard view.
   const sourceReportName = readOnly ? undefined : readSourceReportName(widget)
 
+  /**
+   * Count cards render their own title (and icon) inside the body, matching the reference.
+   * The header would then repeat that title, so it is dropped — but only when it carries
+   * nothing else: in builder mode it still holds the drag handle and the toolbar, and it is
+   * kept whenever component filters give the user a control to click.
+   */
+  const hideHeader = usesKpiCardLayout(widget) && readOnly && componentFilterFields.length === 0
+
   return (
     <div
       className={`${widgetCardClass} group h-full ${!readOnly && selected ? 'ring-2 ring-blue-500/70' : ''}`}
       onClick={readOnly ? undefined : onSelect}
       role={readOnly ? undefined : 'presentation'}
     >
+      {hideHeader ? null : (
       <div
         className={`${widgetHeaderClass}${
           readOnly ? '' : ' widget-header-drag cursor-grab active:cursor-grabbing'
@@ -119,14 +132,21 @@ function WidgetCardInner({
           ) : null}
         </div>
       </div>
+      )}
       <div className="min-h-0 flex-1 overflow-hidden">
-        <WidgetRenderer widget={widget} loading={loading} runtimeFilters={runtimeFilters} />
+        <WidgetRenderer
+          widget={widget}
+          loading={loading}
+          runtimeFilters={runtimeFilters}
+          paletteIndex={paletteIndex}
+          showBodyTitle={hideHeader}
+        />
       </div>
       {sourceReportName ? (
-        <div className="flex w-full items-center justify-center gap-1.5 border-t border-[#E3ECFC] px-5 py-2 text-[11px] font-semibold text-[#4A5675] dark:border-[#27272A] dark:text-[#71717A]">
-          <FileText size={12} weight="duotone" className="flex-shrink-0" />
+        <div className="flex w-full items-center justify-center gap-1.5 border-t border-[#E3ECFC] px-5 py-2.5 text-[13px] font-bold text-[#1D4ED8] dark:border-[#27272A] dark:text-[#60A5FA]">
+          <FileText size={14} weight="duotone" className="flex-shrink-0" />
           <span className="truncate">Source Report: {sourceReportName}</span>
-          <ArrowSquareOut size={11} weight="bold" className="flex-shrink-0" />
+          <ArrowSquareOut size={12} weight="bold" className="flex-shrink-0" />
         </div>
       ) : null}
     </div>

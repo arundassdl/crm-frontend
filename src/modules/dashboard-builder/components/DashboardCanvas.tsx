@@ -12,6 +12,7 @@ import {
 import type { DashboardWidget, GridLayoutItem } from '../types'
 import { DRAG_MIME } from '../styles/classes'
 import { readCatalogDragData } from '../utils/catalogDrag'
+import { buildKpiPaletteIndex } from '../utils/kpiPaletteIndex'
 import { EmptyCanvasState } from './EmptyCanvasState'
 import { WidgetCard } from './WidgetCard'
 
@@ -41,6 +42,7 @@ function DashboardCanvasInner({
   const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true })
   const gridContainerRef = containerRef as RefObject<HTMLDivElement>
   const widgetMap = useMemo(() => new Map(widgets.map(w => [w.id, w])), [widgets])
+  const kpiPaletteIndex = useMemo(() => buildKpiPaletteIndex(widgets), [widgets])
 
   /** Live size of the item currently being resized — drives the dimensions badge. */
   const [resizing, setResizing] = useState<{ i: string; w: number; h: number } | null>(null)
@@ -172,6 +174,7 @@ function DashboardCanvasInner({
               <div key={item.i} data-grid={item} className="relative h-full">
                 <WidgetCard
                   widget={widget}
+                  paletteIndex={kpiPaletteIndex.get(widget.id)}
                   selected={selectedWidgetId === widget.id}
                   onSelect={() => onSelectWidget(widget.id)}
                   onRemove={() => onRemoveWidget(widget.id)}

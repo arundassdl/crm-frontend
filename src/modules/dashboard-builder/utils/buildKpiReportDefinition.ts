@@ -232,8 +232,14 @@ export function buildKpiReportDefinition(
 
     const measures = aggregateColumnsToMeasures(aggregate_columns, pm, moduleOptions)
 
+    // `basic` included: without a `comparison` block the backend returns a bare current
+    // value, and the count card then has no percentage change to show and no second point
+    // to draw a trend from.
     const comparison =
-        (kpiStyle === 'growth_index' || kpiStyle === 'standard' || kpiStyle === 'scorecard') &&
+        (kpiStyle === 'basic' ||
+            kpiStyle === 'growth_index' ||
+            kpiStyle === 'standard' ||
+            kpiStyle === 'scorecard') &&
         form.compareTo &&
         form.objective
             ? {

@@ -442,6 +442,7 @@ const LeadsListing = () => {
             stages={stages}
             statusCounts={statusCounts}
             statusField={statusFieldName || undefined}
+            statusOptions={leadStatusOptions}
           />
           {open && (
             <AddEditLeadDrawer

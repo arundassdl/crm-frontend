@@ -7,6 +7,7 @@ import { useTheme } from "@mui/material/styles";
 import { Plus, Phone, Envelope, Buildings, DotsThreeVertical } from "@phosphor-icons/react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { getAvatarColor } from "@/@core/utils/avatarColor";
+import { getStatusTokens, type StatusOption } from "@/components/Common/DataGrid/statusBadge";
 
 interface Lead {
   name: string;
@@ -21,12 +22,10 @@ interface Lead {
   creation?: string;
 }
 
-type StatusColumn = { key: string; label: string; color: string; bg: string; dot: string; headerBg: string };
+type StatusColumn = { key: string; label: string; bg: string; text: string; dot: string };
 
 /** A backend status option (from the Component Pick List API). */
-export type LeadStatusOption = { value: string; label?: string; color?: string };
-
-const DEFAULT_ACCENT = "#334155";
+export type LeadStatusOption = StatusOption;
 
 /** Append an alpha channel to a 7-char hex color, e.g. "#0C2472" + 0.1 -> "#0C24721A". */
 const hexWithAlpha = (hex: string, alpha: number): string => {
@@ -37,16 +36,21 @@ const hexWithAlpha = (hex: string, alpha: number): string => {
   return `${hex}${a}`;
 };
 
-/** Build a Kanban column, deriving header/dot/background tones from the single backend color. */
-const buildColumn = (option: LeadStatusOption): StatusColumn => {
-  const accent = option.color || DEFAULT_ACCENT;
+/**
+ * Build a Kanban column from a status option.
+ *
+ * Colours come from `getStatusTokens` — the exact resolver the List/Grid status
+ * badge uses — so a status is painted identically in every view: the configured
+ * pick list colour wins, otherwise the shared curated/derived fallback applies.
+ */
+const buildColumn = (option: LeadStatusOption, isDark: boolean): StatusColumn => {
+  const { bg, text, dot } = getStatusTokens(option.value, option.color, isDark);
   return {
     key: option.value,
     label: option.label || option.value,
-    color: accent,
-    headerBg: accent,
-    dot: accent,
-    bg: hexWithAlpha(accent, 0.1),
+    bg,
+    text,
+    dot,
   };
 };
 
@@ -74,7 +78,10 @@ export default function LeadKanbanView({ leads, onUpdateLeadStatus, onAddNewLead
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
-  const STATUSES: StatusColumn[] = (statuses ?? []).map(buildColumn);
+  const STATUSES: StatusColumn[] = React.useMemo(
+    () => (statuses ?? []).map((option) => buildColumn(option, isDark)),
+    [statuses, isDark]
+  );
 
   // Read a lead's status from the resolved field, falling back to `status` for safety.
   const getLeadStatus = (lead: Lead): string => (lead as any)[statusField] ?? lead.status;
@@ -118,14 +125,18 @@ export default function LeadKanbanView({ leads, onUpdateLeadStatus, onAddNewLead
 
           return (
             <div key={col.key} className="flex-shrink-0 w-[240px] flex flex-col">
-              {/* Column header — keeps semantic color regardless of theme */}
+              {/* Column header — same status tokens as the List/Grid badge */}
               <div
-                className="flex items-center justify-between px-3 py-2.5 rounded-xl mb-3 text-white"
-                style={{ backgroundColor: col.headerBg }}
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl mb-3"
+                style={{ backgroundColor: col.bg, color: col.text }}
               >
                 <div className="flex items-center gap-2">
+                  <span className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ backgroundColor: col.dot }} />
                   <span className="font-sans text-[14px] font-bold">{col.label}</span>
-                  <span className="text-[11px] font-bold bg-[#f9fbff]/20 px-1.5 py-0.5 rounded-full leading-none">
+                  <span
+                    className="text-[11px] font-bold px-1.5 py-0.5 rounded-full leading-none"
+                    style={{ backgroundColor: hexWithAlpha(col.dot, 0.2) }}
+                  >
                     {colLeads.length}
                   </span>
                 </div>
@@ -136,9 +147,10 @@ export default function LeadKanbanView({ leads, onUpdateLeadStatus, onAddNewLead
                         e.stopPropagation();
                         onAddNewLead();
                       }}
-                      className="w-6 h-6 rounded-lg bg-[#f9fbff]/15 hover:bg-[#f9fbff]/30 flex items-center justify-center transition-colors"
+                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors"
+                      style={{ backgroundColor: hexWithAlpha(col.dot, 0.15) }}
                     >
-                      <Plus size={13} color="white" weight="bold" />
+                      <Plus size={13} color={col.text} weight="bold" />
                     </button>
                   </Tooltip>
                 )}
@@ -275,7 +287,7 @@ export default function LeadKanbanView({ leads, onUpdateLeadStatus, onAddNewLead
                   }`}
                   style={{
                     borderColor: isDark ? undefined : col.dot + "60",
-                    color: isDark ? undefined : col.color,
+                    color: isDark ? undefined : col.text,
                   }}
                 >
                   <Plus size={13} weight="bold" />

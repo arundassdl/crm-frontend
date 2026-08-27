@@ -14,33 +14,6 @@ import { HourglassBottom, CheckCircle, Cancel } from '@mui/icons-material';
 import CircleIcon from '@mui/icons-material/Circle';
 import { getAvatarColor as avatarColor } from "@/@core/utils/avatarColor";
 
-const STATUS_CFG: Record<string, { bg: string; text: string; dot: string; bgDark: string; textDark: string }> = {
-  "New":         { bg:"#EFF6FF", text:"#0C2472", dot:"#3B82F6", bgDark:"rgba(96, 165, 250, 0.15)", textDark:"#60A5FA" },
-  "Contacted":   { bg:"#E3ECFC", text:"#0C2472", dot:"#3B82F6", bgDark:"rgba(96, 165, 250, 0.15)", textDark:"#60A5FA" },
-  "Nurture":     { bg:"#EFF6FF", text:"#007adb", dot:"#007adb", bgDark:"rgba(0, 122, 219, 0.15)", textDark:"#60A5FA" },
-  "Qualified":   { bg:"#DCFCE7", text:"#166534", dot:"#16A34A", bgDark:"rgba(16, 185, 129, 0.15)", textDark:"#34D399" },
-  "Unqualified": { bg:"#F1F5F9", text:"#475569", dot:"#94A3B8", bgDark:"rgba(168, 85, 247, 0.15)", textDark:"#A855F7" },
-  "Junk":        { bg:"#FEF2F2", text:"#991B1B", dot:"#EF4444", bgDark:"rgba(244, 63, 94, 0.15)", textDark:"#F87171" },
-  "In Progress": { bg:"#E3ECFC", text:"#0C2472", dot:"#1D4ED8", bgDark:"rgba(251, 191, 36, 0.15)", textDark:"#FBBF24" },
-  "Lost":        { bg:"#FEF2F2", text:"#991B1B", dot:"#EF4444", bgDark:"rgba(244, 63, 94, 0.15)", textDark:"#F87171" },
-};
-
-const renderStatusCell = (status: string, isDark: boolean) => {
-  const cfg = STATUS_CFG[status] || { bg: "#F1F5F9", text: "#475569", dot: "#94A3B8", bgDark: "rgba(168, 85, 247, 0.15)", textDark: "#A855F7" };
-  const bg = isDark ? cfg.bgDark : cfg.bg;
-  const text = isDark ? cfg.textDark : cfg.text;
-  
-  return (
-    <div
-      style={{ backgroundColor: bg, color: text }}
-      className="inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-full text-[13px] font-medium leading-none transition-colors"
-    >
-      <span className="w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ backgroundColor: isDark ? text : cfg.dot }} />
-      {status}
-    </div>
-  );
-};
-
 // avatarColor is imported at the top from the shared theme-aligned palette.
 const initials = (n: string) => {
   const p = n.trim().split(/\s+/);
@@ -560,15 +533,14 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
       type: "string",
       valueGetter: (params, row) => row.mobile_no,
     },
+    // No `renderCell` here on purpose: the status badge is rendered by the grid
+    // itself (RawDynamicDataGrid -> StatusBadge) so it can use the labels and
+    // colours configured on the module's status pick list. A renderCell defined
+    // here would shadow that and re-introduce hardcoded statuses.
     status: {
       flex: 1,
       minWidth: 150,
       type: "string",
-      renderCell: (params) => {
-        const theme = useTheme();
-        const isDark = theme.palette.mode === "dark";
-        return renderStatusCell(params.row.status, isDark);
-      },
     },
 
     creation: {

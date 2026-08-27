@@ -75,3 +75,20 @@ export function parentDoctypeForModule(parent_module: string): string {
     default: return "";
   }
 }
+
+/**
+ * Notes and Attachments already have dedicated cards on every detail dashboard,
+ * so a related list configured for them in Settings → "Detail View" would render
+ * the same content a second time. Detect those entries so the generic
+ * config-driven sections can skip them.
+ *
+ * Matching stays deliberately exact (labels are compared whole, not by
+ * substring) so real doctypes such as "Delivery Note" keep rendering.
+ */
+export function isDedicatedRelatedList(mainDoctype?: string, label?: string): boolean {
+  const DEDICATED_DOCTYPES = ["fcrm note", "note", "file", "attachment"];
+  const DEDICATED_LABELS = ["note", "notes", "attachment", "attachments"];
+  const doctype = String(mainDoctype || "").trim().toLowerCase();
+  const name = String(label || "").trim().toLowerCase();
+  return DEDICATED_DOCTYPES.includes(doctype) || DEDICATED_LABELS.includes(name);
+}

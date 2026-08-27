@@ -68,7 +68,8 @@ import AddEditDealDrawer from "@/components/Deals/CreateEdit";
 import AttachmentsSection from "@/components/Common/Upload/AttachmentsSection";
 import StageHistory from "@/components/Common/RelatedList/StageHistory";
 import DynamicRelatedSection from "@/components/Common/RelatedList/DynamicRelatedSection";
-import { getRelatedListKind, getRelatedListMeta } from "@/components/Common/RelatedList/relatedListMeta";
+import { getRelatedListKind, getRelatedListMeta, isDedicatedRelatedList } from "@/components/Common/RelatedList/relatedListMeta";
+import { useHorizontalScroll } from "@/hooks/GeneralHooks/useHorizontalScroll";
 import { showToast } from "@/components/ToastNotificationNew";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
 
@@ -132,6 +133,11 @@ export default function DealDetailDashboard({ name }: { name: string }) {
   const [stageOptions, setStageOptions] = useState<StageProbabilityOption[]>([]);
   const [stageField, setStageField] = useState<string>("status");
   const [layoutId, setLayoutId] = useState<string>("");
+
+  // Drives the stage strip's left/right navigation arrows. Must stay above the
+  // `loading` / `!recordData` early returns below — a hook skipped on one render
+  // and called on the next changes the hook order.
+  const stageScroll = useHorizontalScroll<HTMLDivElement>([stageOptions]);
 
   // UI state
   const [activeTab, setActiveTab] = useState<"overview" | "timeline">("overview");
@@ -253,6 +259,9 @@ export default function DealDetailDashboard({ name }: { name: string }) {
   const sectionRelatedLists = relatedLists.filter((rl) => {
     const kind = getRelatedListKind(rl.main_doctype_name, rl.label);
     if (kind === "task") return false;
+    // Notes / Attachments render as dedicated cards above — skip the config
+    // copies so they are not shown a second time.
+    if (isDedicatedRelatedList(rl.main_doctype_name, rl.label)) return false;
     const isStageHistory =
       String(rl.main_doctype_name || "") === "Stage Probability History" ||
       String(rl.label || "").toLowerCase().includes("stage history");
@@ -490,6 +499,7 @@ export default function DealDetailDashboard({ name }: { name: string }) {
   const amountRaw = recordData.deal_value ?? recordData.annual_revenue;  
   const expectedRaw = recordData.expected_revenue ?? recordData.expected_deal_value;
   const closeDate = recordData.close_date || recordData.closing_date || "";
+
   const currentStatus: string = recordData[stageField] || recordData.status || stageOptions[0]?.value || "";
   const pipelineIdx = stageOptions.findIndex((o) => o.value === currentStatus);
   const currentOption = stageOptions.find((o) => o.value === currentStatus);
@@ -674,7 +684,26 @@ export default function DealDetailDashboard({ name }: { name: string }) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-0 overflow-x-auto pb-1">
+                <div className="flex items-center gap-2">
+                {/* Arrows render only while the stages overflow, so a short
+                    pipeline keeps the existing full-width layout. */}
+                {stageScroll.overflowing && (
+                  <button
+                    type="button"
+                    onClick={() => stageScroll.scrollByDirection(-1)}
+                    disabled={stageScroll.atStart}
+                    title="Scroll stages left"
+                    aria-label="Scroll stages left"
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60A5FA]
+                      ${isDark ? "bg-[#18181B] text-[#E4E4E7] border-[#3F3F46] hover:bg-[#27272A] hover:text-white" : "bg-[#E3ECFC] text-[#0C2472] border-[#CBDCF9] hover:bg-[#DCE6FB] hover:border-[#1D4ED8]"}
+                      ${stageScroll.atStart ? "opacity-40 pointer-events-none" : ""}`}
+                  >
+                    <CaretRight size={16} weight="bold" className="rotate-180" />
+                  </button>
+                )}
+                {/* Scrollbar hidden — the arrows above are the navigation affordance.
+                    Wheel / trackpad / touch scrolling still reach every stage. */}
+                <div ref={stageScroll.ref} className="flex items-center gap-0 flex-1 min-w-0 overflow-x-auto pb-1 scrollbar-hide">
                   {stageOptions.map((stage, i) => {
                     const isActive = currentStatus === stage.value;
                     const isPast = pipelineIdx > i;
@@ -726,6 +755,21 @@ export default function DealDetailDashboard({ name }: { name: string }) {
                       )}
                     </div>
                   )}
+                </div>
+                {stageScroll.overflowing && (
+                  <button
+                    type="button"
+                    onClick={() => stageScroll.scrollByDirection(1)}
+                    disabled={stageScroll.atEnd}
+                    title="Scroll stages right"
+                    aria-label="Scroll stages right"
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60A5FA]
+                      ${isDark ? "bg-[#18181B] text-[#E4E4E7] border-[#3F3F46] hover:bg-[#27272A] hover:text-white" : "bg-[#E3ECFC] text-[#0C2472] border-[#CBDCF9] hover:bg-[#DCE6FB] hover:border-[#1D4ED8]"}
+                      ${stageScroll.atEnd ? "opacity-40 pointer-events-none" : ""}`}
+                  >
+                    <CaretRight size={16} weight="bold" />
+                  </button>
+                )}
                 </div>
               </div>
 

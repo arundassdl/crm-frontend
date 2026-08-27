@@ -7,15 +7,11 @@ import { useRef } from 'react'
 import { styled, useTheme } from '@mui/material/styles'
 import MuiDrawer from '@mui/material/Drawer'
 import Box from '@mui/material/Box'
-import IconButton from '@mui/material/IconButton'
-import Tooltip from '@mui/material/Tooltip'
-import { GearSixIcon } from '@phosphor-icons/react'
 
 // Component Imports
 import VerticalNav, { NavHeader } from '@menu/vertical-menu'
 import VerticalMenu from './VerticalMenu'
 import SidebarProfileSummary from './SidebarProfileSummary'
-import { RouterLink } from '@menu/components/RouterLink'
 
 // Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav'
@@ -127,12 +123,14 @@ const Navigation = () => {
           <VerticalMenu scrollMenu={scrollMenu} collapsed={collapsed} />
         </Box>
 
-        {/* Pinned bottom section: settings + profile summary */}
+        {/* Pinned bottom section: profile summary (Settings is pinned above it by VerticalMenu) */}
         <Box
           sx={{
             flexShrink: 0,
             borderBlockStart: '1px solid var(--nav-chrome-border)',
-            paddingInline: collapsed ? 1 : 1.25,
+            // Matches the menu list's own inset (`menuClasses.root` in navigationCustomStyles),
+            // so the profile card shares a left edge with the rows above it.
+            paddingInline: collapsed ? '4px' : '8px',
             paddingBlockEnd: 1.5,
             paddingBlockStart: 1,
             display: 'flex',
@@ -140,52 +138,6 @@ const Navigation = () => {
             gap: 0.5
           }}
         >
-          {collapsed ? (
-            <Tooltip title='Settings' placement='right'>
-              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                <IconButton
-                  component={RouterLink}
-                  href='/settings'
-                  sx={{
-                    inlineSize: 40,
-                    blockSize: 40,
-                    borderRadius: '8px',
-                    color: 'var(--nav-chrome-text-muted)',
-                    '&:hover': {
-                      backgroundColor: 'var(--nav-chrome-active-bg)',
-                      color: 'var(--nav-chrome-active-text)'
-                    }
-                  }}
-                >
-                  <GearSixIcon size={18} weight='duotone' />
-                </IconButton>
-              </Box>
-            </Tooltip>
-          ) : (
-            <Box
-              component={RouterLink}
-              href='/settings'
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                paddingInline: 1.5,
-                paddingBlock: 1.25,
-                borderRadius: '8px',
-                fontSize: 16,
-                fontWeight: 500,
-                textDecoration: 'none',
-                color: 'var(--nav-chrome-text-muted)',
-                '&:hover': {
-                  backgroundColor: 'var(--nav-chrome-active-bg)',
-                  color: 'var(--nav-chrome-active-text)'
-                }
-              }}
-            >
-              <GearSixIcon size={18} weight='duotone' />
-              Settings
-            </Box>
-          )}
           <SidebarProfileSummary collapsed={collapsed} />
         </Box>
       </Drawer>

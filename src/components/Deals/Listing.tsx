@@ -537,6 +537,7 @@ const DealsListing: React.FC<DealProps> = ({ link_name }) => {
             stages={stages}
             statusCounts={statusCounts}
             statusField={dealStageField || undefined}
+            statusOptions={dealStageOptions}
           />
         )}
 

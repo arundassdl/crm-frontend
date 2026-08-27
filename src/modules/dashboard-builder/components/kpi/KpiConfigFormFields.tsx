@@ -171,7 +171,14 @@ export function KpiConfigFormFields({
 
             <DurationFields form={form} patch={patch} dateFieldOptions={dateFieldOptions} />
 
-            {(kpiStyle === 'growth_index' || kpiStyle === 'standard' || kpiStyle === 'scorecard') && (
+            {/* Basic KPIs render the same count card as the other styles, so they need the
+                comparison too — it is what produces the card's `↑ x% vs …` pill and its trend
+                line. Still optional here: `canSubmit` only requires it for the styles that
+                always required it. */}
+            {(kpiStyle === 'basic' ||
+                kpiStyle === 'growth_index' ||
+                kpiStyle === 'standard' ||
+                kpiStyle === 'scorecard') && (
                 <>
                     <Box sx={{ mb: 1.5 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>

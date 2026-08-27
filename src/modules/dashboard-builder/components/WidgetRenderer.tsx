@@ -6,6 +6,7 @@ import type { DashboardWidget } from '../types'
 import type { RuntimeFilterRow } from '../types/componentFilters'
 import { isTableChartType } from '../utils/isTableChartType'
 import { resolveKpiStyle } from '../utils/resolveKpiStyle'
+import { usesKpiCardLayout } from '../utils/usesKpiCardLayout'
 import { findCatalogItem } from '../utils/widgetCatalog'
 import { ChartWidget } from '../widgets/ChartWidget'
 import { StaircaseWidget } from '../widgets/StaircaseWidget'
@@ -25,6 +26,14 @@ type WidgetRendererProps = {
   loading?: boolean
   /** Dashboard runtime "Display Component Filters" rows, applied for this query only. */
   runtimeFilters?: RuntimeFilterRow[]
+  /** Count card's position among the dashboard's count cards — picks its palette entry. */
+  paletteIndex?: number
+  /**
+   * Whether a count card should render its own title. False when the card shell kept its
+   * header (builder canvas, or a card with component filters), which already shows it —
+   * otherwise the title appears twice.
+   */
+  showBodyTitle?: boolean
 }
 
 function isTableWidget(widget: DashboardWidget): boolean {
@@ -36,13 +45,6 @@ function isTableWidget(widget: DashboardWidget): boolean {
   if (isTableChartType(catalog?.config?.chartType)) return true
 
   return false
-}
-
-function usesKpiCardLayout(widget: DashboardWidget): boolean {
-  if (widget.config?.component_type === 'growth_index_kpi') return true
-  const catalog = widget.catalogId ? findCatalogItem(widget.catalogId) : undefined
-  const kpiStyle = resolveKpiStyle(widget, catalog)
-  return kpiStyle === 'growth_index' || kpiStyle === 'standard'
 }
 
 function usesRankingKpiLayout(widget: DashboardWidget): boolean {
@@ -68,7 +70,13 @@ function isStaircaseWidget(widget: DashboardWidget): boolean {
   return chartType === 'standard staircase'
 }
 
-function WidgetRendererInner({ widget, loading, runtimeFilters }: WidgetRendererProps) {
+function WidgetRendererInner({
+  widget,
+  loading,
+  runtimeFilters,
+  paletteIndex,
+  showBodyTitle,
+}: WidgetRendererProps) {
   const chartKind = widget.chartKind?.toLowerCase()
   const chartType = String(widget.config?.chartType ?? widget.config?.chart_type ?? '').toLowerCase()
   const comparatorStyle = String(widget.config?.comparator_style ?? '').toLowerCase()
@@ -115,11 +123,27 @@ function WidgetRendererInner({ widget, loading, runtimeFilters }: WidgetRenderer
         return <RankingKpiWidget widget={widget} loading={loading} runtimeFilters={runtimeFilters} />
       }
       if (usesKpiCardLayout(widget)) {
-        return <KpiCardWidget widget={widget} loading={loading} runtimeFilters={runtimeFilters} />
+        return (
+          <KpiCardWidget
+            widget={widget}
+            loading={loading}
+            runtimeFilters={runtimeFilters}
+            paletteIndex={paletteIndex}
+            showBodyTitle={showBodyTitle}
+          />
+        )
       }
       return <KpiWidget widget={widget} loading={loading} runtimeFilters={runtimeFilters} />
     case 'number':
-      return <NumberCardWidget widget={widget} loading={loading} />
+      return (
+        <NumberCardWidget
+          widget={widget}
+          loading={loading}
+          runtimeFilters={runtimeFilters}
+          paletteIndex={paletteIndex}
+          showBodyTitle={showBodyTitle}
+        />
+      )
     case 'chart':
       return <ChartWidget widget={widget} loading={loading} runtimeFilters={runtimeFilters} />
     case 'funnel':

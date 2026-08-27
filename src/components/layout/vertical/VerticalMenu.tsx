@@ -20,6 +20,7 @@ import useVerticalNav from '@menu/hooks/useVerticalNav'
 // Style Imports
 import menuItemStyles from '@core/styles/vertical/menuItemStyles'
 import menuSectionStyles from '@core/styles/vertical/menuSectionStyles'
+import { menuClasses } from '@menu/utils/menuClasses'
 import useMultilangHook from '@/hooks/LanguageHook/Multilanguages-hook'
 import { useEffect, useState, type ReactNode } from 'react'
 import { renderMenuIcon } from '@/utils/phosphorMenuIcon';
@@ -182,13 +183,15 @@ const VerticalMenu = ({ scrollMenu, collapsed }: VerticalMenuProps) => {
 
   /** Collapsed rail: label is hidden, so it's shown as a hover tooltip on the icon instead. */
   const getIconWithTooltip = (iconName: string | undefined, label: ReactNode, path?: string) => {
+    // Wrapped in both modes: an unwrapped <svg> and a wrapped one measure differently
+    // (inline vs inline-flex baseline), which shifted the icon a pixel against the label.
     const icon = <span style={{ display: 'inline-flex' }}>{getIcon(iconName, path)}</span>
     return collapsed ? (
       <Tooltip title={label} placement='right'>
         {icon}
       </Tooltip>
     ) : (
-      getIcon(iconName, path)
+      icon
     )
   }
 
@@ -236,13 +239,32 @@ const VerticalMenu = ({ scrollMenu, collapsed }: VerticalMenuProps) => {
     );
   };
 
+  /**
+   * The reference design pins Settings to the sidebar bottom, away from the module list.
+   * It still comes from the same role-filtered API menu (so permissions and its submenu
+   * children are unchanged) — it is only pulled out of the scrolling group and rendered in
+   * the footer below, rather than being hardcoded here.
+   */
+  const isSettingsItem = (item: any) => String(item?.label ?? '').trim().toLowerCase() === 'settings'
+
+  const mainSections = filteredMenu
+    .map((section: any) => ({ ...section, items: (section.items || []).filter((i: any) => !isSettingsItem(i)) }))
+    .filter((section: any) => section.items.length > 0)
+
+  const settingsItems = filteredMenu.flatMap((section: any) => (section.items || []).filter(isSettingsItem))
+
   return (
     // eslint-disable-next-line lines-around-comment
     /* Custom scrollbar instead of browser scroll, remove if you want browser scroll only */
+    <Box sx={{ flex: '1 1 auto', minBlockSize: 0, display: 'flex', flexDirection: 'column' }}>
     <ScrollWrapper
+      // Takes the leftover height in the column so the pinned Settings row below stays at the
+      // bottom; `minHeight: 0` lets it actually shrink and scroll instead of pushing the
+      // footer off-screen when the module list is long.
+      style={{ flex: '1 1 auto', minHeight: 0 }}
       {...(isBreakpointReached
         ? {
-          className: 'bs-full overflow-y-auto overflow-x-hidden',
+          className: 'overflow-y-auto overflow-x-hidden',
           onScroll: container => scrollMenu(container, false)
         }
         : {
@@ -253,7 +275,7 @@ const VerticalMenu = ({ scrollMenu, collapsed }: VerticalMenuProps) => {
       {/* Incase you also want to scroll NavHeader to scroll with Vertical Menu, remove NavHeader from above and paste it below this comment */}
       {/* Vertical Menu */}
       <Menu menuItemStyles={menuItemStyles(theme)} menuSectionStyles={menuSectionStyles(theme)}>
-       {filteredMenu.map((section, secIdx) => (
+       {mainSections.map((section, secIdx) => (
         <MenuSection label='' key={`${section.section}-${secIdx}`}>
           {section.items.map((item: any, idx: number) =>
             renderMenuItem(item, `${section.section}-${secIdx}-${idx}-${item.label ?? 'item'}`)
@@ -263,6 +285,24 @@ const VerticalMenu = ({ scrollMenu, collapsed }: VerticalMenuProps) => {
        
       </Menu>
     </ScrollWrapper>
+
+    {/* Pinned Settings — the scroll area above takes the remaining height, so this stays
+        at the bottom and is visually separated from the module list at any viewport height. */}
+    {settingsItems.length > 0 && (
+      <Box
+        sx={{
+          flexShrink: 0,
+          // The footer Menu inherits the shared `menuClasses.root` inset (so Settings lines up
+          // with the rows above) but not its top/bottom padding, which would double up here.
+          [`& .${menuClasses.root}`]: { paddingBlock: '0 !important' }
+        }}
+      >
+        <Menu menuItemStyles={menuItemStyles(theme)} menuSectionStyles={menuSectionStyles(theme)}>
+          {settingsItems.map((item: any, idx: number) => renderMenuItem(item, `settings-${idx}-${item.label ?? 'item'}`))}
+        </Menu>
+      </Box>
+    )}
+    </Box>
   )
 }
 
