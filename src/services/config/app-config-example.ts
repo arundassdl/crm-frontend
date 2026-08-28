@@ -79,7 +79,7 @@ export const CONSTANTS = {
     process.env.NEXT_PUBLIC_REPORTS_APP_URL ??
     (process.env.NODE_ENV === 'production'
       ? REPORTS_APP_URL_PUBLIC_HOST_DEFAULT
-      : 'http://localhost:3002/reports'),
+      : 'http://localhost:3014/reports'),
   REPORTS_MF_REMOTE_NAME,
   /**
    * Legacy fallback module + alternates: see `config/microfrontends/analytics.ts` to add screens.
