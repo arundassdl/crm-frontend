@@ -8,11 +8,15 @@ import type { ChildrenType } from '../../types'
 import { verticalNavClasses } from '../../utils/menuClasses'
 
 const StyledNavHeader = styled.div`
-  padding: 15px;
-  padding-inline-start: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  flex-shrink: 0;
+  height: var(--header-height);
+  min-block-size: var(--header-height);
+  max-block-size: var(--header-height);
+  box-sizing: border-box;
 `
 
 const NavHeader = ({ children }: ChildrenType) => {

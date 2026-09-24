@@ -1,6 +1,5 @@
 'use client'
 // Next Imports
-import Link from 'next/link'
 
 // MUI Imports
 import { Box, IconButton, InputBase, Button, Tooltip, Badge } from '@mui/material'
@@ -16,12 +15,11 @@ import UserDropdown from '@components/layout/shared/UserDropdown'
 // Util Imports
 import { verticalLayoutClasses } from '@layouts/utils/layoutClasses'
 import React, { useEffect, useState } from 'react'
-import Logo from '../shared/Logo'
 import useVerticalNav from '@/@menu/hooks/useVerticalNav'
 import { useSettings } from '@core/hooks/useSettings'
 
 const NavbarContent = () => {
-  const { isToggled, toggleVerticalNav } = useVerticalNav()
+  const { isToggled, isBreakpointReached, toggleVerticalNav } = useVerticalNav()
   const { settings } = useSettings()
   const isDark = settings.mode === 'dark'
   const [search, setSearch] = useState('')
@@ -39,20 +37,19 @@ const NavbarContent = () => {
       }}
     >
       <div className='flex items-center gap-2 sm:gap-4'>
-        <IconButton
-          onClick={handleToggleNav}
-          aria-label='Toggle navigation'
-          sx={{
-            color: 'inherit',
-            borderRadius: '9px',
-            '&:hover': { bgcolor: isDark ? '#262626' : '#EFF6FF' }
-          }}
-        >
-          <ListIcon size={18} weight='bold' />
-        </IconButton>
-        <Link href='/'>
-          <Logo />
-        </Link>
+        {isBreakpointReached && (
+          <IconButton
+            onClick={handleToggleNav}
+            aria-label='Toggle navigation'
+            sx={{
+              color: 'inherit',
+              borderRadius: '9px',
+              '&:hover': { bgcolor: isDark ? '#262626' : '#EFF6FF' }
+            }}
+          >
+            <ListIcon size={18} weight='bold' />
+          </IconButton>
+        )}
       </div>
 
       <div className='flex items-center gap-4 sm:gap-6'>

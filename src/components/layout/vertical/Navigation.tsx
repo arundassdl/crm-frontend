@@ -3,6 +3,9 @@
 // React Imports
 import { useRef } from 'react'
 
+// Next Imports
+import Link from 'next/link'
+
 // MUI Imports
 import { styled, useTheme } from '@mui/material/styles'
 import MuiDrawer from '@mui/material/Drawer'
@@ -12,6 +15,8 @@ import Box from '@mui/material/Box'
 import VerticalNav, { NavHeader } from '@menu/vertical-menu'
 import VerticalMenu from './VerticalMenu'
 import SidebarProfileSummary from './SidebarProfileSummary'
+import NavToggle from './NavToggle'
+import Logo from '../shared/Logo'
 
 // Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav'
@@ -25,7 +30,7 @@ export const EXPANDED_WIDTH = 260
 export const RAIL_WIDTH = 68
 
 const StyledBoxForShadow = styled('div')(({ theme }) => ({
-  top: 60,
+  top: 'var(--header-height)',
   left: -8,
   zIndex: 2,
   opacity: 0,
@@ -50,7 +55,9 @@ const widthMixin = (theme, width: number) => ({
     easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
     duration: 300
   }),
-  overflowX: 'hidden'
+  // Visible so the circular collapse control can sit on the rail's right edge.
+  overflowX: 'visible',
+  overflowY: 'visible'
 })
 
 const Drawer = styled(MuiDrawer, { shouldForwardProp: prop => prop !== 'open' })(({ theme }) => ({
@@ -58,8 +65,9 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: prop => prop !== 'open' })
   flexShrink: 0,
   whiteSpace: 'nowrap',
   boxSizing: 'border-box',
+  overflow: 'visible',
   '& .MuiDrawer-paper': {
-    overflowX: 'hidden',
+    overflow: 'visible',
     backgroundColor: 'var(--nav-chrome-bg)',
     boxShadow: 'none',
     borderInlineEnd: '1px solid var(--nav-chrome-border)',
@@ -110,12 +118,31 @@ const Navigation = () => {
         sx={{
           width: drawerWidth,
           flexShrink: 0,
-          '& .MuiDrawer-paper': widthMixin(theme, drawerWidth)
+          overflow: 'visible',
+          '& .MuiDrawer-paper': {
+            ...widthMixin(theme, drawerWidth),
+            overflow: 'visible'
+          }
         }}
       >
-        {/* Nav Header (kept empty — logo lives in the top navbar) */}
         <NavHeader>
-          <></>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              minWidth: 0,
+              flex: 1,
+              height: '100%',
+              overflow: 'hidden',
+              pr: collapsed ? 0 : 2
+            }}
+          >
+            <Link href='/' style={{ display: 'flex', alignItems: 'center', minWidth: 0, color: 'inherit', textDecoration: 'none' }}>
+              <Logo compact={collapsed} />
+            </Link>
+          </Box>
+          <NavToggle collapsed={collapsed} />
         </NavHeader>
         <StyledBoxForShadow ref={shadowRef} />
 

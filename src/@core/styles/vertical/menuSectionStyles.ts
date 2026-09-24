@@ -19,10 +19,11 @@ import { menuClasses } from '@menu/utils/menuClasses'
 const menuSectionStyles = (theme: Theme): MenuProps['menuSectionStyles'] => {
   return {
     root: {
-      marginBlockStart: 0,
+      marginBlockStart: '0 !important',
       [`& .${menuClasses.menuSectionContent}`]: {
+        display: 'none !important',
         paddingInline: '0 !important',
-        paddingBlock: 0
+        paddingBlock: '0 !important'
       },
       [`& .${menuClasses.menuSectionLabel}`]: {
         display: 'none'

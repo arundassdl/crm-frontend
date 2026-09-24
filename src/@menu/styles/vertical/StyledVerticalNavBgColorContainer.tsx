@@ -7,8 +7,7 @@ const StyledVerticalNavBgColorContainer = styled.div`
   z-index: 3;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
   background-color: white;
 `
 

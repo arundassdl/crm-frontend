@@ -7,15 +7,9 @@ import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import Tooltip from '@mui/material/Tooltip'
 
-// Third-party Imports
-import PerfectScrollbar from 'react-perfect-scrollbar'
-
 // Component Imports
 import { Menu, MenuItem, MenuSection } from '@menu/vertical-menu'
 import RailSubMenuFlyout from './RailSubMenuFlyout'
-
-// Hook Imports
-import useVerticalNav from '@menu/hooks/useVerticalNav'
 
 // Style Imports
 import menuItemStyles from '@core/styles/vertical/menuItemStyles'
@@ -33,10 +27,7 @@ type VerticalMenuProps = {
 const VerticalMenu = ({ scrollMenu, collapsed }: VerticalMenuProps) => {
   // Hooks
   const theme = useTheme()
-  const { isBreakpointReached } = useVerticalNav()
   const pathname = usePathname()
-
-  const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
 
   const { handleLanguageChange, multiLanguagesData }: any = useMultilangHook();
   const [multiLang, setMultiLang] = useState<any>([])
@@ -254,23 +245,16 @@ const VerticalMenu = ({ scrollMenu, collapsed }: VerticalMenuProps) => {
   const settingsItems = filteredMenu.flatMap((section: any) => (section.items || []).filter(isSettingsItem))
 
   return (
-    // eslint-disable-next-line lines-around-comment
-    /* Custom scrollbar instead of browser scroll, remove if you want browser scroll only */
     <Box sx={{ flex: '1 1 auto', minBlockSize: 0, display: 'flex', flexDirection: 'column' }}>
-    <ScrollWrapper
-      // Takes the leftover height in the column so the pinned Settings row below stays at the
-      // bottom; `minHeight: 0` lets it actually shrink and scroll instead of pushing the
-      // footer off-screen when the module list is long.
-      style={{ flex: '1 1 auto', minHeight: 0 }}
-      {...(isBreakpointReached
-        ? {
-          className: 'overflow-y-auto overflow-x-hidden',
-          onScroll: container => scrollMenu(container, false)
-        }
-        : {
-          options: { wheelPropagation: false, suppressScrollX: true },
-          onScrollY: container => scrollMenu(container, true)
-        })}
+    <Box
+      className='sidebar-menu-scroll'
+      onScroll={event => scrollMenu(event, false)}
+      sx={{
+        flex: '1 1 auto',
+        minHeight: 0,
+        overflowY: 'auto',
+        overflowX: 'hidden'
+      }}
     >
       {/* Incase you also want to scroll NavHeader to scroll with Vertical Menu, remove NavHeader from above and paste it below this comment */}
       {/* Vertical Menu */}
@@ -284,7 +268,7 @@ const VerticalMenu = ({ scrollMenu, collapsed }: VerticalMenuProps) => {
       ))}
        
       </Menu>
-    </ScrollWrapper>
+    </Box>
 
     {/* Pinned Settings — the scroll area above takes the remaining height, so this stays
         at the bottom and is visually separated from the module list at any viewport height. */}

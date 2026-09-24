@@ -22,6 +22,7 @@
   --nav-chrome-border: #e3ecfc;
   --nav-chrome-text-primary: #0c2472;
   --nav-chrome-text-muted: #64748b;
+  --nav-chrome-scrollbar: #c5d0e0;
 }
 
 [data-mui-color-scheme='dark'] {
@@ -33,6 +34,7 @@
   --nav-chrome-border: #27272a;
   --nav-chrome-text-primary: #ffffff;
   --nav-chrome-text-muted: #9ca3af;
+  --nav-chrome-scrollbar: #3f3f46;
 }
 
 .setup-customization-layout .layout-listing-root {
@@ -122,25 +124,41 @@ ul:not([class]) {
 }
 
 .ts-vertical-nav-root {
-  .ps__thumb-y {
-    inline-size: 4px;
-    &:hover,
-    &:focus,
-    &.ps--clicking {
-      inline-size: 6px;
-    }
+  color-scheme: light;
+
+  .ps__rail-y,
+  .ps--active-y > .ps__rail-y {
+    display: none !important;
   }
-  .ps__rail-y {
-    inline-size: 10px;
-    &:hover,
-    &:focus,
-    &.ps--clicking {
-      background-color: transparent !important;
-      .ps__thumb-y {
-        inline-size: 6px;
-      }
-    }
+
+  .sidebar-menu-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--nav-chrome-scrollbar) transparent;
   }
+
+  .sidebar-menu-scroll::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .sidebar-menu-scroll::-webkit-scrollbar-track,
+  .sidebar-menu-scroll::-webkit-scrollbar-track:hover,
+  .sidebar-menu-scroll::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  .sidebar-menu-scroll::-webkit-scrollbar-thumb,
+  .sidebar-menu-scroll::-webkit-scrollbar-thumb:hover,
+  .sidebar-menu-scroll::-webkit-scrollbar-thumb:active {
+    background-color: var(--nav-chrome-scrollbar) !important;
+    border: none;
+    border-radius: 4px;
+  }
+}
+
+[data-mui-color-scheme='dark'] .ts-vertical-nav-root,
+html.dark .ts-vertical-nav-root {
+  color-scheme: dark;
 }
   
 :where([class^='ri-']) {

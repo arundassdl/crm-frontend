@@ -17,6 +17,9 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
   return {
     root: {
       marginBlockStart: theme.spacing(0.5),
+      '&:first-of-type': {
+        marginBlockStart: 0
+      },
       [`&.${menuClasses.disabled} > .${menuClasses.button}`]: {
         color: 'var(--mui-palette-text-disabled)',
         [`& .${menuClasses.icon}`]: {

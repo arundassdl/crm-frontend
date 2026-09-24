@@ -12,7 +12,6 @@ import MaterioLogo from "@core/svg/Logo";
 
 // Config Imports
 import themeConfig from "@configs/themeConfig";
-import Image from "next/image";
 import SDLLogo from "@/@core/svg/SDLLogo";
 import useVerticalNav from "@/@menu/hooks/useVerticalNav";
 // import { companyProfilePage } from "@/services/api/my-company/my-comapny-api";
@@ -55,9 +54,11 @@ const ThemedLogo = styled.img`
 const Logo = ({
   color,
   from,
+  compact = false,
 }: {
   color?: CSSProperties["color"];
   from?: string;
+  compact?: boolean;
 }) => {
   const [companyData, setCompanyData] = useState<any>(() =>
     getCompanyDataParsed()
@@ -115,21 +116,71 @@ const Logo = ({
     <div className="flex items-center min-bs-[24px]">
       {from == "login" ? (
         <ThemedLogo alt="EVOQ CRM" />
+      ) : compact ? (
+        <Box
+          component='img'
+          src='/images/logo/crmicon.png'
+          alt='EVOQ CRM'
+          sx={{ width: 45, height: 45, objectFit: 'contain', display: 'block', flexShrink: 0 }}
+        />
       ) : (
-        <>
-          {companyData?.company_logo != undefined &&
-          companyData?.company_logo != "" ? (
-            <div style={{ maxWidth: "185px", maxHeight: "40px", overflow: "hidden" }}>
-              <img
-                src={companyData?.company_logo}
-                alt={companyData?.company_name}
-                style={{ width: "100%", height: "40px", objectFit: "contain" }}
-              />
-            </div>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            minWidth: 0,
+            height: 45
+          }}
+        >
+          <Box
+            component='img'
+            src='/images/logo/crmicon.png'
+            alt=''
+            sx={{ width: 45, height: 45, objectFit: 'contain', display: 'block', flexShrink: 0 }}
+          />
+          {companyData?.company_logo != undefined && companyData?.company_logo != '' ? (
+            <Box
+              component='img'
+              src='/images/logo/logoicon.png'
+              alt={companyData?.company_name || 'EVOQ CRM'}
+              sx={{ height: 28, width: 'auto', maxWidth: 140, objectFit: 'contain', display: 'block' }}
+            />
           ) : (
-            <ThemedLogo alt="EVOQ CRM" />
+            <>
+              <Box
+                component='img'
+                src='/images/logo/evoqicon.png'
+                alt='EVOQ'
+                sx={{
+                  height: 35,
+                  width: 'auto',
+                  objectFit: 'contain',
+                  display: 'block',
+                  flexShrink: 1,
+                  minWidth: 0,
+                  '[data-mui-color-scheme="dark"] &': {
+                    filter: 'brightness(0) invert(1)'
+                  }
+                }}
+              />
+              <Box
+                component='span'
+                sx={{
+                  fontSize: '1.5rem',
+                  fontWeight: 600,
+                  lineHeight: 1,
+                  letterSpacing: '0.02em',
+                  color: 'var(--nav-chrome-text-black)',
+                  whiteSpace: 'nowrap',
+                  pt: '6px'
+                }}
+              >
+                CRM
+              </Box>
+            </>
           )}
-        </>
+        </Box>
       )}
     </div>
   );

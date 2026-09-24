@@ -27,17 +27,24 @@ const RAIL_WIDTH_PX = 68
 const navigationCustomStyles = (theme: Theme, collapsed: boolean) => {
   return {
     color: 'var(--nav-chrome-text-primary)',
-    zIndex: 'var(--drawer-z-index) !important',
+    zIndex: '1210 !important',
+    overflow: 'visible',
     [`& .${verticalNavClasses.bgColorContainer}`]: {
-      backgroundColor: 'var(--nav-chrome-bg)'
+      backgroundColor: 'var(--nav-chrome-bg)',
+      overflow: 'visible'
     },
     [`& .${verticalNavClasses.header}`]: {
-      paddingBlock: theme.spacing(5),
-      paddingInline: theme.spacing(5.5, 4),
+      paddingBlock: 0,
+      paddingInline: collapsed ? 8 : 16,
+      height: 'var(--header-height)',
+      minBlockSize: 'var(--header-height)',
+      maxBlockSize: 'var(--header-height)',
+      borderBlockEnd: '1px solid var(--nav-chrome-border)',
     },
     [`& .${verticalNavClasses.container}`]: {
       transition: 'none',
       borderColor: 'transparent',
+      overflow: 'visible',
       [`& .${verticalNavClasses.toggled}`]: {
         boxShadow: 'var(--mui-customShadows-lg)'
       }
@@ -45,7 +52,7 @@ const navigationCustomStyles = (theme: Theme, collapsed: boolean) => {
     [`& .${menuClasses.root}`]: {
       paddingBlockEnd: theme.spacing(2),
       paddingInline: collapsed ? 4 : 8,
-      paddingTop: 12,
+      paddingTop: 4,
     },
     [`&.${verticalNavClasses.toggled}:not(.${verticalNavClasses.breakpointReached})`]: {
       inlineSize: `${RAIL_WIDTH_PX}px !important`,
