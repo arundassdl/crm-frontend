@@ -57,7 +57,7 @@ const OverviewSection = ({ slug, doctype }) => {
       job_title: slug?.record?.job_title,
       probability: slug?.record?.probability,
       status: slug?.record?.status,
-      close_date: slug?.record?.close_date,
+      expected_closure_date: slug?.record?.expected_closure_date,
       organization_name: slug?.record?.organization_name,
       lead_name: slug?.record?.lead_name,
       lead: slug?.record?.lead,
@@ -209,10 +209,10 @@ fetchSourceData();
               </Grid>
               <Grid item xs={12} sm={12}>
                 <EditableField
-                  label="Close Date"
-                  field="close_date"
+                  label="Expected Close Date"
+                  field="expected_closure_date"
                   type="date"
-                  value={profile?.close_date}
+                  value={profile?.expected_closure_date}
                   onSave={handleSave}
                 />
               </Grid>

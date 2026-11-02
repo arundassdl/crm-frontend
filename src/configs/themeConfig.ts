@@ -17,6 +17,10 @@ const hindsilu = Hind_Siliguri({ subsets: ['latin'], weight: ['300','400','500',
 const inter = Inter({ subsets: ['latin'], weight: ['200','300', '400', '500', '600', '700', '800', '900'] })
 
 export type Config = {
+  /** Company brand, as on CTRL (`ctrl/lib/brand.ts`). */
+  brandName: string
+  /** Product name shown beside the wordmark. */
+  productName: string
   templateName: string
   templateDesc: string
   footerText: string
@@ -29,9 +33,11 @@ export type Config = {
 }
 
 const themeConfig: Config = {
-  templateName: 'Social DNA Labs',
-  templateDesc: 'Software development company',
-  footerText: 'Social DNA Labs',
+  brandName: 'EVOQ',
+  productName: 'CRM',
+  templateName: 'EVOQ CRM',
+  templateDesc: 'EVOQ CRM: leads, deals, contacts and accounts for your organization',
+  footerText: 'EVOQ',
   settingsCookieName: 'sdl',
   mode: 'light', // 'light', 'dark'
   layoutPadding: 10, // Common padding for header, content, footer layout components (in px)

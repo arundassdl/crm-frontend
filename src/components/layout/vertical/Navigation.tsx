@@ -22,6 +22,12 @@ import navigationCustomStyles from '@core/styles/vertical/navigationCustomStyles
 import * as React from 'react';
 import MuiDrawer from '@mui/material/Drawer';
 import { useClickContext } from '@/app/GlobalProvider'
+import { usePathname } from 'next/navigation'
+
+/** R56: the header menu button fires this on small screens to open the mobile drawer
+ * (open, not toggle: the button and its icon both fire on one tap). It closes via
+ * backdrop, Escape, or navigation. */
+export const MOBILE_NAV_TOGGLE_EVENT = 'crm:toggle-mobile-nav'
 
 
 
@@ -133,6 +139,18 @@ const Navigation = () => {
   }
 
   const [open, setOpen] = React.useState((isBreakpointReached)?false:true);
+  // R56: on small screens the hover-to-expand rail cannot be opened by touch,
+  // so the menu is shown in a slide-over drawer instead.
+  const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = React.useState(false)
+  React.useEffect(() => {
+    const openNav = () => setMobileOpen(true)
+    window.addEventListener(MOBILE_NAV_TOGGLE_EVENT, openNav)
+    return () => window.removeEventListener(MOBILE_NAV_TOGGLE_EVENT, openNav)
+  }, [])
+  React.useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname, isBreakpointReached])
   const { isClicked, setIsClicked } = useClickContext();
   
 
@@ -217,6 +235,22 @@ const Navigation = () => {
   return (
     // eslint-disable-next-line lines-around-comment
     // Sidebar Vertical Menu
+    <>
+    {isBreakpointReached && (
+      <MuiDrawer
+        variant='temporary'
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        ModalProps={{ keepMounted: true }}
+        PaperProps={{
+          'data-testid': 'crm-mobile-nav',
+          // Menu starts below the fixed header so Dashboard and Leads are not hidden.
+          sx: { width: drawerWidth, backgroundColor: 'var(--mui-palette-background-default)', pt: '76px' }
+        } as any}
+      >
+        <VerticalMenu scrollMenu={() => {}} />
+      </MuiDrawer>
+    )}
     <VerticalNav onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave} customStyles={navigationCustomStyles(theme, open)}>
 
@@ -263,7 +297,7 @@ const Navigation = () => {
       </Drawer>
      
     </VerticalNav>
-
+    </>
   )
 }
 

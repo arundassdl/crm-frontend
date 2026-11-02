@@ -247,7 +247,7 @@ const Notes: React.FC<NoteProps> = ({ link_name, doc_type }) => {
                 <ListItemAvatar>
                   <CustomAvatar
                     alt={note.owner_name}
-                    src={`${CONSTANTS.API_BASE_URL}${note.image}`}
+                    src={note.image ? `${CONSTANTS.API_BASE_URL}${note.image}` : undefined}
                     className="shadow-xs"
                   />
                 </ListItemAvatar>

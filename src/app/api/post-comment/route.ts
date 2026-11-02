@@ -1,38 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { CONSTANTS } from "@/services/config/app-config";
+import { NextRequest, NextResponse } from "next/server";
+import { bffErrorResponse, frappeCall } from "@/lib/tenant-fetch";
 
-
-const API_BASE_URL = CONSTANTS.API_BASE_URL;
-
+/** Add a comment to a record (R55) via frappe.desk.form.utils.add_comment. */
 export async function POST(req: NextRequest) {
+  let body: any;
   try {
-    const body = await req.json();
-    const token = req.headers.get('Authorization');
-
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const url = `${API_BASE_URL}/api/method/frappe.desk.form.utils.add_comment`;
-
-    const frappeRes = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: token,
-      },
-      body: JSON.stringify(body),
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "BAD_REQUEST", kind: "failed", message: "Invalid request." }, { status: 400 });
+  }
+  const { reference_doctype, reference_name, content } = body || {};
+  if (!reference_doctype || !reference_name || !content) {
+    return NextResponse.json({ error: "BAD_REQUEST", kind: "failed", message: "Missing comment fields" }, { status: 400 });
+  }
+  try {
+    // comment_email / comment_by come from the delegated Frappe user, not the browser.
+    const sess = await frappeCall(req, "frappe.auth.get_logged_user", {}, "GET");
+    const res = await frappeCall(req, "frappe.desk.form.utils.add_comment", {
+      reference_doctype,
+      reference_name,
+      content,
+      comment_email: sess?.message,
+      comment_by: sess?.message,
     });
-
-    const data = await frappeRes.json();
-
-    if (!frappeRes.ok) {
-      return NextResponse.json({ error: data.message || 'Frappe error' }, { status: frappeRes.status });
-    }
-
-    return NextResponse.json(data);
+    return NextResponse.json(res);
   } catch (err) {
-    console.error('Server error in post-comment route:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return bffErrorResponse(err, "post-comment");
   }
 }

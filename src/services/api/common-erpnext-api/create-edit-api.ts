@@ -531,7 +531,9 @@ export const fetchDetailData = async (doctype: any,docname: any,token: any,linke
       body: JSON.stringify({ doctype: doctype, docname: docname,linked_docname:linked_docname }),
     });
      
-    return res.json(); // Frappe returns data inside `message`
+    // R55: an error body is not a record; callers treat null as "could not load".
+    if (!res.ok) return null;
+    return res.json();
   } catch (error) {
     console.error(`Fetch ${doctype} with Links Error:`, error);
     return null;

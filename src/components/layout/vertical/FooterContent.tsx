@@ -23,11 +23,6 @@ const FooterContent = () => {
     >
       <p>
         <span>{`© ${new Date().getFullYear()}, ${themeConfig.footerText} - All rights reserved `}</span>
-         {/* <span>{`❤️`}</span>
-        <span>{` by `}</span>
-       <Link href='https://socialdnalabs.com' target='_blank' className='text-primary'>
-          SDL
-        </Link> */}
       </p>
       {/* {!isBreakpointReached && (
         <div className='flex items-center gap-4'>

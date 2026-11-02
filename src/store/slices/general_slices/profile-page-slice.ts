@@ -46,6 +46,7 @@ export const ProfileDataScreen = createSlice({
       state.isLoading = 'pending';
       state.partyName = '';
       state.items = [];
+      state.error = ''; // R60: a new load starts without the previous failure
     });
     builder.addCase(fetchprofileDataThunk.fulfilled, (state, action) => {
       console.log(

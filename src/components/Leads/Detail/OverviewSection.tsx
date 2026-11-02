@@ -117,7 +117,7 @@ const OverviewSection = ({ slug, doctype }) => {
         >
           <CustomAvatar
             alt={customerData?.name}
-            src={`${CONSTANTS.API_BASE_URL}${customerData?.image}`}
+            src={customerData?.image ? `${CONSTANTS.API_BASE_URL}${customerData?.image}` : undefined}
             size={100}
             variant="circular"
             sx={{

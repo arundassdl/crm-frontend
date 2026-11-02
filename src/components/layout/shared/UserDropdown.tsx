@@ -37,6 +37,7 @@ const BadgeContentSpan = styled('span')({
 })
 import { useEffect } from 'react'; // Add this import
 import { CONSTANTS } from '@/services/config/app-config'
+import { useCrmSession } from '@/components/CrmSessionContext'
 
 const UserDropdown = () => {
   // States
@@ -50,6 +51,29 @@ const UserDropdown = () => {
       });
   const { profileImage, setProfileImage } = useClickContext();
   const [LoggedIn, setLoggedIn] = useState<boolean>(false);
+  // R56: sessions opened from CTRL carry the user and organization; the legacy
+  // localStorage profile is empty for them.
+  const crmSession = useCrmSession();
+  const [tenantUser, setTenantUser] = useState<{ full_name?: string; user_image?: string } | null>(null);
+  useEffect(() => {
+    if (!crmSession?.userId) return;
+    const params = new URLSearchParams({
+      doctype: 'User',
+      filters: JSON.stringify({ name: crmSession.userId }),
+      fieldname: JSON.stringify(['full_name', 'user_image']),
+    });
+    fetch(`/api/proxy/api/method/frappe.client.get_value?${params}`, { headers: { Accept: 'application/json' } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (d?.message) {
+          setTenantUser(d.message);
+          if (d.message.user_image) setProfileImage(getFullImageUrl(d.message.user_image));
+        }
+      })
+      .catch(() => {});
+  }, [crmSession?.userId]);
+  const displayName = crmSession ? tenantUser?.full_name || crmSession.userId : userData?.full_name || "User";
+  const displayCaption = crmSession ? crmSession.organization : userData?.userType || "";
 
   // Refs
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -102,6 +126,17 @@ const UserDropdown = () => {
   };
 
   const handleClick = async () => {
+    if (crmSession) {
+      // R59: global sign-out. A POST (not a link) so it cannot be triggered from another site;
+      // the server ends every session and the browser lands on the Evoq One homepage.
+      try { localStorage.clear(); sessionStorage.clear(); } catch {}
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/api/auth/logout';
+      document.body.appendChild(form);
+      form.submit();
+      return;
+    }
     let obj = {
       Logouts: true,
     };
@@ -149,7 +184,7 @@ const UserDropdown = () => {
       >
         <Avatar
           ref={anchorRef}
-          alt={userData?.full_name || "User"}
+          alt={displayName}
           src={profileImage}
           onClick={handleDropdownOpen}
           className='cursor-pointer bs-[38px] is-[38px]'
@@ -174,19 +209,29 @@ const UserDropdown = () => {
               <ClickAwayListener onClickAway={e => handleDropdownClose(e as MouseEvent | TouchEvent)}>
                 <MenuList>
                   <div className='flex items-center plb-2 pli-4 gap-2' tabIndex={-1}>
-                    <Avatar alt={userData?.full_name || "User"} src={profileImage} />
+                    <Avatar alt={displayName} src={profileImage} />
                     <div className='flex items-start flex-col'>
-                      <Typography className='font-medium' color='text.primary'>
-                        {userData?.full_name || "User"}
+                      <Typography className='font-medium' color='text.primary' data-testid='crm-user-name'>
+                        {displayName}
                       </Typography>
-                      <Typography variant='caption'>{userData?.userType || ""}</Typography>
+                      {crmSession && tenantUser?.full_name && (
+                        <Typography variant='caption'>{crmSession.userId}</Typography>
+                      )}
+                      <Typography variant='caption' data-testid='crm-user-org'>{displayCaption}</Typography>
                     </div>
                   </div>
                   <Divider className='mlb-1' />
-                  <MenuItem className='gap-3' onClick={e => handleLinkClick("/my-account")}>
-                    <i className='ri-user-3-line' />
-                    <Typography color='text.primary'>My Account</Typography>
-                  </MenuItem>
+                  {crmSession ? (
+                    <MenuItem className='gap-3' component='a' href='/api/auth/switch-org' data-testid='crm-switch-org'>
+                      <i className='ri-building-line' />
+                      <Typography color='text.primary'>Switch organization</Typography>
+                    </MenuItem>
+                  ) : (
+                    <MenuItem className='gap-3' onClick={e => handleLinkClick("/my-account")}>
+                      <i className='ri-user-3-line' />
+                      <Typography color='text.primary'>My Account</Typography>
+                    </MenuItem>
+                  )}
                   <div className='flex items-center plb-2 pli-4'>
                     <Button
                       fullWidth
@@ -195,6 +240,7 @@ const UserDropdown = () => {
                       size='small'
                       endIcon={<i className='ri-logout-box-r-line' />}
                       onClick={handleClick}
+                      data-testid='crm-logout'
                       sx={{ '& .MuiButton-endIcon': { marginInlineStart: 1.5 } }}
                     >
                       Logout

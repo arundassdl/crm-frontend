@@ -20,6 +20,8 @@ interface StyledDataGridProps extends Partial<DataGridProps> {
   checkboxSelection?: boolean;
   disableRowSelectionOnClick?: boolean;
   toolbarProps?: Record<string, any>;
+  /** R60: text when there are no rows (e.g. say the load failed rather than "No Records found"). */
+  noRowsLabel?: string;
   gridHeight?: string;
 }
 
@@ -39,6 +41,7 @@ const SDLDataGrid: React.FC<StyledDataGridProps> = ({
   checkboxSelection = true,
   disableRowSelectionOnClick = true,
   toolbarProps = {},
+  noRowsLabel = 'No Records found',
   gridHeight
 }) => {
   
@@ -75,7 +78,7 @@ const SDLDataGrid: React.FC<StyledDataGridProps> = ({
           }}
           slots={{ toolbar: CustomToolbar }}
           slotProps={{ toolbar: toolbarProps }}
-          localeText={{ noRowsLabel: 'No Records found' }}
+          localeText={{ noRowsLabel }}
         />
       </Box>
     </Box>

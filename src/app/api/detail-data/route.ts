@@ -1,41 +1,53 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
-import axios from "axios";
-import { CONSTANTS } from "@/services/config/app-config";
+import { bffErrorResponse, frappeCall } from "@/lib/tenant-fetch";
+import { isValidDoctype } from "@/lib/frappe-list";
 
+/**
+ * Record detail (R55): { ...doc, record: doc, primary_address? }.
+ * `record` is the full document (with child tables such as `links`) via frappe.client.get,
+ * so Frappe read permission applies.
+ */
 export async function POST(req: Request) {
+  let body: any;
   try {
-    const body = await req.json();
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "BAD_REQUEST", kind: "failed", message: "Invalid request." }, { status: 400 });
+  }
+  const { doctype } = body || {};
+  // CRM Task names are auto-increment numbers.
+  const docname = typeof body?.docname === "number" ? String(body.docname) : body?.docname;
+  if (!isValidDoctype(doctype) || !docname || typeof docname !== "string") {
+    return NextResponse.json({ error: "BAD_REQUEST", kind: "failed", message: "Missing doctype or name" }, { status: 400 });
+  }
 
-    const {
-      doctype,
-      docname,
-      linked_docname=""
-    } = body;
-    const token = req.headers.get("Authorization");
- 
+  try {
+    const res = await frappeCall(req, "frappe.client.get", { doctype, name: docname });
+    const record = res?.message || null;
+    // Fields at the top level and under `record`: detail screens read both shapes.
+    const result: Record<string, unknown> = { ...(record || {}), record };
 
-    if (!doctype || !docname) {
-      return NextResponse.json({ error: "Missing doctype or name" }, { status: 400 });
-    }
-   
-    const version = CONSTANTS.VERSION;
-    const method = 'get_record_with_links';
-    const entity = 'datalist';
-    const url = `${CONSTANTS.API_BASE_URL}${CONSTANTS.API_MANDATE_PARAMS}?version=${version}&method=${method}&entity=${entity}`;
-
-    const response = await axios.get(
-      url, 
-      {
-        params: { doctype: doctype, docname: docname,linked_docname:linked_docname },
-        headers: { Authorization: `${token}` },
+    // Optional: primary address for doctypes linked through Dynamic Link (Contact / CRM Organization).
+    if (record && (doctype === "Contact" || doctype === "CRM Organization")) {
+      try {
+        const addr = await frappeCall(req, "frappe.client.get_list", {
+          doctype: "Address",
+          fields: ["*"],
+          filters: [
+            ["Dynamic Link", "link_doctype", "=", doctype],
+            ["Dynamic Link", "link_name", "=", docname],
+          ],
+          order_by: "is_primary_address desc, modified desc",
+          limit_page_length: 1,
+        });
+        if (Array.isArray(addr?.message) && addr.message.length) result.primary_address = addr.message[0];
+      } catch {
+        // Address is optional; a permission gap here must not hide the record.
       }
-    );
-
-    return NextResponse.json(response.data.message);
-    
-  } catch (error: any) {
-    console.error('[UpdateDocumentError]', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+    return NextResponse.json(result);
+  } catch (err) {
+    return bffErrorResponse(err, "detail-data");
   }
 }

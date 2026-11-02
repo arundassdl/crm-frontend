@@ -177,25 +177,14 @@ export const FetchPostalCodeByStateCity = async (state: any,city: any, token: an
 
 
 export const get_arealist = async (token: any) => {
-  const version = CONSTANTS.VERSION;
-  const stateMethod = 'get_territory_list';
-  const entity = 'territory';
-  const stateParams = `?version=${version}&method=${stateMethod}&entity=${entity}`;
-  const config = {
-    headers: {
-      Authorization: token,
-    },
-  };
-  await axios
-    .get(
-      `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}${stateParams}`,
-      config
-    )
-    .then((res: any) => {
-      response = res?.data?.message?.data;
-    })
-    .catch((err: any) => {
-      console.log('err', err);
+  // R55: Frappe CRM territories (CRM Territory) through the BFF proxy.
+  try {
+    const res = await axios.get(`${CONSTANTS.API_BASE_URL}/api/resource/CRM Territory`, {
+      params: { fields: JSON.stringify(['name', 'territory_name']), limit_page_length: 0, order_by: 'territory_name asc' },
     });
-  return response;
+    return res?.data?.data || [];
+  } catch (err: any) {
+    console.error('Territory list failed:', err?.response?.status);
+    return [];
+  }
 };

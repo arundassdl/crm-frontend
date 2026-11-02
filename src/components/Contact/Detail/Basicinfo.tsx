@@ -116,7 +116,7 @@ const Basicinfo = ({ slug, doctype }) => {
             >
                <CustomAvatar
                 alt={customerData?.name}
-                src={`${CONSTANTS.API_BASE_URL}${customerData?.image}`}
+                src={customerData?.image ? `${CONSTANTS.API_BASE_URL}${customerData?.image}` : undefined}
                 size={(doctype=="Customer")?100:120}
                 variant="circular"
                 sx={{

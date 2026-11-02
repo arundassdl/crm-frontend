@@ -24,22 +24,28 @@ import useVerticalNav from '@/@menu/hooks/useVerticalNav'
 import { styled, useTheme } from '@mui/material/styles'
 import { useClickContext } from '@/app/GlobalProvider'
 import Image from 'next/image'
+import Chip from '@mui/material/Chip'
+import { orgHomeHref, useCrmSession } from '@/components/CrmSessionContext'
+import { MOBILE_NAV_TOGGLE_EVENT } from './Navigation'
 
 const NavbarContent = () => {
   const [companyData, setCompanyData] = useState<any>([]);
   const { isBreakpointReached, isToggled, toggleVerticalNav } = useVerticalNav()
   const [open, setOpen] = React.useState(true);
   const theme = useTheme()
+  const crmSession = useCrmSession()
   const { setIsClicked } = useClickContext();
 
 
   const handleDrawerOpen = () => {  
+    if (isBreakpointReached) { window.dispatchEvent(new Event(MOBILE_NAV_TOGGLE_EVENT)); return; }
     setIsClicked(true);
     setOpen(true);
     toggleVerticalNav(false)    
   };
 
   const handleDrawerClose = (e) => {
+    if (isBreakpointReached) { window.dispatchEvent(new Event(MOBILE_NAV_TOGGLE_EVENT)); return; }
     setIsClicked(true);
     if(open==true){
       setOpen(false);
@@ -105,7 +111,7 @@ const NavbarContent = () => {
             {theme.direction === 'rtl' ? <i className='ri-menu-fold-line text-xl cursor-pointer' onClick={handleDrawerOpen} /> : <i className='ri-menu-line text-xl cursor-pointer' onClick={handleDrawerOpen} />}
           </IconButton>
           )}  
-        <Link href='/'>
+        <Link href={orgHomeHref(crmSession)}>
             <Logo />
             {/* <Image
               src="/assets/images/small-logo.png"
@@ -140,6 +146,17 @@ const NavbarContent = () => {
         </Link> */}
         {/* <LinguisticsAndForex /> */}
         
+        {crmSession?.organization && (
+          <Chip
+            data-testid='crm-org-chip'
+            icon={<i className='ri-building-line' />}
+            label={crmSession.organization}
+            size='small'
+            variant='outlined'
+            className='mie-2 max-sm:hidden'
+            title='Current organization'
+          />
+        )}
         <ModeDropdown />
         {/* <IconButton className='text-textPrimary'>
           <i className='ri-notification-2-line' />

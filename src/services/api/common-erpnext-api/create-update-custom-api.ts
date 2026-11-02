@@ -31,44 +31,26 @@ export const fetchRecordsWithLinks = async (doctype: any,docname: any,token: any
 
 
 export const fetchCommentsWithOwner = async (doctype: any,docname: any,token: any) => {
+  // R55: Frappe CRM tenant via the BFF (/api/related), not the SalesBond method.
   try {
-    const version = CONSTANTS.VERSION;
-    const method = 'get_comments_with_owner';
-    const entity = 'datalist';
-    const url = `${CONSTANTS.API_BASE_URL}${CONSTANTS.API_MANDATE_PARAMS}?version=${version}&method=${method}&entity=${entity}`;
-
-    const response = await axios.get(
-      url, 
-      {
-        params: { doctype: doctype, docname: docname },
-        headers: { Authorization: `${token}` },
-      }
-    );
-    return response.data.message; // Frappe returns data inside `message`
+    if (!docname) return [];
+    const response = await axios.post('/api/related', { kind: 'comments', doctype, docname });
+    return response.data?.data || [];
   } catch (error) {
-    console.error(`Fetch ${doctype} with Links Error:`, error);
-    return null;
+    console.error(`Fetch ${doctype} comments failed:`, (error as any)?.response?.status);
+    return [];
   }
 };
 
 export const fetchNotesWithOwner = async (doctype: any,docname: any,token: any) => {
+  // R55: FCRM Note via the BFF (/api/related).
   try {
-    const version = CONSTANTS.VERSION;
-    const method = 'get_notes_with_owner';
-    const entity = 'datalist';
-    const url = `${CONSTANTS.API_BASE_URL}${CONSTANTS.API_MANDATE_PARAMS}?version=${version}&method=${method}&entity=${entity}`;
-
-    const response = await axios.get(
-      url, 
-      {
-        params: { doctype: doctype, docname: docname },
-        headers: { Authorization: `${token}` },
-      }
-    );
-    return response.data.message; // Frappe returns data inside `message`
+    if (!docname) return [];
+    const response = await axios.post('/api/related', { kind: 'notes', doctype, docname });
+    return response.data?.data || [];
   } catch (error) {
-    console.error(`Fetch ${doctype} with Links Error:`, error);
-    return null;
+    console.error(`Fetch ${doctype} notes failed:`, (error as any)?.response?.status);
+    return [];
   }
 };
 export type Task = {
@@ -92,42 +74,22 @@ export const fetchTasksWithOwner = async (
   limit: number = 5,
   offset: number = 0
 ): Promise<{ data: Task[]; total: number }> => {
+  // R55: CRM Task via the BFF (/api/related).
   try {
-    const version = CONSTANTS.VERSION;
-    const method = 'get_tasks_with_owner';
-    const entity = 'datalist';
-    const url = `${CONSTANTS.API_BASE_URL}${CONSTANTS.API_MANDATE_PARAMS}?version=${version}&method=${method}&entity=${entity}`;
-
-    const response = await axios.get(url, {
-      params: {
-        doctype,
-        docname,
-        limit,
-        offset,
-      },
-      headers: {
-        Authorization: `${token}`,
-      },
-    });
-
-    const resData = response.data?.message || [];
-
+    if (!docname) return { data: [], total: 0 };
+    const response = await axios.post('/api/related', { kind: 'tasks', doctype, docname, limit, offset });
     return {
-      data: resData?.data || [],
-      total: resData?.total_count || 0,
+      data: response.data?.data || [],
+      total: response.data?.total || 0,
     };
   } catch (error) {
-    console.error(`Fetch ${doctype} tasks failed:`, error);
+    console.error(`Fetch ${doctype} tasks failed:`, (error as any)?.response?.status);
     return {
       data: [],
       total: 0,
     };
   }
 };
-
-
-
-
 
 export const createOrUpdateRecord = async (
   doctype: string,

@@ -112,15 +112,17 @@ const CustomerAddresssListing: React.FC<addresslistProps> = ({doc_name, doc_type
     { doctype: module, field: "modified", hidden: "False" },
   ];
   const relatedDocs = [];
-  const Joinquery = " LEFT JOIN `tabDynamic Link` ON `tabAddress`.name = `tabDynamic Link`.parent and `tabDynamic Link`.parenttype = 'Address'";
-  const whereconditon = " AND `tabDynamic Link`.link_doctype = '" + doc_type + "' AND `tabDynamic Link`.link_name = '" + doc_name + "'";
-  // const whereconditon = ""
+  // R60: the BFF never runs raw SQL; related rows are selected with Frappe filters instead.
+  const linkedTo = [
+    { field: "Dynamic Link", key: "link_doctype", operator: "=" as const, value: doc_type },
+    { field: "Dynamic Link", key: "link_name", operator: "=" as const, value: doc_name },
+  ];
   const include_contact = "False";
   const include_address = "False";
   
   const fetchDataWrapper = (fetchFunction, params, token) => {
     // return fetchFunction(params, token, colFields, module, relatedDocs,include_contact); // Ensure relatedDocs is passed
-    return fetchFunction(params, token, colFields, module, relatedDocs,include_contact,'','',Joinquery,whereconditon,userToken?.role_profile,userToken?.username); // Ensure relatedDocs is passed
+    return fetchFunction(params, token, colFields, module, relatedDocs, include_contact, '', linkedTo); // Ensure relatedDocs is passed
   };
 
   return (

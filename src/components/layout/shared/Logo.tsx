@@ -12,7 +12,6 @@ import MaterioLogo from "@core/svg/Logo";
 // Config Imports
 import themeConfig from "@configs/themeConfig";
 import Image from "next/image";
-import SDLLogo from "@/@core/svg/SDLLogo";
 import useVerticalNav from "@/@menu/hooks/useVerticalNav";
 // import { companyProfilePage } from "@/services/api/my-company/my-comapny-api";
 import { Box } from "@mui/material";
@@ -31,6 +30,34 @@ const LogoText = styled.span<LogoTextProps>`
   // text-transform: uppercase;
   margin-inline-start: 5px;
 `;
+
+/**
+ * EVOQ wordmark (the asset CTRL uses, `public/images/logo/logo-evoq.png`) with the
+ * product name beside it, as CTRL shows "EVOQ CTRL" (R57).
+ */
+const EvoqBrand = ({ color, compact }: { color?: CSSProperties["color"]; compact?: boolean }) => (
+  <Box display="flex" alignItems="center" gap={1} minHeight={24} data-testid="crm-brand">
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img
+      src="/images/logo/logo-evoq.png"
+      alt={themeConfig.brandName}
+      width={1161}
+      height={230}
+      style={{ height: compact ? 22 : 26, width: "auto", display: "block" }}
+    />
+    <LogoText
+      color={color}
+      style={{
+        fontFamily: themeConfig.fontFamily,
+        fontSize: compact ? 20 : 22,
+        letterSpacing: "0.005px",
+        fontWeight: 700,
+      }}
+    >
+      {themeConfig.productName}
+    </LogoText>
+  </Box>
+);
 
 const Logo = ({
   color,
@@ -97,23 +124,7 @@ const Logo = ({
   return (
     <div className="flex items-center min-bs-[24px]">
       {from == "login" ? (
-        <Box display="flex" alignItems="center" gap={1} minHeight={24}>
-        <SDLLogo
-          width={isBreakpointReached ? 65 : 68}
-          height={isBreakpointReached ? 65 : 68}
-        />
-        <LogoText
-          color={color}
-          style={{
-            fontFamily: themeConfig.fontFamily,
-            fontSize: isBreakpointReached ? 20 : 22,
-            marginInlineStart: "5px !important",
-            letterSpacing: "0.005px",
-          }}
-        >
-          {themeConfig.templateName}
-        </LogoText>
-      </Box>
+        <EvoqBrand color={color} compact={isBreakpointReached} />
       ) : (
         <>
           {companyData?.company_logo != undefined &&
@@ -145,23 +156,7 @@ const Logo = ({
             //   style={{ objectFit: 'contain' }} // Ensures the aspect ratio is preserved
             // />
             // <Image src="/assets/images/logo.png" alt="logo" width={200} height={-1}/>
-            <Box display="flex" alignItems="center" gap={1} minHeight={24}>
-              <SDLLogo
-                width={isBreakpointReached ? 65 : 68}
-                height={isBreakpointReached ? 65 : 68}
-              />
-              <LogoText
-                color={color}
-                style={{
-                  fontFamily: themeConfig.fontFamily,
-                  fontSize: isBreakpointReached ? 20 : 22,
-                  marginInlineStart: "5px !important",
-                  letterSpacing: "0.005px",
-                }}
-              >
-                {themeConfig.templateName}
-              </LogoText>
-            </Box>
+            <EvoqBrand color={color} compact={isBreakpointReached} />
           )}
         </>
       )}

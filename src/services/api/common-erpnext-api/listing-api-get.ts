@@ -125,21 +125,51 @@ export async function fetchRawDataGridListing(
     if (relatedDocs && relatedDocs.length > 0) {
       requestBody.related = relatedDocs;
     }    
-    console.log("requestBodyresponse000",requestBody)
     // Fetch data from API using POST
     const response = await axios.post("/api/datalist", requestBody);
-    console.log("response000",response);
     
     return {
       data: response?.data?.records || [],
       totalCount: response?.data?.total_count || 0,
     };
   } catch (error: unknown) {
+    // R55: keep the reason so the grid can show it instead of an empty list.
     return {
       data: [],
       totalCount: 0,
+      error: describeListError(error),
     };
   }
+}
+
+export type ListErrorKind = "auth" | "permission" | "not_found" | "validation" | "unavailable" | "failed";
+export interface ListError {
+  kind: ListErrorKind;
+  status?: number;
+  message: string;
+}
+
+export function describeListError(error: unknown): ListError {
+  const resp: any = (error as any)?.response;
+  const status: number | undefined = resp?.status;
+  const body: any = resp?.data || {};
+  let kind: ListErrorKind = body?.kind;
+  if (!kind) {
+    if (status === 401) kind = "auth";
+    else if (status === 403 || status === 402) kind = "permission";
+    else if (status === 404) kind = "not_found";
+    else if (!status || status >= 500) kind = "unavailable";
+    else kind = "failed";
+  }
+  const defaults: Record<ListErrorKind, string> = {
+    auth: "Your session has expired. Open CRM again from CTRL.",
+    permission: "You do not have permission to view these records.",
+    not_found: "This list is not available.",
+    validation: "The list request was not accepted.",
+    unavailable: "CRM is temporarily unavailable. Try again shortly.",
+    failed: "Could not load records. Try again.",
+  };
+  return { kind, status, message: typeof body?.message === "string" && body.message ? body.message : defaults[kind] };
 }
 
 export async function fetchCommonListingGet(

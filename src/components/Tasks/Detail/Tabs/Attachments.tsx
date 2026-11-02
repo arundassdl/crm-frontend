@@ -45,7 +45,7 @@ const TaskAttachment: any = (slug) => {
                                             {loading && <CircularProgress /> }                                          
                                             {dealData?.name && (
                                             <MultiFileUpload
-                                                attachedToDoctype="CRM Lead"
+                                                attachedToDoctype="CRM Task"
                                                 attachedToName={dealData?.name}
                                                 //   attachedToField="attachment"  //pass this if we nee to attach to doctype
                                                 allowedTypes={["image/*", "application/pdf"]}

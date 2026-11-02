@@ -78,7 +78,7 @@ const DealsListing: React.FC<DealProps> = ({ link_name }) => {
     { doctype: module, field: "mobile_no", hidden: "False" },
     { doctype: module, field: "email", hidden: "False" },
     { doctype: module, field: "status", hidden: "False" },
-    { doctype: module, field: "close_date", hidden: "False" },
+    { doctype: module, field: "expected_closure_date", headerName: "Expected Close", hidden: "False" },
     { doctype: module, field: "creation", hidden: "False" },
     { doctype: module, field: "modified", hidden: "False" },
   ];
@@ -111,7 +111,7 @@ const DealsListing: React.FC<DealProps> = ({ link_name }) => {
     "mobile_no",
     "email",
     "status",
-    "close_date",
+    "expected_closure_date",
     "owner",
     "annual_revenue",
     "creation",

@@ -1,71 +1,54 @@
-// app/api/frappe/upload/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { CONSTANTS } from "@/services/config/app-config";
-const ERP_API_BASE = CONSTANTS.API_BASE_URL;
+import { backendError, bffErrorResponse, frappeCall, tenantFetch } from "@/lib/tenant-fetch";
+import { isValidDoctype } from "@/lib/frappe-list";
 
+/** Upload a file and attach it to a record (R55) via Frappe upload_file. */
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
-  const file = formData.get("file") as Blob;
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
+    return NextResponse.json({ error: "BAD_REQUEST", kind: "failed", message: "Invalid upload." }, { status: 400 });
+  }
+  const file = formData.get("file") as File | null;
   const attachedToDoctype = formData.get("attached_to_doctype") as string;
   const attachedToName = formData.get("attached_to_name") as string;
   const folder = (formData.get("folder") as string) || "Home";
-  const is_private = formData.get("is_private") || "0";
-  const token = req.headers.get("Authorization");
+  const isPrivate = (formData.get("is_private") as string) || "0";
   const attachedToField = formData.get("attached_to_field") as string;
 
-  if (!file || !attachedToDoctype || !attachedToName) {
-    return NextResponse.json(
-      { error: "Missing required fields" },
-      { status: 400 }
-    );
+  if (!file || !isValidDoctype(attachedToDoctype) || !attachedToName) {
+    return NextResponse.json({ error: "BAD_REQUEST", kind: "failed", message: "Missing required fields" }, { status: 400 });
   }
 
   const uploadForm = new FormData();
-  uploadForm.append("file", file, (file as File).name);
-  // uploadForm.append("doctype", attachedToDoctype);
-  // uploadForm.append("docname", attachedToName);
-  
+  uploadForm.append("file", file, file.name);
   uploadForm.append("attached_to_doctype", attachedToDoctype);
   uploadForm.append("attached_to_name", attachedToName);
   uploadForm.append("folder", folder);
-  uploadForm.append("is_private", is_private);
+  uploadForm.append("is_private", isPrivate);
   if (attachedToField) {
     uploadForm.append("attached_to_field", attachedToField);
-  }else{
+  } else {
     uploadForm.append("doctype", attachedToDoctype);
     uploadForm.append("docname", attachedToName);
   }
-console.log("uploadForm",uploadForm);
 
-  const res = await fetch(`${ERP_API_BASE}/api/method/upload_file`, {
-    method: "POST",
-    body: uploadForm,
-    headers: {
-      Authorization: `${token}`,
-    },
-  });
+  try {
+    const res = await tenantFetch(req, "/api/method/upload_file", { method: "POST", body: uploadForm });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw backendError(res.status, result);
 
-  const result = await res.json();
-
-// Manual update ONLY if you didn't use attachedToField in the upload
-// (this block should now be disabled in your case)
-if (attachedToField ) {
-  const file_url = result?.message?.file_url;
-
-  await fetch(
-    `${ERP_API_BASE}/api/resource/${attachedToDoctype}/${attachedToName}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `${token}`,
-      },
-      body: JSON.stringify({
-        [attachedToField]: file_url,
-      }),
+    if (attachedToField && /^[A-Za-z0-9_]+$/.test(attachedToField) && result?.message?.file_url) {
+      await frappeCall(req, "frappe.client.set_value", {
+        doctype: attachedToDoctype,
+        name: attachedToName,
+        fieldname: attachedToField,
+        value: result.message.file_url,
+      });
     }
-  );
-}
-  
-  return NextResponse.json(result);
+    return NextResponse.json(result);
+  } catch (err) {
+    return bffErrorResponse(err, "multifile-upload");
+  }
 }

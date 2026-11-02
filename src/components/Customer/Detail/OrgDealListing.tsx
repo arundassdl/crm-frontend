@@ -228,7 +228,7 @@ const OrgDealListing: React.FC<OrgDealListingProps> = ({ link_name }) => {
     { doctype: module, field: "mobile_no", hidden: "False" },
     { doctype: module, field: "email", hidden: "False" },
     { doctype: module, field: "status", hidden: "False" },
-    { doctype: module, field: "close_date", hidden: "False" },
+    { doctype: module, field: "expected_closure_date", headerName: "Expected Close", hidden: "False" },
     { doctype: module, field: "creation", hidden: "False" },
     { doctype: module, field: "modified", hidden: "False" },
   ];
@@ -244,15 +244,15 @@ const OrgDealListing: React.FC<OrgDealListingProps> = ({ link_name }) => {
       };
       console.log("fetchParams", fetchParams);
       const relatedDocs = ["CRM Organziation"];
-      const Joinquery = "LEFT JOIN `tabCRM Organization` ON `tabCRM Organization`.`name` = `tabCRM Deal`.`organization`";
-      const whereconditon =" AND `tabCRM Deal`.`organization` = '"+link_name+"'";
+      // R60: the BFF never runs raw SQL; related rows are selected with Frappe filters instead.
+      const onlyThisAccount = [{ field: "CRM Deal", key: "organization", operator: "=" as const, value: link_name }];
       const data = await fetchRawDataGridListing(
         fetchParams,
         userToken?.access_token,
         colFields as any,
         "CRM Deal",
         relatedDocs,
-        "", "" ,[], Joinquery, whereconditon
+        "", "", onlyThisAccount
       );
       console.log("contact_list data", data);
 

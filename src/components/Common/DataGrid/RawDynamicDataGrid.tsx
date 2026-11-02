@@ -9,7 +9,7 @@ import {
 import classnames from "classnames";
 import SDLDataGrid from "@/@core/components/datagrid/SDLDataGrid";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { debounce } from "@mui/material";
+import { Alert, Button, debounce } from "@mui/material";
 // import { fetchCommonListingGet } from "@/services/api/common-erpnext-api/listing-api-get";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
 import { GridRowId } from "@mui/x-data-grid";
@@ -41,7 +41,7 @@ interface DynamicDataGridProps {
   relatedDocs?: string[];
   fetchDataFunction?: (
     ...args: any[]
-  ) => Promise<{ data: any[]; totalCount: number }>;
+  ) => Promise<{ data: any[]; totalCount: number; error?: { kind: string; message: string } }>;
   onSubmit?: () => void;
   refreshKey?: number; 
   gridHeight?: string; 
@@ -85,6 +85,8 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
     20, 50, 100,
   ]);
   const [loading, setLoading] = useState(false);
+  // R55: why the last load failed, so an error is not shown as "no records".
+  const [loadError, setLoadError] = useState<{ kind: string; message: string } | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [rowCount, setRowCount] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -169,8 +171,10 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
 
       setData(result.data || []);
       setRowCount(result.totalCount || 0);
+      setLoadError(result?.error || null);
     } catch (error) {
       console.error("Error fetching data:", error);
+      setLoadError({ kind: "failed", message: "Could not load records. Try again." });
     }
     setLoading(false);
   };
@@ -327,6 +331,26 @@ console.log("columns",columns);
         onClose={() => setDialogOpen(false)}
         onConfirm={handleDeleteClick}
       />
+      {loadError && (
+        <Alert
+          severity={loadError.kind === "permission" ? "warning" : "error"}
+          sx={{ mb: 2 }}
+          data-testid="grid-load-error"
+          action={
+            loadError.kind === "auth" ? (
+              <Button color="inherit" size="small" href="/api/auth/session-ended">
+                Sign in again
+              </Button>
+            ) : loadError.kind === "unavailable" || loadError.kind === "failed" ? (
+              <Button color="inherit" size="small" onClick={() => fetchData()}>
+                Retry
+              </Button>
+            ) : undefined
+          }
+        >
+          {loadError.message}
+        </Alert>
+      )}
       <SDLDataGrid
         rows={data}
         columns={columns}
@@ -341,9 +365,11 @@ console.log("columns",columns);
         onFilterModelChange={handleFilterModelChange}
         pageSizeOptions={pageSizeOptions}
         loading={loading}
+        // R60: a failed load is not "0 records": no count, and the empty grid says why.
+        noRowsLabel={loadError ? "Records could not be loaded." : undefined}
         toolbarProps={{
           title: moduleHeading,
-          total: Number(rowCount),
+          total: loadError ? undefined : Number(rowCount),
           module,
           onAddNew,
           multipleViews

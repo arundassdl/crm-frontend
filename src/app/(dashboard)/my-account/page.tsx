@@ -8,6 +8,9 @@ import dynamic from 'next/dynamic'
 // Component Imports
 import AccountSettings from '@views/account-settings'
 import useProfilePage from '@/hooks/GeneralHooks/ProfileHooks/ProfileHooks';
+import { useSelector } from 'react-redux'
+import Alert from '@mui/material/Alert'
+import { profileData_state } from '@/store/slices/general_slices/profile-page-slice'
 
 
 const AccountTab = dynamic(() => import('@views/account-settings/account'))
@@ -30,6 +33,16 @@ const AccountSettingsPage = () => {
   console.log("profileList=>profileList",profileList);
   
   
+  // R60: the legacy profile service is not on EVOQ CRM tenants. Say so, rather than show an empty form.
+  const profileError = useSelector(profileData_state)?.error
+  if (profileError) {
+    return (
+      <Alert severity='warning' data-testid='my-account-unavailable'>
+        Your profile details can&apos;t be shown here yet. Your EVOQ account is managed in EVOQ CTRL.
+      </Alert>
+    )
+  }
+
   return <AccountSettings tabContentList={tabContentList(profileList)} />
 }
 

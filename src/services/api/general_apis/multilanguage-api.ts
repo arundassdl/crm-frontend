@@ -2,6 +2,9 @@ import axios from 'axios';
 import { CONSTANTS } from '../../config/app-config';
 
 const MultiLangApiFetch = async () => {
+  // R55: tenant Frappe CRM sites (reached through /api/proxy) do not have the
+  // SalesBond translation API, so the shared frontend runs English-only there.
+  if (CONSTANTS.API_BASE_URL === '/api/proxy') return [];
   let response: any;
   const version = CONSTANTS.VERSION;
   const method = 'get_languages';
@@ -54,6 +57,8 @@ const MultiLangApiFetch = async () => {
   const langTransmethod = 'get_translation_text';
   const langTransentity = 'translation';
 
+  if (!Array.isArray(MultiLanguagesList)) return [];
+
   const generateMultiLingualArrayOfData = await Promise.all(
     MultiLanguagesList.map(async (lang: any) => {
       console.log('MultiLanguagesList langname', lang);
@@ -95,6 +100,8 @@ const MultiLangApiFetch = async () => {
 
 
 const MultiLangApi = async () => {
+  // R55: see MultiLangApiFetch — no translation API on tenant CRM sites.
+  if (CONSTANTS.API_BASE_URL === '/api/proxy') return [];
   let response: any;
   const version = CONSTANTS.VERSION;
   const method = 'get_languages';
@@ -125,6 +132,8 @@ const MultiLangApi = async () => {
 
   const langTransmethod = 'get_translation_text';
   const langTransentity = 'translation';
+
+  if (!Array.isArray(MultiLanguagesList)) return [];
 
   const generateMultiLingualArrayOfData = await Promise.all(
     MultiLanguagesList.map(async (lang: any) => {

@@ -238,14 +238,15 @@ const OrgContactListing: React.FC<OrgContactListingProps> = ({ link_name }) => {
       };
       console.log("fetchParams", fetchParams);
       const relatedDocs = [];
-      const whereconditon =" AND `tabContact`.`company_name` = '"+link_name+"'";
+      // R60: the BFF never runs raw SQL; related rows are selected with Frappe filters instead.
+      const onlyThisAccount = [{ field: "Contact", key: "company_name", operator: "=" as const, value: link_name }];
       const data = await fetchRawDataGridListing(
         fetchParams,
         userToken?.access_token,
         colFields as any,
         "Contact",
         relatedDocs,
-        "", "" ,[], "", whereconditon
+        "", "", onlyThisAccount
 
       );
       console.log("Contact data", data);

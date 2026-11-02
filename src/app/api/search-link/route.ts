@@ -1,83 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { CONSTANTS } from "@/services/config/app-config";
-import axios from 'axios';
+import { NextRequest, NextResponse } from "next/server";
+import { bffErrorResponse, frappeCall } from "@/lib/tenant-fetch";
+import { isValidDoctype } from "@/lib/frappe-list";
 
+/**
+ * Link-field search (R55) via frappe.desk.search.search_link.
+ * Response: { data: [{ value, label?, description? }] }.
+ */
 export async function POST(req: NextRequest) {
+  let body: any;
   try {
-    const { txt, module,reference_doctype } = await req.json();
-    const token = req.headers.get("Authorization");
-    console.log("reference_doctype",reference_doctype);
-    
-
-    const fetchUrl = `${CONSTANTS.API_BASE_URL}${CONSTANTS.API_MANDATE_PARAMS}?version=${CONSTANTS.VERSION}`;
-    console.log("fetchUrl",fetchUrl);
-
-
-    //  const response = await axios.post(
-    //   fetchUrl,
-    //   {
-    //     version: CONSTANTS.VERSION,
-    //     method: "search_link_wrapper",
-    //     entity: "datalist",
-    //     txt:" ",
-    //     doctype:module,
-    //     ignore_user_permissions: 1,
-    //     reference_doctype: reference_doctype?reference_doctype:'Dynamic Link',
-    //     page_length: 10,
-    //   },
-    //   {
-    //     headers: {
-    //       Authorization: token || "",
-    //       "Content-Type": "application/json"
-    //     },
-    //     // body: JSON.stringify({ doctype, data }),
-    //   }
-    // );
-
-    const response = await fetch(
-      `${fetchUrl}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `${token}`,
-        },
-        body: JSON.stringify({
-           version: CONSTANTS.VERSION,
-        method: "search_link_wrapper",
-        entity: "datalist",
-          txt:" ",
-          doctype:module,
-          ignore_user_permissions: 1,
-          reference_doctype: reference_doctype?reference_doctype:'Dynamic Link',
-          page_length: 10,
-        }),
-      }
-    );
-
-    // const response = await fetch(
-    //   `${CONSTANTS.API_BASE_URL}/api/method/frappe.desk.search.search_link`,
-    //   {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //       Authorization: `${token}`,
-    //     },
-    //     body: JSON.stringify({
-    //       txt,
-    //       doctype:module,
-    //       ignore_user_permissions: 1,
-    //       reference_doctype: reference_doctype?reference_doctype:'Dynamic Link',
-    //       page_length: 10,
-    //     }),
-    //   }
-    // );
-
-    const data = await response.json();
-
-    return NextResponse.json({ data: data.message || [] });
-  } catch (error) {
-    console.error('Error in API route:', error);
-    return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "BAD_REQUEST", kind: "failed", message: "Invalid request." }, { status: 400 });
+  }
+  const { txt, module, reference_doctype } = body || {};
+  if (!isValidDoctype(module)) {
+    return NextResponse.json({ error: "BAD_REQUEST", kind: "failed", message: "Missing doctype" }, { status: 400 });
+  }
+  const args: Record<string, unknown> = {
+    doctype: module,
+    txt: typeof txt === "string" ? txt : "",
+    page_length: 20,
+  };
+  if (isValidDoctype(reference_doctype)) args.reference_doctype = reference_doctype;
+  try {
+    const res = await frappeCall(req, "frappe.desk.search.search_link", args);
+    const rows = Array.isArray(res?.message) ? res.message : Array.isArray(res?.results) ? res.results : [];
+    return NextResponse.json({ data: rows });
+  } catch (err) {
+    return bffErrorResponse(err, "search-link");
   }
 }

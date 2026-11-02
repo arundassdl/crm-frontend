@@ -1,69 +1,59 @@
 import { NextResponse } from 'next/server';
-import type { NextFetchEvent } from 'next/server';
 import type { NextRequest } from 'next/server';
-import axios from 'axios';
-import { CONSTANTS } from '@/services/config/app-config';
-import { redirect, usePathname } from 'next/navigation'
+import { getOneSigninUrl, safeCrmPath } from '@/lib/one';
 
-const notProtectedRoutes = ['/login', '/register', '/forgot-password' , '/update-password','/store'];
-export async function middleware(request: NextRequest, event: NextFetchEvent) {
+// Duplicated from lib/session.ts: that module imports Node 'crypto', which the Edge middleware cannot bundle.
+const SESSION_COOKIE_NAME = 'evoq_crm_session';
+
+/** The template's own username/password pages. EVOQ CRM has no separate login: these never render. */
+const LEGACY_AUTH_PAGES = ['/login', '/register', '/forgot-password', '/update-password'];
+
+/**
+ * Routing hint only: is there an unexpired session cookie? The signature is verified in the
+ * Node runtime (org layout, BFF routes); a forged cookie gets no data, only the page shell.
+ */
+function sessionLooksValid(raw: string | undefined): boolean {
+  if (!raw) return false;
+  const parts = raw.split('.');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return false;
   try {
-    if (CONSTANTS.ENABLE_REDIRECT_FEATURE) {
-
-      const isLoggedIn = (request.cookies.get('isLoggedIn')?.value != undefined) ? request.cookies.get('isLoggedIn')?.value : "";
-      const url = request.nextUrl.clone();
-      // console.log("currentUser", isLoggedIn);
-      const isNotProtectedRoute = notProtectedRoutes.some((route) =>
-        url.pathname.startsWith(route)
-      );
-
-      if (url.pathname.startsWith('/_next')) {
-        return NextResponse.next();
-      }
-      if ((!isLoggedIn || isLoggedIn == "false") && isNotProtectedRoute === false) {
-        // If the user is not authenticated and trying to access a protected route
-        url.pathname = '/login';
-        return NextResponse.redirect(url);
-      }
-
-      if (url.pathname.startsWith('/login') === true && isLoggedIn == "true") {
-        // If the user is authenticated and trying to access the login page, redirect to the dashboard
-        url.pathname = '/';
-        return NextResponse.redirect(url);
-      }
-
-      // const redirect = await fetch(
-      //   `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}&method=get_redirecting_urls&entity=signin`,
-      //   {
-      //     method: 'GET',
-      //   }
-      // ).then((res: any) => res.json());
-
-
-      // const url = request.nextUrl.clone();
-      // if (url.pathname.startsWith('/_next')) {
-      //   return NextResponse.next();
-      // }
-      // const matchingRedirect = redirect.message.find(
-      //   (value: any) => value.from === url.pathname
-      // );
-      // if (matchingRedirect) {
-      //   url.pathname = matchingRedirect.to;
-      //   url.search = '';
-      //   return Response.redirect(url, 308);
-      // } else {
-      //   return NextResponse.next();
-      // }
-    } else {
-      console.log('Redirect feature is disabled.');
-    }
-  } catch (err) {
-    console.error('Error fetching redirect data:', err);
-    return NextResponse.next();
+    const b64 = parts[0].replace(/-/g, '+').replace(/_/g, '/');
+    const json = JSON.parse(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)));
+    return typeof json?.expiresAt === 'number' && json.expiresAt > Date.now() && typeof json?.organization === 'string';
+  } catch {
+    return false;
   }
 }
+
+/**
+ * R58 (doc 62 §3): without a valid CRM session every page goes to the Evoq One CRM page, which
+ * offers EVOQ sign-in and plans; the intended CRM path is kept as a validated relative `next`.
+ *
+ * `/api/*` (including `/api/auth/launch`, the launch-ticket redemption) is excluded by the
+ * matcher, so a launch ticket is always processed before this rule can redirect.
+ */
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (pathname.startsWith('/_next')) return NextResponse.next();
+
+  const raw = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (!sessionLooksValid(raw)) {
+    const res = NextResponse.redirect(getOneSigninUrl(safeCrmPath(pathname)), 307);
+    res.headers.set('Cache-Control', 'no-store');
+    if (raw) res.cookies.set(SESSION_COOKIE_NAME, '', { path: '/', maxAge: 0, httpOnly: true });
+    if (request.cookies.get('isLoggedIn')) res.cookies.set('isLoggedIn', '', { path: '/', maxAge: 0 });
+    return res;
+  }
+
+  if (LEGACY_AUTH_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return NextResponse.redirect(new URL('/org', request.url), 307);
+  }
+  // R59: tell the server components which page this is (for a safe return after sign-in).
+  const forwarded = new Headers(request.headers);
+  forwarded.set('x-evoq-path', pathname);
+  return NextResponse.next({ request: { headers: forwarded } });
+}
+
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|assets|images|favicon.ico|logo.png|sw.js).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|assets|images|favicon.ico|favicon.png|logo.png|sw.js).*)'],
 };
-
-

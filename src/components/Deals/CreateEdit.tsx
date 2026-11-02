@@ -79,7 +79,7 @@ export default function AddEditLeadDrawer({
     const formData = new FormData();
     Object.keys(values).forEach(function (key) {
       console.log(key, "============", values[key]);
-      if(key === "close_date" && values["close_date"]!=""){
+      if(key === "expected_closure_date" && values["expected_closure_date"]!=""){
         values[key] = formatCalDate(values[key])
       }
       formData.append(key, values[key]);
@@ -166,7 +166,7 @@ export default function AddEditLeadDrawer({
   const formFields: FieldConfigNew[] = [
     
       { name: "organization", label: "Account", type: "custom", component: SelectCustomerField,componentProps: { onCustomerSelect: (customer: any) => {console.log("Selected organization qqqq:", customer);setOrganization(customer?.value)},}, placeholder: "Select Account", validate: false, section: "Deal Information",value:organization },
-      { name: "close_date", label: "Close Date", type: "date", placeholder: "Select Date", section: "Deal Information" },
+      { name: "expected_closure_date", label: "Expected Close Date", type: "date", placeholder: "Select Date", section: "Deal Information" },
        { name: "probability", label: "Probability (%)", type: "text", placeholder: "Enter probability", value:"0.00",section: "Deal Information" },
 
       { name: "status", label: "Status", type: "autocomplete", options: dealStatus, placeholder: "Select Status", validate: true, section: "Deal Information" },

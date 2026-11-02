@@ -200,7 +200,7 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
         >
           {/* <CustomAvatar
             alt={params?.row?.organization}
-            // src={`${CONSTANTS.API_BASE_URL}${params?.row?.image}`}
+            // src={params?.row?.image ? `${CONSTANTS.API_BASE_URL}${params?.row?.image}` : undefined}
             size={35}
             className="shadow-xs"
           /> */}
@@ -303,6 +303,12 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
       type: "date",
       valueGetter: (params, row) => new Date(row.close_date),
     },
+    // R55: Frappe CRM's field name for the deal's expected close date.
+    expected_closure_date: {
+      width: 160,
+      type: "date",
+      valueGetter: (params, row) => (row.expected_closure_date ? new Date(row.expected_closure_date) : null),
+    },
     creation: {
       width: 150,
       type: "date",
@@ -330,7 +336,7 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
         >
           {/* <CustomAvatar
             alt={params?.row?.name}
-            src={`${CONSTANTS.API_BASE_URL}${params?.row?.image}`}
+            src={params?.row?.image ? `${CONSTANTS.API_BASE_URL}${params?.row?.image}` : undefined}
             size={35}
             className="shadow-xs"
           /> */}
@@ -359,7 +365,7 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
         >
           {/* <CustomAvatar
             alt={params?.row?.lead_name}
-            src={`${CONSTANTS.API_BASE_URL}${params?.row?.image}`}
+            src={params?.row?.image ? `${CONSTANTS.API_BASE_URL}${params?.row?.image}` : undefined}
             size={35}
             className="shadow-xs"
           /> */}
@@ -491,7 +497,7 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
         >
           <CustomAvatar
             alt={params?.row?.name}
-            src={`${CONSTANTS.API_BASE_URL}${params?.row?.image}`}
+            src={params?.row?.image ? `${CONSTANTS.API_BASE_URL}${params?.row?.image}` : undefined}
             size={35}
             className="shadow-xs"
           />
@@ -606,7 +612,7 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
         >
           <CustomAvatar
             alt={params?.row?.full_name}
-            src={`${CONSTANTS.API_BASE_URL}${params?.row?.image}`}
+            src={params?.row?.image ? `${CONSTANTS.API_BASE_URL}${params?.row?.image}` : undefined}
             size={35}
             className="shadow-xs"
           />
@@ -744,7 +750,7 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
         >
           <CustomAvatar
             alt={params?.row?.item_code}
-            src={`${CONSTANTS.API_BASE_URL}${params?.row?.image}`}
+            src={params?.row?.image ? `${CONSTANTS.API_BASE_URL}${params?.row?.image}` : undefined}
             size={45}
             variant="square"
             className="shadow-xs"
@@ -954,7 +960,7 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
         >
           <CustomAvatar
             alt={params?.row?.name}
-            src={`${CONSTANTS.API_BASE_URL}${params?.row?.user_image}`}
+            src={params?.row?.user_image ? `${CONSTANTS.API_BASE_URL}${params?.row?.user_image}` : undefined}
             size={35}
             className="shadow-xs"
           />
@@ -1054,7 +1060,7 @@ export const columnsConfig: Record<string, Record<string, Partial<GridColDef>>> 
         >
           <CustomAvatar
             alt={params?.row?.name}
-            src={`${CONSTANTS.API_BASE_URL}${params?.row?.image}`}
+            src={params?.row?.image ? `${CONSTANTS.API_BASE_URL}${params?.row?.image}` : undefined}
             size={35}
             className="shadow-xs"
           />

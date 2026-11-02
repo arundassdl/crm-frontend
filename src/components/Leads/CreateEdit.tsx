@@ -14,6 +14,7 @@ import { ProfileDataFetch } from "@/services/api/general_apis/ProfilePageApi/pro
 // import SelectCustomerField from "../Customer/SelectCustomerField";
 import { createCustomMultipleDocuments } from "@/services/api/common-erpnext-api/create-edit-api";
 import { v4 as uuidv4 } from 'uuid';
+// import DepartmentSelect from "../TreeDropdown";
 
 interface AddEditLeadDrawerProps {
   initialValues: [];
@@ -50,7 +51,10 @@ export default function AddEditLeadDrawer({
   console.log('localStorage.getItem("userProfileData")',userData);
   
   const router = useRouter();
+  const [selected, setSelected] = React.useState<string | number>("");
 
+
+  
   useEffect(() => {
      const getUserData = async () => {
       const ProfileOrderData = await ProfileDataFetch(userToken?.access_token);
@@ -243,6 +247,22 @@ export default function AddEditLeadDrawer({
       return acc;
     }, {} as FormValueType);
 
+    // const departments = [
+    //   {
+    //     id: 1,
+    //     name: "Engineering",
+    //     children: [
+    //       { id: 101, name: "Frontend" },
+    //       { id: 102, name: "Backend" },
+    //     ],
+    //   },
+    //   {
+    //     id: 2,
+    //     name: "HR",
+    //     children: [{ id: 201, name: "Recruitment" }],
+    //   },
+    // ];
+    
 
 return (
   <DrawerComponent
@@ -250,6 +270,7 @@ return (
     onClose={onClose}
     title={`${operation} Lead`}
   >
+    {/* <DepartmentSelect label="Department" value="" onChange={() => {}} data={departments}/> */}
     <CustomForm
       fields={formFields}
       initialValues={formInitialValues}

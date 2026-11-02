@@ -22,6 +22,7 @@ import menuItemStyles from '@core/styles/vertical/menuItemStyles'
 import menuSectionStyles from '@core/styles/vertical/menuSectionStyles'
 import useMultilangHook from '@/hooks/LanguageHook/Multilanguages-hook'
 import { useEffect, useState } from 'react'
+import { orgHomeHref, useCrmSession } from '@/components/CrmSessionContext'
  import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
 import ArticleIcon from '@mui/icons-material/Article';
 import CorporateFareIcon from '@mui/icons-material/CorporateFare';
@@ -45,6 +46,8 @@ const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) =
 const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectScrollbar: boolean) => void }) => {
   // Hooks
   const theme = useTheme()
+  // R56: Dashboard is the organization's CRM home when opened from CTRL.
+  const crmSession = useCrmSession()
   const { isBreakpointReached, transitionDuration } = useVerticalNav()
 
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
@@ -95,7 +98,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
       >
        
         <MenuItem
-          href={`/`}
+          href={orgHomeHref(crmSession)}
           icon={<i className='ri-home-smile-line' />}
         // suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
         // target='_blank'
