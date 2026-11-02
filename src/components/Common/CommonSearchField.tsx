@@ -41,6 +41,8 @@ interface CustomerSearchProps {
   error?: boolean; // ✅ Add error prop
   helperText?: string;
   label?: string;
+  /** R69: Contact pickers list customer contacts only unless a workflow explicitly needs team members. */
+  includeTeamMembers?: boolean;
 }
 
 export default function CommonSearchField({
@@ -51,7 +53,8 @@ export default function CommonSearchField({
   onUserSelect,
   error,
   helperText,
-  label
+  label,
+  includeTeamMembers = false,
 }: CustomerSearchProps) {
   const [options, setOptions] = useState<any[]>([]);
   const [inputValue, setInputValue] = useState<string>("");
@@ -88,6 +91,7 @@ export default function CommonSearchField({
         doctype?doctype:"",        
         userToken?.access_token,
         reference_doctype?reference_doctype:"",
+        { include_team_members: includeTeamMembers },
       );      
       setOptions(response);
     } catch (error) {

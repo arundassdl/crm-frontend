@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bffErrorResponse, frappeCall } from "@/lib/tenant-fetch";
-import { isValidDoctype } from "@/lib/frappe-list";
+import { CUSTOMER_CONTACTS_ONLY, isValidDoctype } from "@/lib/frappe-list";
 
 /**
  * Link-field search (R55) via frappe.desk.search.search_link.
@@ -23,6 +23,9 @@ export async function POST(req: NextRequest) {
     page_length: 20,
   };
   if (isValidDoctype(reference_doctype)) args.reference_doctype = reference_doctype;
+  // R69: a Contact picker offers customer contacts only, like the Contacts list (R68). A workflow that really needs
+  // an internal team member asks for it explicitly; existing references are untouched (they are not searched).
+  if (module === "Contact" && body.include_team_members !== true) args.filters = JSON.stringify([[...CUSTOMER_CONTACTS_ONLY]]);
   try {
     const res = await frappeCall(req, "frappe.desk.search.search_link", args);
     const rows = Array.isArray(res?.message) ? res.message : Array.isArray(res?.results) ? res.results : [];

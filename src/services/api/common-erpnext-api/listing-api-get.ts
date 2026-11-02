@@ -555,7 +555,8 @@ export async function fetchDataBySearch(
   txt: string,
   doctype: string,
   token: string,
-  reference_doctype?: string
+  reference_doctype?: string,
+  options: { include_team_members?: boolean } = {},
 ): Promise<SearchResultItem[]> {
   try {
     const res = await fetch('/api/search-link', {
@@ -568,6 +569,7 @@ export async function fetchDataBySearch(
         txt,
         module: doctype,
         ...(reference_doctype && { reference_doctype }), // only include if defined
+        ...(options.include_team_members === true && { include_team_members: true }),
       }),
     });
 
