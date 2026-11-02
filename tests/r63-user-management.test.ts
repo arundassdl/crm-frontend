@@ -150,6 +150,8 @@ describe('R63 screens', () => {
     for (const d of ['app/roles', 'app/user/roles', 'app/user/users']) walk(join(ROOT, 'src', d));
     const legacy = pages.filter(p => !/app\/user\/(roles|users)\/page\.tsx$/.test(p));
     assert.strictEqual(legacy.length, 10);
+    const cfg = readFileSync(join(ROOT, 'next.config.js'), 'utf8');
+    for (const src of ["'/roles'", "'/roles/:rest(add|edit/.*|detail/.*)'", "'/user/roles/:rest(add|edit/.*|detail/.*)'", "'/user/users/:rest(add|edit/.*|detail/.*)'"]) assert.ok(cfg.includes(`source: ${src}`), src);
     for (const p of legacy) {
       const s = readFileSync(p, 'utf8');
       assert.match(s, /redirect\('\/user\/(roles|users)'\)/, p);
