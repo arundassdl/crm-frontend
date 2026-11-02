@@ -1,14 +1,6 @@
-import React, { useState, useEffect } from "react";
-import AddRole from '@/components/roles/AddRole';
+// R64 (doc 68): the legacy SDL screen is retired; users and roles are managed in one place.
+import { redirect } from 'next/navigation'
 
-const AddRoleForm = () => {
-  return (
-    <>
-      <div>
-      <AddRole />
-      </div>
-    </>
-  );
-};
-
-export default AddRoleForm;
+export default function LegacyRedirect(): never {
+  redirect('/user/roles')
+}

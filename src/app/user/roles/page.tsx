@@ -1,21 +1,7 @@
-"use client"
-import React, { useState, useEffect } from "react";
-import RolesList from '@/components/roles/Listing'; 
-import { useRouter } from "next/navigation";
+'use client'
+// R63 (doc 67): role profiles from sdl_user_management 2.0 replace the legacy SDL Role listing.
+import RoleProfilesPanel from '@/components/UserManagement/RoleProfilesPanel'
 
-const Roleslists = () => {
-
-  const router = useRouter();
-  let isLoggedIn: any;
-  const [userLogged, set] = useState(false)
-
-  return (
-    <>
-      <div>
-      <RolesList />
-      </div>
-    </>
-  );
-};
-
-export default Roleslists;
+export default function RolesPage() {
+  return <RoleProfilesPanel />
+}

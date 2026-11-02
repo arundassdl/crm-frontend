@@ -1,44 +1,6 @@
-"use client"
-import React, { useState, useEffect } from "react";
-import Adduser from '@/components/Users/Users/AddUser'; 
-import { useRouter } from "next/navigation";
+// R64 (doc 68): the legacy SDL screen is retired; users and roles are managed in one place.
+import { redirect } from 'next/navigation'
 
-const Addusers = () => {
-
-  const router = useRouter();
-  let isLoggedIn: any;
-  const [userLogged, set] = useState(false)
-
-  return (
-    <>
-      <div>
-      <Adduser />
-      </div>
-    </>
-  );
-};
-
-export default Addusers;
-
-
-// "use client"
-// import React, { useState, useEffect } from "react";
-// import UsersList from '@/components/Users/Users/UsersListDatagrid'; 
-// import { useRouter } from "next/navigation";
-
-// const UsersLists = () => {
-
-//   const router = useRouter();
-//   let isLoggedIn: any;
-//   const [userLogged, set] = useState(false)
-
-//   return (
-//     <>
-//       <div>
-//       <UsersList />
-//       </div>
-//     </>
-//   );
-// };
-
-// export default UsersLists;
+export default function LegacyRedirect(): never {
+  redirect('/user/users')
+}

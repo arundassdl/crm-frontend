@@ -144,6 +144,7 @@ describe('R60 data-loading fixes', () => {
     assert.match(g, /href="\/api\/auth\/session-ended"/);
   });
   test('My Account says when the profile cannot be shown instead of an empty form', () => {
-    assert.match(src('app/(dashboard)/my-account/page.tsx'), /data-testid='my-account-unavailable'/);
+    // R63: My Account moved to the secured user-management component (still shows a message, never an empty form).
+    assert.match(src('components/UserManagement/MyAccount.tsx'), /data-testid='my-account-unavailable'/);
   });
 });

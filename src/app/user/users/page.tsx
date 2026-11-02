@@ -1,22 +1,7 @@
-"use client"
-import React, { useState, useEffect } from "react";
-// import UsersList from '@/components/Users/Users/UsersListDatagrid'; 
-import UsersListing from '@/components/Users/Users/Listing'; 
-import { useRouter } from "next/navigation";
+'use client'
+// R63 (doc 67): secured user management (sdl_user_management 2.0) replaces the legacy SDL listing.
+import UsersPanel from '@/components/UserManagement/UsersPanel'
 
-const UsersLists = () => {
-
-  const router = useRouter();
-  let isLoggedIn: any;
-  const [userLogged, set] = useState(false)
-
-  return (
-    <>
-      <div>
-      <UsersListing />
-      </div>
-    </>
-  );
-};
-
-export default UsersLists;
+export default function UsersPage() {
+  return <UsersPanel />
+}

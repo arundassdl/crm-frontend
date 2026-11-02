@@ -1,21 +1,6 @@
-import React, { useState, useEffect } from "react";
-import EditRole from '@/components/roles/EditRole';
-import { useRouter } from "next/router";
+// R64 (doc 68): the legacy SDL screen is retired; users and roles are managed in one place.
+import { redirect } from 'next/navigation'
 
-// Multiple versions of this page will be statically generated
-// using the `params` returned by `generateStaticParams`
-export default function InstallationEditPage({ params }: { params: { slug: string } }) {
-  const rolename  = params.slug
-
-  const roleComp =<EditRole role_name={rolename} /> ;
-
-  return (
-    <>
-    <div>
-      {roleComp}
-      </div>
-    </>
-  );
-  
-  
+export default function LegacyRedirect(): never {
+  redirect('/user/roles')
 }

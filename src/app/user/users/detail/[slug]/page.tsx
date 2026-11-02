@@ -1,23 +1,6 @@
-import React from "react";
-import UserDetail from '@/components/Users/Users/UserDetails';
+// R64 (doc 68): the legacy SDL screen is retired; users and roles are managed in one place.
+import { redirect } from 'next/navigation'
 
-
-// Multiple versions of this page will be statically generated
-// using the `params` returned by `generateStaticParams`
-export default function ContactDetailsPage({ params }: { params: { slug: string} }) {
-  const name  = params.slug
-  
-  const userComp = <UserDetail name={name} />;
-  //console.log("name "+name +" type "+params.viewtyp)
-
-  return (
-    <>
-    <div>
-      {userComp}
-      {/* {params.viewtyp=='d'?contactCompDet:contactComp} */}
-      </div>
-    </>
-  );
-  
-  
+export default function LegacyRedirect(): never {
+  redirect('/user/users')
 }

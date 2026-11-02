@@ -1,22 +1,6 @@
-import React from "react";
-import RoleDetail from '@/components/roles/RoleDetail';
+// R64 (doc 68): the legacy SDL screen is retired; users and roles are managed in one place.
+import { redirect } from 'next/navigation'
 
-// Multiple versions of this page will be statically generated
-// using the `params` returned by `generateStaticParams`
-export default function RoleDetailPage({ params }: { params: { slug: string } }) {
-  const rolename  = params.slug
-
-  const roleComp = <RoleDetail role_name={rolename} />;
-
-
-
-  return (
-    <>
-    <div>
-      {roleComp}
-      </div>
-    </>
-  );
-  
-  
+export default function LegacyRedirect(): never {
+  redirect('/user/roles')
 }
