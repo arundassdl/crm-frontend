@@ -19,6 +19,8 @@ export interface GridListRequest {
   limit_start?: number | string;
   limit_page_length?: number | string;
   order_by?: string;
+  /** R68: Contact lists only — `true` also lists the tenant's own team members. */
+  include_team_members?: boolean;
 }
 
 export interface FrappeListArgs {
@@ -108,6 +110,13 @@ export function translateFilters(filters: unknown, doctype: string): { filters: 
   return { filters: out, or_filters: orOut };
 }
 
+/**
+ * R68: a Contact linked to a sign-in user of this tenant (`Contact.user` set) is an internal team member — Frappe
+ * creates one for every synced member. Customer-facing Contact lists and counts leave them out; nothing is deleted
+ * or changed, and a customer whose email happens to match a member stays listed (the link, not the email, decides).
+ */
+export const CUSTOMER_CONTACTS_ONLY = ['Contact', 'user', 'is', 'not set'] as const;
+
 export function buildListArgs(body: GridListRequest): FrappeListArgs {
   const doctype = body.module;
   if (!isValidDoctype(doctype)) throw new ListRequestError('Missing or invalid doctype');
@@ -124,6 +133,7 @@ export function buildListArgs(body: GridListRequest): FrappeListArgs {
   if (!fields.includes('name')) fields.unshift('name');
 
   const { filters, or_filters } = translateFilters(body.filters, doctype);
+  if (doctype === 'Contact' && body.include_team_members !== true) filters.push([...CUSTOMER_CONTACTS_ONLY]);
 
   return {
     doctype,

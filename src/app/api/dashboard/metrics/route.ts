@@ -10,6 +10,7 @@ import {
   WonDealRow,
   summariseRevenue,
 } from '@/lib/dashboard-metrics';
+import { CUSTOMER_CONTACTS_ONLY } from '@/lib/frappe-list';
 
 /**
  * Dashboard figures for the signed-in organization (R57, doc 61).
@@ -23,8 +24,8 @@ import {
 const PAGE = 500;
 const MAX_WON_DEALS = 10_000;
 
-async function count(req: Request, doctype: string): Promise<CountMetric> {
-  const res = await frappeCall(req, 'frappe.desk.reportview.get_count', { doctype, filters: [] });
+async function count(req: Request, doctype: string, filters: unknown[] = []): Promise<CountMetric> {
+  const res = await frappeCall(req, 'frappe.desk.reportview.get_count', { doctype, filters });
   const n = Number(res?.message);
   if (!Number.isFinite(n)) throw new BffError(502, 'BAD_COUNT', 'unavailable', 'Unexpected count response.');
   return { status: 'ok', value: n };
@@ -112,7 +113,8 @@ export async function GET(req: Request) {
   }
 
   const tasks = {
-    contacts: count(req, 'Contact'),
+    // R68: customer contacts only — the tenant's own team members are not counted.
+    contacts: count(req, 'Contact', [[...CUSTOMER_CONTACTS_ONLY]]),
     leads: count(req, 'CRM Lead'),
     deals: count(req, 'CRM Deal'),
     revenue: bookedRevenue(req),

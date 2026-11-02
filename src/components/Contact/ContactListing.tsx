@@ -10,6 +10,8 @@ import {
 import { showToast } from "@/components/ToastNotificationNew";
 import { columnsConfig } from "../Common/DataGrid/columnsConfig";
 import RawDynamicDataGrid from "../Common/DataGrid/RawDynamicDataGrid";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
 
 interface ContactListingProps {
   // contact_list: any;
@@ -29,6 +31,8 @@ const ContactListingMain: React.FC<ContactListingProps> = ({ link_name }) => {
   const [selectedRow, setSelectedRow] = useState<any>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  // R68: team members (people who sign in to this CRM) are hidden from the customer list unless asked for.
+  const [showTeamMembers, setShowTeamMembers] = useState(false);
 
   // Open dialog only when selectedRow is updated
   useEffect(() => {
@@ -88,12 +92,23 @@ const ContactListingMain: React.FC<ContactListingProps> = ({ link_name }) => {
   
   const fetchDataWrapper = (fetchFunction, params, token) => {
     // return fetchFunction(params, token, colFields, module, []); // Ensure relatedDocs is passed
-    return fetchFunction(params, token, colFields, module, [],'','','','','',userToken?.role_profile,userToken?.username); // Ensure relatedDocs is passed
+    return fetchFunction(params, token, colFields, module, [],'','','','','',userToken?.role_profile,userToken?.username,{ include_team_members: showTeamMembers }); // Ensure relatedDocs is passed
   };
 
 
   return (
     <div>
+      <FormControlLabel
+        control={
+          <Switch
+            size="small"
+            checked={showTeamMembers}
+            onChange={(e) => { setShowTeamMembers(e.target.checked); setRefreshKey((k) => k + 1); }}
+            inputProps={{ "data-testid": "contacts-show-team-members" } as any}
+          />
+        }
+        label="Show team members"
+      />
       <RawDynamicDataGrid
         module={module}
         onAddNew={handleAddNew}
