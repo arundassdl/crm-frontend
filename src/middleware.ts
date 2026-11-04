@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getOneSigninUrl, safeCrmPath } from '@/lib/one';
+import { embedSigninUrl, isFrameRequest } from '@/lib/embed';
 
 // Duplicated from lib/session.ts: that module imports Node 'crypto', which the Edge middleware cannot bundle.
 const SESSION_COOKIE_NAME = 'evoq_crm_session';
@@ -38,7 +39,13 @@ export function middleware(request: NextRequest) {
 
   const raw = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (!sessionLooksValid(raw)) {
-    const res = NextResponse.redirect(getOneSigninUrl(safeCrmPath(pathname)), 307);
+    // newdocs/80: inside CTRL's frame, Evoq One (which refuses frames) is replaced by a page that tells CTRL.
+    const res = NextResponse.redirect(
+      isFrameRequest(request.headers)
+        ? embedSigninUrl(request.nextUrl.origin, safeCrmPath(pathname))
+        : getOneSigninUrl(safeCrmPath(pathname)),
+      307,
+    );
     res.headers.set('Cache-Control', 'no-store');
     if (raw) res.cookies.set(SESSION_COOKIE_NAME, '', { path: '/', maxAge: 0, httpOnly: true });
     if (request.cookies.get('isLoggedIn')) res.cookies.set('isLoggedIn', '', { path: '/', maxAge: 0 });
@@ -55,5 +62,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|assets|images|favicon.ico|favicon.png|logo.png|sw.js).*)'],
+  matcher: ['/((?!api|embed|_next/static|_next/image|assets|images|favicon.ico|favicon.png|logo.png|sw.js).*)'],
 };

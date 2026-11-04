@@ -13,6 +13,7 @@
 import { NextResponse } from 'next/server';
 import { CrmSession, SESSION_COOKIE_NAME, parseSession } from './session';
 import { TenantResolverError, resolveTenant } from './tenant-resolver';
+import { ORGANIZATION_CHANGED, PAGE_ORG_HEADER } from './embed';
 
 /** What the UI needs to know to pick the right message. */
 export type BffErrorKind = 'auth' | 'permission' | 'not_found' | 'validation' | 'unavailable' | 'failed';
@@ -53,6 +54,19 @@ export function sessionFromRequest(req: Request): CrmSession | null {
   return parseSession(readCookie(req, SESSION_COOKIE_NAME));
 }
 
+/**
+ * EM-6 (newdocs/80): a page names the organization it was drawn for. The CRM session holds one
+ * organization per browser, so after another tab (or CTRL's frame) opens a different one, an older
+ * page must not read or write the new organization's data. Refused with 409; the page then reloads
+ * (standalone) or CTRL relaunches it (inside CTRL). A request without the header is unchanged.
+ */
+export function assertPageOrganization(req: Request, session: CrmSession): void {
+  const page = req.headers.get(PAGE_ORG_HEADER);
+  if (page && page !== session.organization) {
+    throw new BffError(409, ORGANIZATION_CHANGED, 'failed', 'Your organization changed in another tab. Reload this page to continue.');
+  }
+}
+
 function resolverKind(status: number): BffErrorKind {
   if (status === 401) return 'auth';
   if (status === 402 || status === 403) return 'permission';
@@ -81,6 +95,7 @@ export async function tenantFetch(req: Request, path: string, init: TenantFetchI
   if (!session) {
     throw new BffError(401, 'UNAUTHORIZED', 'auth', 'Your session has expired. Open CRM again from CTRL.');
   }
+  assertPageOrganization(req, session);
 
   let resolution;
   try {
