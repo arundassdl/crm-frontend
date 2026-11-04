@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { BffError, bffErrorResponse, frappeCall, sessionFromRequest } from '@/lib/tenant-fetch';
+import { BffError, assertPageOrganization, bffErrorResponse, frappeCall, sessionFromRequest } from '@/lib/tenant-fetch';
 import {
   CountMetric,
   DashboardMetrics,
@@ -103,6 +103,11 @@ export async function GET(req: Request) {
   const session = sessionFromRequest(req);
   if (!session) {
     return bffErrorResponse(new BffError(401, 'UNAUTHORIZED', 'auth', 'Your session has expired. Open CRM again from CTRL.'));
+  }
+  try {
+    assertPageOrganization(req, session);
+  } catch (err) {
+    return bffErrorResponse(err);
   }
   const requested = new URL(req.url).searchParams.get('org');
   if (requested && requested.trim() !== session.organization) {

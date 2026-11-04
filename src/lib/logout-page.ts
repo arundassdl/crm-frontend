@@ -31,6 +31,8 @@ export function logoutPage(state: LogoutPageState, urls: LogoutPageUrls): { html
   const nonce = crypto.randomBytes(16).toString('base64');
   const confirmed = state === 'signed_out';
   const origins = [urls.clearCtrl, urls.clearOne].map((u) => new URL(u).origin).join(' ');
+  // newdocs/80: CTRL may frame CRM; inside its frame the page tells CTRL instead of leaving for Evoq One.
+  const ctrl = new URL(urls.clearCtrl).origin;
   const csp = [
     "default-src 'none'",
     `script-src 'nonce-${nonce}'`,
@@ -38,7 +40,7 @@ export function logoutPage(state: LogoutPageState, urls: LogoutPageUrls): { html
     `connect-src ${origins}`,
     "form-action 'self'",
     "base-uri 'none'",
-    "frame-ancestors 'none'",
+    `frame-ancestors 'self' ${ctrl}`,
   ].join('; ');
 
   const body = confirmed
@@ -54,6 +56,7 @@ export function logoutPage(state: LogoutPageState, urls: LogoutPageUrls): { html
   const script = `
 (function () {
   var dest = ${JSON.stringify(urls.destination)}, fallback = ${JSON.stringify(urls.fallback)}, go = ${confirmed};
+  var framed = window.parent !== window, ctrl = ${JSON.stringify(ctrl)};
   function clear(url) {
     var ctl = new AbortController(); var t = setTimeout(function () { ctl.abort(); }, ${CLEAR_TIMEOUT_MS});
     return fetch(url, { credentials: 'include', mode: 'cors', cache: 'no-store', signal: ctl.signal })
@@ -61,6 +64,7 @@ export function logoutPage(state: LogoutPageState, urls: LogoutPageUrls): { html
   }
   Promise.all([clear(${JSON.stringify(urls.clearCtrl)}), clear(${JSON.stringify(urls.clearOne)})]).then(function (ok) {
     if (!go) return;
+    if (framed) { window.parent.postMessage({ evoq: 1, type: 'signed-out' }, ctrl); return; }
     window.location.replace(ok[0] && ok[1] ? dest : fallback);
   });
 })();`;

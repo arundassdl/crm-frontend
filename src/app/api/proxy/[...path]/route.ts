@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME, parseSession } from '@/lib/session';
 import { TenantResolverError, resolveTenant } from '@/lib/tenant-resolver';
+import { ORGANIZATION_CHANGED, PAGE_ORG_HEADER } from '@/lib/embed';
 
 const FORBIDDEN_CLIENT_HEADERS = new Set([
   'host',
@@ -12,6 +13,7 @@ const FORBIDDEN_CLIENT_HEADERS = new Set([
   'x-evoq-user-key',
   'authorization',
   'cookie',
+  PAGE_ORG_HEADER,
 ]);
 
 async function handleProxy(req: NextRequest, { params }: { params: { path: string[] } }) {
@@ -32,6 +34,15 @@ async function handleProxy(req: NextRequest, { params }: { params: { path: strin
     return NextResponse.json(
       { error: 'ORGANIZATION_FORBIDDEN', message: 'Access to specified organization is forbidden.' },
       { status: 403 },
+    );
+  }
+
+  // EM-6 (newdocs/80): a page drawn for another organization than the session's now.
+  const pageOrg = req.headers.get(PAGE_ORG_HEADER);
+  if (pageOrg && pageOrg !== session.organization) {
+    return NextResponse.json(
+      { error: ORGANIZATION_CHANGED, message: 'Your organization changed in another tab. Reload this page to continue.' },
+      { status: 409 },
     );
   }
 

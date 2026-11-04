@@ -12,6 +12,8 @@ import type { ChildrenType } from "@core/types";
 import StoreProvider from "@/app/StoreProvider";
 import ToastProvider from "@/libs/ToastProvider";
 import { ClickProvider } from "./GlobalProvider";
+import EmbedBridge from "@/components/EmbedBridge";
+import { EMBED_MARK_SCRIPT } from "@/lib/embed-client";
 
 // Next.js & React Imports
 import { usePathname } from "next/navigation";
@@ -41,7 +43,11 @@ const RootLayout = ({ children }: ChildrenType) => {
   }, [pathname]);
 
   return (
-    <html id="__next" dir={direction}>
+    // newdocs/80: the marker is set by the browser before first paint when CRM is framed (inside CTRL).
+    <html id="__next" dir={direction} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: EMBED_MARK_SCRIPT }} />
+      </head>
       <StoreProvider>
         <body className="flex is-full min-bs-full flex-auto flex-col">
           {/* Global Page Loader */}
@@ -61,6 +67,7 @@ const RootLayout = ({ children }: ChildrenType) => {
             <Suspense fallback={<CircularProgress sx={{ display: "block", mx: "auto", mt: 5 }} />}>
               <ToastProvider>
                 <ClickProvider>{children}</ClickProvider>
+                <EmbedBridge />
               </ToastProvider>
             </Suspense>
           </main>

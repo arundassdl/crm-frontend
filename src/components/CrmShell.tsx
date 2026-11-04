@@ -14,6 +14,7 @@ import VerticalFooter from '@components/layout/vertical/Footer'
 import { CrmSessionProvider } from '@/components/CrmSessionContext'
 import { SESSION_COOKIE_NAME, parseSession } from '@/lib/session'
 import BackNavigationGuard from '@/components/BackNavigationGuard'
+import { PageOrganization } from '@/components/EmbedBridge'
 import { TenantResolverError, resolveTenant } from '@/lib/tenant-resolver'
 
 /**
@@ -42,6 +43,8 @@ async function CrmShell({ children }: { children: ReactNode }) {
   return (
     <CrmSessionProvider value={info}>
       <BackNavigationGuard />
+      {/* EM-6 (newdocs/80): the organization this page was drawn for. */}
+      <PageOrganization value={info?.organization ?? null} />
       <Providers direction='ltr'>
         <LayoutWrapper
           verticalLayout={

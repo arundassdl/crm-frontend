@@ -111,3 +111,12 @@ code {
   background-color: rgb(var(--mui-palette-info-mainChannel) / 0.08);
   border: 0;
 }
+
+/*
+ * newdocs/80 (EM-2 option A): inside EVOQ CTRL, CTRL's bar is the only bar. CRM keeps its own module
+ * menu and content and hides its top bar and footer. The attribute is set only in a frame.
+ */
+html[data-evoq-embedded] .ts-vertical-layout-header,
+html[data-evoq-embedded] .ts-vertical-layout-footer {
+  display: none !important;
+}
