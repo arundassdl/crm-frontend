@@ -150,3 +150,34 @@ describe('EM-6: each page is bound to its organization', () => {
     assert.match(read('src/components/CrmShell.tsx'), /<PageOrganization value=\{info\?\.organization \?\? null\} \/>/);
   });
 });
+
+describe('§12.9: CTRL theme, no blank band, module menu on narrow screens', () => {
+  test('CTRL’s appearance is applied page-only: no settings cookie write, own MUI storage keys', () => {
+    const sync = read('src/components/theme/EmbeddedModeSync.tsx');
+    assert.match(sync, /updateSettings\(\{ mode: appearance \}, \{ updateCookie: false \}\)/);
+    const theme = read('src/components/theme/index.tsx');
+    assert.match(theme, /const STORAGE_SUFFIX = typeof window !== 'undefined' && isEmbedded\(\) \? '-embedded' : ''/);
+    assert.match(theme, /-mui-template-mode\$\{STORAGE_SUFFIX\}/);
+    assert.match(theme, /\.\.\.\(STORAGE_SUFFIX \? \{ colorSchemeStorageKey: 'evoq-crm-color-scheme-embedded' \} : \{\}\)/);
+    assert.match(theme, /<EmbeddedModeSync \/>/);
+  });
+
+  test('the appearance is accepted only as light/dark, only when framed, and only from CTRL’s hello', () => {
+    const client = read('src/lib/embed-client.ts');
+    assert.match(client, /if \(\(value !== 'light' && value !== 'dark'\) \|\| !isEmbedded\(\)\) return/);
+    assert.match(client, /window\.sessionStorage\.setItem\(APPEARANCE_KEY, value\)/);
+    const bridge = read('src/components/EmbedBridge.tsx');
+    assert.match(bridge, /if \(event\.origin !== ctrlOrigin\(\) \|\| event\.source !== window\.parent\) return/);
+    assert.match(bridge, /setEmbeddedAppearance\(event\.data\.appearance\)/);
+  });
+
+  test('the blank band is gone only when embedded; narrow screens get a Menu button', () => {
+    const css = read('src/app/globals.css');
+    assert.match(css, /html\[data-evoq-embedded\] \.ts-vertical-nav-header \{\s*display: none !important;/);
+    assert.match(css, /html\[data-evoq-embedded\] \.ts-vertical-layout-content \{\s*margin-top: 0 !important;/);
+    assert.match(css, /\.evoq-embedded-menu-button \{\s*display: none;\s*\}/); // hidden unless embedded
+    const nav = read('src/components/layout/vertical/Navigation.tsx');
+    assert.match(nav, /\{isBreakpointReached && embedded && \(/);
+    assert.match(nav, /pt: embedded \? '12px' : '76px'/);
+  });
+});

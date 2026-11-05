@@ -23,6 +23,7 @@ import * as React from 'react';
 import MuiDrawer from '@mui/material/Drawer';
 import { useClickContext } from '@/app/GlobalProvider'
 import { usePathname } from 'next/navigation'
+import { embeddedSnapshot, serverSnapshot, subscribeNothing } from '@/lib/embed-client'
 
 /** R56: the header menu button fires this on small screens to open the mobile drawer
  * (open, not toggle: the button and its icon both fire on one tap). It closes via
@@ -143,6 +144,8 @@ const Navigation = () => {
   // so the menu is shown in a slide-over drawer instead.
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = React.useState(false)
+  // newdocs/80: inside EVOQ CTRL, CRM's top bar (and its menu button) is hidden.
+  const embedded = React.useSyncExternalStore(subscribeNothing, embeddedSnapshot, serverSnapshot)
   React.useEffect(() => {
     const openNav = () => setMobileOpen(true)
     window.addEventListener(MOBILE_NAV_TOGGLE_EVENT, openNav)
@@ -236,6 +239,19 @@ const Navigation = () => {
     // eslint-disable-next-line lines-around-comment
     // Sidebar Vertical Menu
     <>
+    {isBreakpointReached && embedded && (
+      // newdocs/80: on narrow screens inside CTRL this is the way to CRM's module menu.
+      <button
+        type='button'
+        className='evoq-embedded-menu-button'
+        aria-label='CRM menu'
+        data-testid='crm-embedded-menu'
+        onClick={() => setMobileOpen(true)}
+      >
+        <i className='ri-menu-line' aria-hidden />
+        <span>Menu</span>
+      </button>
+    )}
     {isBreakpointReached && (
       <MuiDrawer
         variant='temporary'
@@ -245,7 +261,7 @@ const Navigation = () => {
         PaperProps={{
           'data-testid': 'crm-mobile-nav',
           // Menu starts below the fixed header so Dashboard and Leads are not hidden.
-          sx: { width: drawerWidth, backgroundColor: 'var(--mui-palette-background-default)', pt: '76px' }
+          sx: { width: drawerWidth, backgroundColor: 'var(--mui-palette-background-default)', pt: embedded ? '12px' : '76px' }
         } as any}
       >
         <VerticalMenu scrollMenu={() => {}} />

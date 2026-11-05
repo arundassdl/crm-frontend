@@ -106,6 +106,50 @@ export function installPageOrganizationBinding(): void {
   }
 }
 
+/**
+ * CTRL's light/dark appearance while framed (newdocs/80 §12.9). Kept for this tab only
+ * (sessionStorage, separate from any standalone CRM tab) and never written to CRM's own settings
+ * cookie or MUI's stored mode, so the standalone site keeps its own choice.
+ */
+export type Appearance = 'light' | 'dark'
+const APPEARANCE_KEY = 'evoq-embedded-appearance'
+const appearanceListeners = new Set<() => void>()
+
+export function getEmbeddedAppearance(): Appearance | null {
+  if (typeof window === 'undefined' || !isEmbedded()) return null
+  try {
+    const v = window.sessionStorage.getItem(APPEARANCE_KEY)
+    return v === 'light' || v === 'dark' ? v : null
+  } catch {
+    return null
+  }
+}
+
+export function setEmbeddedAppearance(value: unknown): void {
+  if ((value !== 'light' && value !== 'dark') || !isEmbedded()) return
+  try {
+    window.sessionStorage.setItem(APPEARANCE_KEY, value)
+  } catch {
+    // not remembered across this tab's reloads; still applied now
+  }
+  latestAppearance = value
+  appearanceListeners.forEach((l) => l())
+}
+
+let latestAppearance: Appearance | null = null
+export function subscribeAppearance(listener: () => void): () => void {
+  appearanceListeners.add(listener)
+  return () => appearanceListeners.delete(listener)
+}
+export function currentAppearance(): Appearance | null {
+  return latestAppearance ?? getEmbeddedAppearance()
+}
+
+/** Framed, for rendering: false on the server and in the first client render's snapshot for SSR. */
+export const subscribeNothing = () => () => undefined
+export const embeddedSnapshot = () => isEmbedded()
+export const serverSnapshot = () => false
+
 /** The script that marks a framed document before first paint, so CRM's own bar never flashes inside CTRL. */
 export const EMBED_MARK_SCRIPT =
   "try{if(window.self!==window.top)document.documentElement.setAttribute('data-evoq-embedded','1')}catch(e){document.documentElement.setAttribute('data-evoq-embedded','1')}"

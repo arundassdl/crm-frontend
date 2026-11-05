@@ -21,6 +21,7 @@ import type { ChildrenType, Direction } from '@core/types'
 
 // Component Imports
 import ModeChanger from './ModeChanger'
+import EmbeddedModeSync from './EmbeddedModeSync'
 
 // Config Imports
 import themeConfig from '@configs/themeConfig'
@@ -31,6 +32,11 @@ import { useSettings } from '@core/hooks/useSettings'
 
 // Core Theme Imports
 import defaultCoreTheme from '@core/theme'
+import { isEmbedded } from '@/lib/embed-client'
+
+// newdocs/80: inside CTRL, MUI keeps its mode under its own keys, so following CTRL's theme never
+// changes (or, through MUI's cross-tab sync, live-updates) a standalone CRM tab.
+const STORAGE_SUFFIX = typeof window !== 'undefined' && isEmbedded() ? '-embedded' : ''
 
 type Props = ChildrenType & {
   direction: Direction
@@ -80,10 +86,12 @@ const ThemeProvider = (props: Props) => {
       <CssVarsProvider
         theme={theme}
         defaultMode={settings.mode}
-        modeStorageKey={`${themeConfig.templateName.toLowerCase().split(' ').join('-')}-mui-template-mode`}
+        modeStorageKey={`${themeConfig.templateName.toLowerCase().split(' ').join('-')}-mui-template-mode${STORAGE_SUFFIX}`}
+        {...(STORAGE_SUFFIX ? { colorSchemeStorageKey: 'evoq-crm-color-scheme-embedded' } : {})}
       >
         <>
           <ModeChanger />
+          <EmbeddedModeSync />
           <CssBaseline />
           {children}
         </>
