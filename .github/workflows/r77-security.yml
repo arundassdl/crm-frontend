@@ -19,6 +19,7 @@ jobs:
       - run: npm run build:icons
       - run: npm run test:security
       - run: npm run typecheck
+      - run: npm audit --audit-level=critical --package-lock-only --ignore-scripts --fetch-timeout=20000 --fetch-retries=0
       - run: npm run build
 # Fixture browser and real Frappe acceptance are separate required release gates.
 # This workflow never deploys or modifies production.

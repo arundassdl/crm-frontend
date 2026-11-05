@@ -1,6 +1,6 @@
 # Salesbond CRM frontend integration plan
 
-**R77 update — development approved:** The user approved development, security remediation, testing and integration-branch commits/pushes. Production remains HOLD. Implementation is in isolated development clones; full feature parity and production acceptance are not complete. See [R77 implementation progress](R77_SALEBOND_CRM_IMPLEMENTATION_PROGRESS.md) for changed files, tests, disabled capabilities, branch provenance and outstanding blockers. Earlier planning-only statements below describe the original review scope.
+**R77 update — development approved:** The user approved development, security remediation, testing and integration-branch commits/pushes. Production remains HOLD. Implementation is in isolated development clones; full feature parity and production acceptance are not complete. See [R77 implementation progress](R77_SALEBOND_CRM_IMPLEMENTATION_PROGRESS.md) for changed files, tests, disabled capabilities, branch provenance and outstanding blockers. Earlier planning-only statements below describe the original review scope. **Additional R77 audit gate:** the inherited candidate lockfile has 114 advisory findings, including 4 critical and 38 high; dependency remediation and full feature compatibility remain outstanding. The implementation is not production-ready.
 
 **Review date:** 5 November 2026 (Asia/Kolkata).  
 **Disposition:** planning complete; implementation and deployment have not begun.  

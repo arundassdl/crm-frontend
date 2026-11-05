@@ -10,5 +10,14 @@
   "new_generated_artifact_files": 0,
   "full_crm_parity": false,
   "production_ready": false,
-  "deployment": "HOLD"
+  "deployment": "HOLD",
+  "metadata_json_documents_parsed": 24,
+  "dependency_audit": {
+    "critical": 4,
+    "high": 38,
+    "moderate": 64,
+    "low": 8,
+    "total": 114,
+    "release_gate": "FAILED"
+  }
 }
