@@ -120,3 +120,46 @@ html[data-evoq-embedded] .ts-vertical-layout-header,
 html[data-evoq-embedded] .ts-vertical-layout-footer {
   display: none !important;
 }
+
+/*
+ * newdocs/80 §12.9: with CRM's top bar hidden inside CTRL, nothing needs clearing above the menu or
+ * the page — remove the empty logo header and the content's top offset (the blank band). On narrow
+ * screens a small Menu button opens CRM's module menu instead of the hidden bar's button.
+ */
+html[data-evoq-embedded] .ts-vertical-nav-header {
+  display: none !important;
+}
+html[data-evoq-embedded] .ts-vertical-layout-content {
+  margin-top: 0 !important;
+}
+html[data-evoq-embedded] .evoq-embedded-menu-button {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1100;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--mui-palette-divider);
+  background: var(--mui-palette-background-paper);
+  color: var(--mui-palette-text-primary);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+html[data-evoq-embedded] .evoq-embedded-menu-button:focus-visible {
+  outline: 2px solid var(--mui-palette-primary-main);
+  outline-offset: 2px;
+}
+.evoq-embedded-menu-button {
+  display: none;
+}
+@media (max-width: 1199.98px) {
+  /* CRM's narrow layout (its menu breakpoint is 1200px): room for the Menu button above the page. */
+  html[data-evoq-embedded] .ts-vertical-layout-content {
+    margin-top: 48px !important;
+  }
+}

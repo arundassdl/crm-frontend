@@ -11,6 +11,7 @@ import {
   ORG_CHANGED_EVENT,
   installPageOrganizationBinding,
   isEmbedded,
+  setEmbeddedAppearance,
   setPageOrganization,
   tellCtrl
 } from '@/lib/embed-client'
@@ -40,7 +41,11 @@ export default function EmbedBridge() {
     const ctrlAnswered = { done: false }
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== ctrlOrigin() || event.source !== window.parent) return
-      if (event.data?.evoq === 1 && event.data?.type === 'hello') ctrlAnswered.done = true
+      if (event.data?.evoq === 1 && event.data?.type === 'hello') {
+        ctrlAnswered.done = true
+        // CTRL's light/dark, sent on load and again whenever CTRL's theme changes.
+        setEmbeddedAppearance(event.data.appearance)
+      }
     }
     window.addEventListener('message', onMessage)
     let tries = 0
