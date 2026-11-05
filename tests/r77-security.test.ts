@@ -295,7 +295,7 @@ test("actual CRM endpoints enforce auth/CSRF/org before any upstream calls", asy
           request("/api/proxy/api/resource/Contact", "GET", undefined, {
             "x-evoq-page-org": "TEAM-00069",
           }),
-          { params: { path: ["api", "resource", "Contact"] } },
+          { params: Promise.resolve({ path: ["api", "resource", "Contact"] }) },
         )
       ).status,
       409,

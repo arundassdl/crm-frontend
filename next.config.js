@@ -17,7 +17,6 @@ const path = require("path");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    instrumentationHook: true,
     optimizePackageImports: [
       "@mui/material",
       "@mui/icons-material",

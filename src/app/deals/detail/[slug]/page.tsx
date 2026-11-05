@@ -4,7 +4,8 @@ import DealDetails from "@/components/Deals/DealDetails";
 
 // Multiple versions of this page will be statically generated
 // using the `params` returned by `generateStaticParams`
-export default function CustomerDetailsPage({ params }: { params: { slug: string} }) {
+export default async function CustomerDetailsPage({ params: paramsPromise }: { params: Promise<{ slug: string}> }) {
+  const params = await paramsPromise
   const name  = params.slug
   
   const customerComp = <DealDetails name={name} />;

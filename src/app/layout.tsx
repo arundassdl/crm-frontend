@@ -20,10 +20,12 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const raw = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const requestHeaders = await headers();
+  const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   const session = parseSession(raw);
-  if (!session) redirect(getOneSigninUrl(headers().get("x-evoq-path")));
-  const path = headers().get("x-evoq-path") || "/";
+  if (!session) redirect(getOneSigninUrl(requestHeaders.get("x-evoq-path")));
+  const path = requestHeaders.get("x-evoq-path") || "/";
   const org = path.match(/^\/org\/([^/]+)/)?.[1];
   if (org && org !== session.organization) redirect("/api/auth/session-ended");
   try {

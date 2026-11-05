@@ -4,7 +4,8 @@ import ContactDetails from '@/components/Contact/ContactDetails';
 
 // Multiple versions of this page will be statically generated
 // using the `params` returned by `generateStaticParams`
-export default function ContactDetailsPage({ params }: { params: { slug: string} }) {
+export default async function ContactDetailsPage({ params: paramsPromise }: { params: Promise<{ slug: string}> }) {
+  const params = await paramsPromise
   const name = decodeURIComponent(params.slug)
   
   const contactComp = <ContactDetails name={name} />;

@@ -1,0 +1,1452 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@babel/core": {
+      "name": "@babel/core",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1123528,
+          "name": "@babel/core",
+          "dependency": "@babel/core",
+          "title": "@babel/core: Arbitrary File Read via sourceMappingURL Comment",
+          "url": "https://github.com/advisories/GHSA-4x5r-pxfx-6jf8",
+          "severity": "low",
+          "cwe": [
+            "CWE-22",
+            "CWE-200"
+          ],
+          "cvss": {
+            "score": 3.2,
+            "vectorString": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:C/C:L/I:N/A:N"
+          },
+          "range": "<=7.29.0"
+        }
+      ],
+      "effects": [],
+      "range": "<=7.29.0",
+      "nodes": [
+        "node_modules/@jest/core/node_modules/@babel/core",
+        "node_modules/jest-cli/node_modules/@babel/core"
+      ],
+      "fixAvailable": true
+    },
+    "@jest/core": {
+      "name": "@jest/core",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        "jest-config"
+      ],
+      "effects": [],
+      "range": ">=25.2.0-alpha.86",
+      "nodes": [
+        "node_modules/@jest/core"
+      ],
+      "fixAvailable": true
+    },
+    "@mui/x-data-grid-generator": {
+      "name": "@mui/x-data-grid-generator",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "@mui/x-data-grid-premium"
+      ],
+      "effects": [],
+      "range": "5.11.0 - 8.14.1",
+      "nodes": [
+        "node_modules/@mui/x-data-grid-generator"
+      ],
+      "fixAvailable": {
+        "name": "@mui/x-data-grid-generator",
+        "version": "9.17.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@mui/x-data-grid-premium": {
+      "name": "@mui/x-data-grid-premium",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "exceljs"
+      ],
+      "effects": [
+        "@mui/x-data-grid-generator"
+      ],
+      "range": "<=8.14.1",
+      "nodes": [
+        "node_modules/@mui/x-data-grid-generator/node_modules/@mui/x-data-grid-premium"
+      ],
+      "fixAvailable": {
+        "name": "@mui/x-data-grid-generator",
+        "version": "9.17.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@npmcli/arborist": {
+      "name": "@npmcli/arborist",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/map-workspaces",
+        "@npmcli/metavuln-calculator",
+        "@npmcli/package-json",
+        "@npmcli/run-script",
+        "cacache",
+        "minimatch",
+        "npm-registry-fetch",
+        "pacote"
+      ],
+      "effects": [
+        "libnpmexec",
+        "libnpmfund",
+        "libnpmpack"
+      ],
+      "range": ">=6.2.6",
+      "nodes": [
+        "node_modules/npm/node_modules/@npmcli/arborist"
+      ],
+      "fixAvailable": true
+    },
+    "@npmcli/config": {
+      "name": "@npmcli/config",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/map-workspaces",
+        "@npmcli/package-json"
+      ],
+      "effects": [
+        "npm"
+      ],
+      "range": ">=8.3.4",
+      "nodes": [
+        "node_modules/npm/node_modules/@npmcli/config"
+      ],
+      "fixAvailable": true
+    },
+    "@npmcli/map-workspaces": {
+      "name": "@npmcli/map-workspaces",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/package-json",
+        "glob",
+        "minimatch"
+      ],
+      "effects": [
+        "@npmcli/arborist",
+        "@npmcli/config"
+      ],
+      "range": ">=3.0.3",
+      "nodes": [
+        "node_modules/npm/node_modules/@npmcli/map-workspaces"
+      ],
+      "fixAvailable": true
+    },
+    "@npmcli/metavuln-calculator": {
+      "name": "@npmcli/metavuln-calculator",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "cacache",
+        "pacote"
+      ],
+      "effects": [
+        "npm"
+      ],
+      "range": ">=7.0.0",
+      "nodes": [
+        "node_modules/npm/node_modules/@npmcli/metavuln-calculator"
+      ],
+      "fixAvailable": true
+    },
+    "@npmcli/package-json": {
+      "name": "@npmcli/package-json",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "glob"
+      ],
+      "effects": [
+        "@npmcli/arborist",
+        "@npmcli/config",
+        "@npmcli/map-workspaces",
+        "@npmcli/run-script",
+        "init-package-json",
+        "libnpmexec",
+        "libnpmpublish",
+        "pacote"
+      ],
+      "range": ">=3.1.0",
+      "nodes": [
+        "node_modules/npm/node_modules/@npmcli/package-json"
+      ],
+      "fixAvailable": true
+    },
+    "@npmcli/run-script": {
+      "name": "@npmcli/run-script",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/package-json"
+      ],
+      "effects": [
+        "@npmcli/arborist",
+        "libnpmexec",
+        "libnpmpack",
+        "libnpmversion",
+        "pacote"
+      ],
+      "range": ">=7.0.4",
+      "nodes": [
+        "node_modules/npm/node_modules/@npmcli/run-script"
+      ],
+      "fixAvailable": true
+    },
+    "@remix-run/router": {
+      "name": "@remix-run/router",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1136293,
+          "name": "@remix-run/router",
+          "dependency": "@remix-run/router",
+          "title": "React Router's same-origin redirect with path starting // causes open redirect via protocol-relative URL reinterpretation",
+          "url": "https://github.com/advisories/GHSA-2j2x-hqr9-3h42",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-601"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=1.3.0 <1.23.3"
+        }
+      ],
+      "effects": [
+        "react-router",
+        "react-router-dom"
+      ],
+      "range": "1.3.0 - 1.23.2",
+      "nodes": [
+        "node_modules/@remix-run/router"
+      ],
+      "fixAvailable": true
+    },
+    "@sigstore/sign": {
+      "name": "@sigstore/sign",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "make-fetch-happen"
+      ],
+      "effects": [
+        "sigstore"
+      ],
+      "range": ">=2.0.0",
+      "nodes": [
+        "node_modules/npm/node_modules/@sigstore/sign"
+      ],
+      "fixAvailable": true
+    },
+    "@sigstore/tuf": {
+      "name": "@sigstore/tuf",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "tuf-js"
+      ],
+      "effects": [
+        "npm",
+        "sigstore"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/npm/node_modules/@sigstore/tuf"
+      ],
+      "fixAvailable": true
+    },
+    "@tufjs/models": {
+      "name": "@tufjs/models",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "minimatch"
+      ],
+      "effects": [
+        "tuf-js"
+      ],
+      "range": ">=1.0.1",
+      "nodes": [
+        "node_modules/npm/node_modules/@tufjs/models"
+      ],
+      "fixAvailable": true
+    },
+    "@typescript-eslint/eslint-plugin": {
+      "name": "@typescript-eslint/eslint-plugin",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "@typescript-eslint/parser",
+        "@typescript-eslint/type-utils",
+        "@typescript-eslint/utils"
+      ],
+      "effects": [],
+      "range": ">=6.16.0",
+      "nodes": [
+        "node_modules/@typescript-eslint/eslint-plugin"
+      ],
+      "fixAvailable": {
+        "name": "@typescript-eslint/eslint-plugin",
+        "version": "6.15.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@typescript-eslint/parser": {
+      "name": "@typescript-eslint/parser",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "@typescript-eslint/typescript-estree"
+      ],
+      "effects": [
+        "@typescript-eslint/eslint-plugin"
+      ],
+      "range": ">=6.16.0",
+      "nodes": [
+        "node_modules/@typescript-eslint/parser"
+      ],
+      "fixAvailable": {
+        "name": "@typescript-eslint/parser",
+        "version": "6.15.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@typescript-eslint/type-utils": {
+      "name": "@typescript-eslint/type-utils",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@typescript-eslint/typescript-estree",
+        "@typescript-eslint/utils"
+      ],
+      "effects": [
+        "@typescript-eslint/eslint-plugin"
+      ],
+      "range": ">=6.16.0",
+      "nodes": [
+        "node_modules/@typescript-eslint/type-utils"
+      ],
+      "fixAvailable": {
+        "name": "@typescript-eslint/eslint-plugin",
+        "version": "6.15.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@typescript-eslint/typescript-estree": {
+      "name": "@typescript-eslint/typescript-estree",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "minimatch"
+      ],
+      "effects": [
+        "@typescript-eslint/parser",
+        "@typescript-eslint/type-utils",
+        "@typescript-eslint/utils"
+      ],
+      "range": ">=6.16.0",
+      "nodes": [
+        "node_modules/@typescript-eslint/typescript-estree"
+      ],
+      "fixAvailable": {
+        "name": "@typescript-eslint/parser",
+        "version": "6.15.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@typescript-eslint/utils": {
+      "name": "@typescript-eslint/utils",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@typescript-eslint/typescript-estree"
+      ],
+      "effects": [],
+      "range": ">=6.16.0",
+      "nodes": [
+        "node_modules/@typescript-eslint/utils"
+      ],
+      "fixAvailable": true
+    },
+    "cacache": {
+      "name": "cacache",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "glob"
+      ],
+      "effects": [
+        "@npmcli/arborist",
+        "@npmcli/metavuln-calculator",
+        "make-fetch-happen",
+        "npm",
+        "pacote"
+      ],
+      "range": ">=17.0.5",
+      "nodes": [
+        "node_modules/npm/node_modules/cacache"
+      ],
+      "fixAvailable": true
+    },
+    "colord": {
+      "name": "colord",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1193675,
+          "name": "colord",
+          "dependency": "colord",
+          "title": "Colord: Slow rejection of oversized malformed color strings",
+          "url": "https://github.com/advisories/GHSA-2wm5-q62r-hmrv",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<2.9.4"
+        }
+      ],
+      "effects": [],
+      "range": "<2.9.4",
+      "nodes": [
+        "node_modules/colord"
+      ],
+      "fixAvailable": true
+    },
+    "create-jest": {
+      "name": "create-jest",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        "jest-config"
+      ],
+      "effects": [
+        "jest-cli"
+      ],
+      "range": ">=29.7.0",
+      "nodes": [
+        "node_modules/jest-cli/node_modules/create-jest"
+      ],
+      "fixAvailable": {
+        "name": "jest",
+        "version": "25.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "deepmerge": {
+      "name": "deepmerge",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1243505,
+          "name": "deepmerge",
+          "dependency": "deepmerge",
+          "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+          "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+          "severity": "low",
+          "cwe": [
+            "CWE-1321"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": ">=4.2.0 <=4.3.1"
+        }
+      ],
+      "effects": [
+        "jest-config"
+      ],
+      "range": ">=4.2.0",
+      "nodes": [
+        "node_modules/@jest/core/node_modules/deepmerge",
+        "node_modules/jest-cli/node_modules/deepmerge"
+      ],
+      "fixAvailable": {
+        "name": "jest",
+        "version": "25.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "esbuild": {
+      "name": "esbuild",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1120680,
+          "name": "esbuild",
+          "dependency": "esbuild",
+          "title": "esbuild allows arbitrary file read when running the development server on Windows",
+          "url": "https://github.com/advisories/GHSA-g7r4-m6w7-qqqr",
+          "severity": "low",
+          "cwe": [
+            "CWE-22"
+          ],
+          "cvss": {
+            "score": 2.5,
+            "vectorString": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": ">=0.27.3 <0.28.1"
+        }
+      ],
+      "effects": [],
+      "range": "0.27.3 - 0.28.0",
+      "nodes": [
+        "node_modules/esbuild"
+      ],
+      "fixAvailable": true
+    },
+    "exceljs": {
+      "name": "exceljs",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "unzipper",
+        "uuid"
+      ],
+      "effects": [
+        "@mui/x-data-grid-premium"
+      ],
+      "range": ">=1.12.0",
+      "nodes": [
+        "node_modules/@mui/x-data-grid-generator/node_modules/exceljs"
+      ],
+      "fixAvailable": {
+        "name": "@mui/x-data-grid-generator",
+        "version": "9.17.0",
+        "isSemVerMajor": true
+      }
+    },
+    "flat-cache": {
+      "name": "flat-cache",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "rimraf"
+      ],
+      "effects": [],
+      "range": "4.0.0",
+      "nodes": [
+        "node_modules/eslint/node_modules/flat-cache"
+      ],
+      "fixAvailable": true
+    },
+    "fstream": {
+      "name": "fstream",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "rimraf"
+      ],
+      "effects": [
+        "unzipper"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/@mui/x-data-grid-generator/node_modules/fstream"
+      ],
+      "fixAvailable": {
+        "name": "@mui/x-data-grid-generator",
+        "version": "9.17.0",
+        "isSemVerMajor": true
+      }
+    },
+    "glob": {
+      "name": "glob",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1244013,
+          "name": "glob",
+          "dependency": "glob",
+          "title": "Glob: AbortSignal cancellation bypass allows post-timeout filesystem traversal",
+          "url": "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=9.0.0 <=14.0.1"
+        },
+        "minimatch"
+      ],
+      "effects": [
+        "@npmcli/map-workspaces",
+        "@npmcli/package-json",
+        "cacache",
+        "npm",
+        "npm-packlist",
+        "rimraf"
+      ],
+      "range": "9.0.0 - 14.0.1",
+      "nodes": [
+        "node_modules/@mui/x-data-grid-generator/node_modules/rimraf/node_modules/glob",
+        "node_modules/eslint/node_modules/glob",
+        "node_modules/npm/node_modules/glob"
+      ],
+      "fixAvailable": {
+        "name": "@mui/x-data-grid-generator",
+        "version": "9.17.0",
+        "isSemVerMajor": true
+      }
+    },
+    "ignore-walk": {
+      "name": "ignore-walk",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "minimatch"
+      ],
+      "effects": [
+        "npm-packlist"
+      ],
+      "range": ">=6.0.2",
+      "nodes": [
+        "node_modules/npm/node_modules/npm-packlist/node_modules/ignore-walk"
+      ],
+      "fixAvailable": true
+    },
+    "init-package-json": {
+      "name": "init-package-json",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/package-json"
+      ],
+      "effects": [],
+      "range": ">=6.0.1",
+      "nodes": [
+        "node_modules/npm/node_modules/init-package-json"
+      ],
+      "fixAvailable": true
+    },
+    "jest": {
+      "name": "jest",
+      "severity": "low",
+      "isDirect": true,
+      "via": [
+        "@jest/core",
+        "jest-cli"
+      ],
+      "effects": [],
+      "range": ">=25.2.0-alpha.86",
+      "nodes": [
+        "node_modules/jest"
+      ],
+      "fixAvailable": {
+        "name": "jest",
+        "version": "25.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "jest-cli": {
+      "name": "jest-cli",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        "@jest/core",
+        "create-jest",
+        "jest-config"
+      ],
+      "effects": [
+        "jest"
+      ],
+      "range": ">=25.2.0-alpha.86",
+      "nodes": [
+        "node_modules/jest-cli"
+      ],
+      "fixAvailable": {
+        "name": "jest",
+        "version": "25.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "jest-config": {
+      "name": "jest-config",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        "deepmerge"
+      ],
+      "effects": [
+        "@jest/core",
+        "create-jest",
+        "jest-cli"
+      ],
+      "range": ">=25.2.0-alpha.86",
+      "nodes": [
+        "node_modules/@jest/core/node_modules/jest-config",
+        "node_modules/jest-cli/node_modules/jest-config"
+      ],
+      "fixAvailable": {
+        "name": "jest",
+        "version": "25.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "libnpmaccess": {
+      "name": "libnpmaccess",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "npm-registry-fetch"
+      ],
+      "effects": [],
+      "range": ">=8.0.0-pre.0",
+      "nodes": [
+        "node_modules/npm/node_modules/libnpmaccess"
+      ],
+      "fixAvailable": true
+    },
+    "libnpmdiff": {
+      "name": "libnpmdiff",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/arborist",
+        "minimatch",
+        "pacote"
+      ],
+      "effects": [],
+      "range": ">=5.0.14",
+      "nodes": [
+        "node_modules/npm/node_modules/libnpmdiff"
+      ],
+      "fixAvailable": true
+    },
+    "libnpmexec": {
+      "name": "libnpmexec",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/arborist",
+        "@npmcli/package-json",
+        "@npmcli/run-script",
+        "pacote"
+      ],
+      "effects": [],
+      "range": ">=5.0.14",
+      "nodes": [
+        "node_modules/npm/node_modules/libnpmexec"
+      ],
+      "fixAvailable": true
+    },
+    "libnpmfund": {
+      "name": "libnpmfund",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/arborist"
+      ],
+      "effects": [],
+      "range": ">=4.0.14",
+      "nodes": [
+        "node_modules/npm/node_modules/libnpmfund"
+      ],
+      "fixAvailable": true
+    },
+    "libnpmorg": {
+      "name": "libnpmorg",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "npm-registry-fetch"
+      ],
+      "effects": [],
+      "range": ">=6.0.0-pre.0",
+      "nodes": [
+        "node_modules/npm/node_modules/libnpmorg"
+      ],
+      "fixAvailable": true
+    },
+    "libnpmpack": {
+      "name": "libnpmpack",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/arborist",
+        "@npmcli/run-script",
+        "pacote"
+      ],
+      "effects": [],
+      "range": ">=5.0.14",
+      "nodes": [
+        "node_modules/npm/node_modules/libnpmpack"
+      ],
+      "fixAvailable": true
+    },
+    "libnpmpublish": {
+      "name": "libnpmpublish",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/package-json",
+        "npm-registry-fetch",
+        "sigstore"
+      ],
+      "effects": [
+        "npm"
+      ],
+      "range": ">=9.0.0-pre.0",
+      "nodes": [
+        "node_modules/npm/node_modules/libnpmpublish"
+      ],
+      "fixAvailable": true
+    },
+    "libnpmsearch": {
+      "name": "libnpmsearch",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "npm-registry-fetch"
+      ],
+      "effects": [
+        "npm"
+      ],
+      "range": ">=7.0.0-pre.0",
+      "nodes": [
+        "node_modules/npm/node_modules/libnpmsearch"
+      ],
+      "fixAvailable": true
+    },
+    "libnpmteam": {
+      "name": "libnpmteam",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "npm-registry-fetch"
+      ],
+      "effects": [
+        "npm"
+      ],
+      "range": ">=6.0.0-pre.0",
+      "nodes": [
+        "node_modules/npm/node_modules/libnpmteam"
+      ],
+      "fixAvailable": true
+    },
+    "libnpmversion": {
+      "name": "libnpmversion",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/run-script"
+      ],
+      "effects": [
+        "npm"
+      ],
+      "range": ">=6.0.0",
+      "nodes": [
+        "node_modules/npm/node_modules/libnpmversion"
+      ],
+      "fixAvailable": true
+    },
+    "make-fetch-happen": {
+      "name": "make-fetch-happen",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "cacache"
+      ],
+      "effects": [
+        "@sigstore/sign",
+        "npm",
+        "npm-registry-fetch"
+      ],
+      "range": ">=13.0.0",
+      "nodes": [
+        "node_modules/npm/node_modules/make-fetch-happen"
+      ],
+      "fixAvailable": true
+    },
+    "minimatch": {
+      "name": "minimatch",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1244623,
+          "name": "minimatch",
+          "dependency": "minimatch",
+          "title": "minimatch has potential denial of service via globparts amplification",
+          "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-405"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=7.0.0 <11.0.1"
+        }
+      ],
+      "effects": [
+        "@npmcli/arborist",
+        "@tufjs/models",
+        "@typescript-eslint/typescript-estree",
+        "glob",
+        "ignore-walk",
+        "libnpmdiff",
+        "npm"
+      ],
+      "range": "7.0.0 - 11.0.0",
+      "nodes": [
+        "node_modules/@mui/x-data-grid-generator/node_modules/rimraf/node_modules/minimatch",
+        "node_modules/eslint/node_modules/glob/node_modules/minimatch",
+        "node_modules/minimatch",
+        "node_modules/npm/node_modules/minimatch"
+      ],
+      "fixAvailable": {
+        "name": "@typescript-eslint/parser",
+        "version": "6.15.0",
+        "isSemVerMajor": true
+      }
+    },
+    "moment": {
+      "name": "moment",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1240099,
+          "name": "moment",
+          "dependency": "moment",
+          "title": "moment vulnerable to Path Traversal via crafted non-string locale name",
+          "url": "https://github.com/advisories/GHSA-4p3w-j4w9-5jqw",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-27"
+          ],
+          "cvss": {
+            "score": 5.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N"
+          },
+          "range": ">=2.29.2 <2.31.0"
+        }
+      ],
+      "effects": [],
+      "range": "2.29.2 - 2.30.1",
+      "nodes": [
+        "node_modules/moment"
+      ],
+      "fixAvailable": true
+    },
+    "npm": {
+      "name": "npm",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/arborist",
+        "@npmcli/config",
+        "@npmcli/map-workspaces",
+        "@npmcli/metavuln-calculator",
+        "@npmcli/package-json",
+        "@npmcli/run-script",
+        "@sigstore/tuf",
+        "cacache",
+        "glob",
+        "init-package-json",
+        "libnpmaccess",
+        "libnpmdiff",
+        "libnpmexec",
+        "libnpmfund",
+        "libnpmorg",
+        "libnpmpack",
+        "libnpmpublish",
+        "libnpmsearch",
+        "libnpmteam",
+        "libnpmversion",
+        "make-fetch-happen",
+        "minimatch",
+        "npm-profile",
+        "npm-registry-fetch",
+        "pacote"
+      ],
+      "effects": [
+        "react-multi-carousel"
+      ],
+      "range": "6.6.0-next.0 - 6.10.1 || 7.21.0 - 8.5.4 || 8.19.0 - 8.19.2 || >=9.0.0-pre.0",
+      "nodes": [
+        "node_modules/npm"
+      ],
+      "fixAvailable": true
+    },
+    "npm-packlist": {
+      "name": "npm-packlist",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "glob",
+        "ignore-walk"
+      ],
+      "effects": [
+        "pacote"
+      ],
+      "range": ">=8.0.1",
+      "nodes": [
+        "node_modules/npm/node_modules/npm-packlist"
+      ],
+      "fixAvailable": true
+    },
+    "npm-profile": {
+      "name": "npm-profile",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "npm-registry-fetch"
+      ],
+      "effects": [],
+      "range": ">=9.0.0",
+      "nodes": [
+        "node_modules/npm/node_modules/npm-profile"
+      ],
+      "fixAvailable": true
+    },
+    "npm-registry-fetch": {
+      "name": "npm-registry-fetch",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "make-fetch-happen"
+      ],
+      "effects": [
+        "libnpmaccess",
+        "libnpmorg",
+        "libnpmpublish",
+        "libnpmsearch",
+        "libnpmteam",
+        "npm-profile",
+        "pacote"
+      ],
+      "range": ">=16.0.0",
+      "nodes": [
+        "node_modules/npm/node_modules/npm-registry-fetch"
+      ],
+      "fixAvailable": true
+    },
+    "pacote": {
+      "name": "pacote",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@npmcli/package-json",
+        "@npmcli/run-script",
+        "cacache",
+        "npm-packlist",
+        "npm-registry-fetch",
+        "sigstore"
+      ],
+      "effects": [
+        "libnpmdiff",
+        "libnpmexec",
+        "libnpmpack"
+      ],
+      "range": ">=17.0.0",
+      "nodes": [
+        "node_modules/npm/node_modules/pacote"
+      ],
+      "fixAvailable": true
+    },
+    "postcss-selector-parser": {
+      "name": "postcss-selector-parser",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1153169,
+          "name": "postcss-selector-parser",
+          "dependency": "postcss-selector-parser",
+          "title": "postcss-selector-parser allows denial of service through uncontrolled AST recursion",
+          "url": "https://github.com/advisories/GHSA-w9m9-85wc-3x92",
+          "severity": "low",
+          "cwe": [
+            "CWE-404"
+          ],
+          "cvss": {
+            "score": 4.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=7.1.0 <7.1.3"
+        },
+        {
+          "source": 1153170,
+          "name": "postcss-selector-parser",
+          "dependency": "postcss-selector-parser",
+          "title": "postcss-selector-parser allows denial of service through uncontrolled AST recursion",
+          "url": "https://github.com/advisories/GHSA-w9m9-85wc-3x92",
+          "severity": "low",
+          "cwe": [
+            "CWE-404"
+          ],
+          "cvss": {
+            "score": 4.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=6.1.0 <6.1.3"
+        },
+        {
+          "source": 1243379,
+          "name": "postcss-selector-parser",
+          "dependency": "postcss-selector-parser",
+          "title": "PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion",
+          "url": "https://github.com/advisories/GHSA-rj75-hqrm-r3gf",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400",
+            "CWE-407"
+          ],
+          "cvss": {
+            "score": 5.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<6.1.5"
+        },
+        {
+          "source": 1243380,
+          "name": "postcss-selector-parser",
+          "dependency": "postcss-selector-parser",
+          "title": "PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion",
+          "url": "https://github.com/advisories/GHSA-rj75-hqrm-r3gf",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400",
+            "CWE-407"
+          ],
+          "cvss": {
+            "score": 5.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=7.0.0 <7.1.6"
+        }
+      ],
+      "effects": [],
+      "range": "<=6.1.4 || 7.0.0 - 7.1.5",
+      "nodes": [
+        "node_modules/postcss-nested/node_modules/postcss-selector-parser",
+        "node_modules/postcss-selector-parser",
+        "node_modules/tailwindcss-logical/node_modules/postcss-selector-parser",
+        "node_modules/tailwindcss/node_modules/postcss-selector-parser"
+      ],
+      "fixAvailable": true
+    },
+    "quill": {
+      "name": "quill",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1098574,
+          "name": "quill",
+          "dependency": "quill",
+          "title": "Cross-site Scripting in quill",
+          "url": "https://github.com/advisories/GHSA-4943-9vgg-gr5r",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-79"
+          ],
+          "cvss": {
+            "score": 4.2,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:N"
+          },
+          "range": "<=1.3.7"
+        }
+      ],
+      "effects": [
+        "react-quill"
+      ],
+      "range": "<=1.3.7",
+      "nodes": [
+        "node_modules/quill"
+      ],
+      "fixAvailable": {
+        "name": "react-quill",
+        "version": "0.0.2",
+        "isSemVerMajor": true
+      }
+    },
+    "react-multi-carousel": {
+      "name": "react-multi-carousel",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "npm"
+      ],
+      "effects": [],
+      "range": ">=2.8.6",
+      "nodes": [
+        "node_modules/react-multi-carousel"
+      ],
+      "fixAvailable": true
+    },
+    "react-quill": {
+      "name": "react-quill",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "quill"
+      ],
+      "effects": [],
+      "range": ">=0.0.3",
+      "nodes": [
+        "node_modules/react-quill"
+      ],
+      "fixAvailable": {
+        "name": "react-quill",
+        "version": "0.0.2",
+        "isSemVerMajor": true
+      }
+    },
+    "react-router": {
+      "name": "react-router",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@remix-run/router",
+        {
+          "source": 1124268,
+          "name": "react-router",
+          "dependency": "react-router",
+          "title": "React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass)",
+          "url": "https://github.com/advisories/GHSA-wrjc-x8rr-h8h6",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-601"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=6.0.0 <7.18.0"
+        },
+        {
+          "source": 1124272,
+          "name": "react-router",
+          "dependency": "react-router",
+          "title": "React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration",
+          "url": "https://github.com/advisories/GHSA-337j-9hxr-rhxg",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-470"
+          ],
+          "cvss": {
+            "score": 6.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N"
+          },
+          "range": ">=6.4.0 <7.18.0"
+        },
+        {
+          "source": 1136303,
+          "name": "react-router",
+          "dependency": "react-router",
+          "title": "React Router's same-origin redirect with path starting // causes open redirect via protocol-relative URL reinterpretation",
+          "url": "https://github.com/advisories/GHSA-2j2x-hqr9-3h42",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-601"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=6.7.0 <6.30.4"
+        }
+      ],
+      "effects": [
+        "react-router-dom"
+      ],
+      "range": "6.0.0 - 7.17.0",
+      "nodes": [
+        "node_modules/react-router"
+      ],
+      "fixAvailable": true
+    },
+    "react-router-dom": {
+      "name": "react-router-dom",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "@remix-run/router",
+        {
+          "source": 1193652,
+          "name": "react-router-dom",
+          "dependency": "react-router-dom",
+          "title": "React Router: Open redirect leading to XSS",
+          "url": "https://github.com/advisories/GHSA-jjmj-jmhj-qwj2",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-79",
+            "CWE-601"
+          ],
+          "cvss": {
+            "score": 6.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:H/I:L/A:N"
+          },
+          "range": ">=6.30.2 <=6.30.5"
+        },
+        "react-router"
+      ],
+      "effects": [],
+      "range": "6.0.0-alpha.0 - 7.17.0",
+      "nodes": [
+        "node_modules/react-router-dom"
+      ],
+      "fixAvailable": true
+    },
+    "rimraf": {
+      "name": "rimraf",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "glob"
+      ],
+      "effects": [
+        "flat-cache",
+        "fstream"
+      ],
+      "range": "4.2.0 - 6.1.3",
+      "nodes": [
+        "node_modules/@mui/x-data-grid-generator/node_modules/rimraf",
+        "node_modules/eslint/node_modules/rimraf"
+      ],
+      "fixAvailable": {
+        "name": "@mui/x-data-grid-generator",
+        "version": "9.17.0",
+        "isSemVerMajor": true
+      }
+    },
+    "sigstore": {
+      "name": "sigstore",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@sigstore/sign",
+        "@sigstore/tuf"
+      ],
+      "effects": [
+        "pacote"
+      ],
+      "range": ">=1.6.0",
+      "nodes": [
+        "node_modules/npm/node_modules/sigstore"
+      ],
+      "fixAvailable": true
+    },
+    "tuf-js": {
+      "name": "tuf-js",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@tufjs/models"
+      ],
+      "effects": [
+        "@sigstore/tuf"
+      ],
+      "range": ">=1.1.2",
+      "nodes": [
+        "node_modules/npm/node_modules/tuf-js"
+      ],
+      "fixAvailable": true
+    },
+    "unzipper": {
+      "name": "unzipper",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "fstream"
+      ],
+      "effects": [
+        "exceljs"
+      ],
+      "range": "0.9.12 - 0.11.6",
+      "nodes": [
+        "node_modules/@mui/x-data-grid-generator/node_modules/unzipper"
+      ],
+      "fixAvailable": {
+        "name": "@mui/x-data-grid-generator",
+        "version": "9.17.0",
+        "isSemVerMajor": true
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1119441,
+          "name": "uuid",
+          "dependency": "uuid",
+          "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+          "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-787",
+            "CWE-1285"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+          },
+          "range": "<11.1.1"
+        }
+      ],
+      "effects": [
+        "exceljs"
+      ],
+      "range": "<11.1.1",
+      "nodes": [
+        "node_modules/@mui/x-data-grid-generator/node_modules/uuid",
+        "node_modules/uuid"
+      ],
+      "fixAvailable": {
+        "name": "uuid",
+        "version": "14.0.3",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 8,
+      "moderate": 54,
+      "high": 0,
+      "critical": 0,
+      "total": 62
+    },
+    "dependencies": {
+      "prod": 1025,
+      "dev": 1169,
+      "optional": 104,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 2246
+    }
+  }
+}

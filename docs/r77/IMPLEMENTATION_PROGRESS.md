@@ -154,6 +154,12 @@ Resolve runtime-critical dependencies first, then transitive and development-too
 
 ## Remaining blockers and production readiness
 
+### Dependency remediation checkpoint — 2026-11-05
+
+The required pre-change 114-row vulnerability matrix was completed before dependency mutation. The isolated integration clone now audits at **0 critical / 0 high / 54 moderate / 8 low** (previously **4 critical / 38 high / 64 moderate / 8 low**). Changes were deliberate pins and scoped transitive overrides; no forced audit rewrite was used. Next 15 generated type validation passes; the combined security/compatibility suite passes **19/19**; the production build passes with build ID `YG49s9m28wnqmkkS6QHym`; and the local Chromium/Firefox fixture passes **21/21** checks. Moderate/low findings remain open and are not accepted on the user's behalf.
+
+This closes the critical/high dependency remediation item at the isolated-candidate level. It does not close R77: semantic API parity, metadata/report security, real disposable Frappe tenant CRUD/role/org testing, private-file enforcement, distributed rate limiting and rollout rehearsal remain blockers.
+
 0. Remediate the dependency audit, including all four critical package findings, with a deliberate compatible upgrade and regression strategy.
 1. Complete semantic endpoint classification and scoped replacement of retired SDK calls.
 2. Audit and secure all required metadata/report/Insights APIs, permission models, datasets and migrations. The dashboard fix alone does not certify these applications.

@@ -1,11 +1,15 @@
 'use server'
 
 import { cookies } from 'next/headers'
+import themeConfig from '@configs/themeConfig'
 
-export async function deleteCookie (data) {
-    console.log("datadatadata",data);
-    
-    // const oneDay = 24 * 60 * 60
-    const oneDay =  60
-    cookies().set(data['name'], JSON.parse(data['value']), { expires: Date.now() - oneDay })
+const USER_PREFERENCE_COOKIES = new Set([themeConfig.settingsCookieName, 'sidebar-collapsed'])
+
+export async function deleteCookie(data: { name?: string }) {
+  if (!data.name || !USER_PREFERENCE_COOKIES.has(data.name)) {
+    throw new Error('Unsupported preference cookie')
+  }
+
+  const cookieStore = await cookies()
+  cookieStore.delete(data.name)
 }

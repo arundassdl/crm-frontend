@@ -6,9 +6,10 @@ import { SecurityError, securityResponse } from "@/lib/security";
 export const dynamic = "force-dynamic";
 async function proxy(
   req: NextRequest,
-  { params }: { params: { path: string[] } },
+  { params: paramsPromise }: { params: Promise<{ path: string[] }> },
 ) {
   try {
+    const params = await paramsPromise;
     const path = "/" + params.path.join("/");
     const query = Object.fromEntries(req.nextUrl.searchParams);
     let args: Record<string, any> = { ...query };

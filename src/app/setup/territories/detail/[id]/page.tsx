@@ -1,7 +1,8 @@
 import React from "react";
 import TerritoryDetail from '@/components/territory/TerritoryDetail';
 
-export default function TerritoryDetailPage({ params }: { params: { id: string } }) {
+export default async function TerritoryDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+    const params = await paramsPromise
     const territoryName = params.id // Using id as name per route [id]
     const decodedName = decodeURIComponent(territoryName);
 

@@ -1,17 +1,14 @@
 'use client'
 
 import { useMemo } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { Box } from '@mui/material'
 
 import HomePageBuilderHost from '@/app/settings/HomePageBuilderHost'
 
-type PageProps = {
-  params: { id: string }
-}
-
 /** Standalone dashboard builder — same shell as settings `view=dashboard-create` / `dashboard-edit`. */
-export default function DashboardBuilderRoutePage({ params }: PageProps) {
+export default function DashboardBuilderRoutePage() {
+  const params = useParams<{ id: string }>()!
   const searchParams = useSearchParams()
   const cloneFrom = searchParams?.get('clone_from')
   const isNew = params.id === 'new'
