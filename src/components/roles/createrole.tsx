@@ -405,25 +405,25 @@ export default function AddEditRoleDrawer({
             sx={{
               flexGrow: 1,
               overflowY: "auto",
-              padding: 2,
+              padding: { xs: 1, sm: 2 },
               height: "100%",
             }}
           >
             <Grid
               container
-              spacing={6}
-              p={5}
+              spacing={{ xs: 3, sm: 6 }}
+              p={{ xs: 1, sm: 5 }}
               sx={{
-                paddingTop: "30px",
-                paddingLeft: "50px",
-                paddingRight: "30px",
+                paddingTop: { xs: "12px", sm: "30px" },
+                paddingLeft: { xs: "12px", sm: "50px" },
+                paddingRight: { xs: "12px", sm: "30px" },
               }}
             >
               <Typography variant="h6">Role Details</Typography>
               <Grid
                 container
-                spacing={6}
-                sx={{ paddingTop: "20px", paddingLeft: "10px" }}
+                spacing={{ xs: 3, sm: 6 }}
+                sx={{ paddingTop: "20px", paddingLeft: { xs: 0, sm: "10px" } }}
               >
                 <Grid item xs={12} sm={12}>
                      <TextField
@@ -471,8 +471,9 @@ export default function AddEditRoleDrawer({
                                     <CardContent>
                                         <Grid container spacing={6}>
                                             <Grid item xs={12} sm={12}>
-                                                <TableContainer component={Paper}>
-                                                    <Table sx={{ tableLayout: 'fixed', width: '100%',borderBottom: 'unset' }} >
+                                                {/* newdocs/80 §12.12: 11 columns do not fit a phone — the table scrolls sideways in its own box. */}
+                                                <TableContainer component={Paper} sx={{ overflowX: 'auto', maxWidth: '100%' }} data-testid="crm-role-permissions">
+                                                    <Table sx={{ tableLayout: 'fixed', width: '100%', minWidth: 760, borderBottom: 'unset' }} >
                                                         <TableHead>
                                                             <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
                                                                 <TableCell style={{ width: '30%', color: "#616161" }}>Module</TableCell>
@@ -601,6 +602,7 @@ export default function AddEditRoleDrawer({
               display: "flex",
               justifyContent: "flex-end",
               padding: 2,
+              paddingBottom: "max(16px, env(safe-area-inset-bottom))",
               borderTop: "1px solid #ccc",
               background: "var(--mui-palette-background-paper)",
               zIndex: 1100,

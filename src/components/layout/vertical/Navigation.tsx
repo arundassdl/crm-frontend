@@ -273,10 +273,12 @@ const Navigation = () => {
       <Drawer
         variant="permanent"
         sx={{
-          width: open ? drawerWidth : (isBreakpointReached)?0:60, // Adjust the width based on hover state
+          // newdocs/80 §12.12: below the breakpoint the menu is the slide-over drawer above; this rail
+          // stays closed there (its open state could race on load and cover the page on a phone).
+          width: isBreakpointReached ? 0 : open ? drawerWidth : 60, // Adjust the width based on hover state
           flexShrink: 0,
           '& .MuiDrawer-paper': {
-            width: open ? drawerWidth : (isBreakpointReached)?0:60,
+            width: isBreakpointReached ? 0 : open ? drawerWidth : 60,
           },
         }}
       >

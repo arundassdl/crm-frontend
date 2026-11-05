@@ -181,3 +181,44 @@ describe('§12.9: CTRL theme, no blank band, module menu on narrow screens', () 
     assert.match(nav, /pt: embedded \? '12px' : '76px'/);
   });
 });
+
+describe('§12.12: create forms ("New …") and dialogs on phones', () => {
+  test('the form drawer is never wider than the screen and uses the visible height', () => {
+    const d = read('src/components/Common/Form/Drawer/DrawerComponent.tsx');
+    assert.match(d, /width: \{ xs: "100vw", sm: desktopWidth \}/);
+    assert.match(d, /const desktopWidth = typeof width === "number" \? `min\(\$\{width\}px, 100vw\)`/);
+    assert.match(d, /"@supports \(height: 100dvh\)": \{ height: "100dvh" \}/);
+    assert.match(d, /aria-label="Close" data-testid="crm-form-close"/);
+    assert.match(d, /overscrollBehavior: "contain"/);
+    assert.match(d, /target\.scrollIntoView\(\{ block: "center", behavior: "smooth" \}\)/);
+  });
+
+  test('the form grid is compact on phones and the footer clears the iPhone home indicator', () => {
+    const f = read('src/components/Common/Form/Drawer/CustomForm.tsx');
+    assert.match(f, /<Grid container spacing=\{\{ xs: 3, sm: 6 \}\} p=\{\{ xs: 1, sm: 5 \}\} key=\{110\}>/);
+    assert.doesNotMatch(f, /spacing=\{6\}/);
+    assert.match(f, /paddingBottom: "max\(16px, env\(safe-area-inset-bottom\)\)"/);
+  });
+
+  test('the on-screen keyboard resizes the page on Android (standalone)', () => {
+    assert.match(read('src/app/layout.tsx'), /interactiveWidget: "resizes-content"/);
+  });
+});
+
+describe('§12.12: the Role form on phones', () => {
+  test('compact on phones; the 11-column permissions table scrolls sideways inside its own box', () => {
+    const r = read('src/components/roles/createrole.tsx');
+    assert.match(r, /<TableContainer component=\{Paper\} sx=\{\{ overflowX: 'auto', maxWidth: '100%' \}\} data-testid="crm-role-permissions">/);
+    assert.match(r, /minWidth: 760/);
+    assert.match(r, /paddingLeft: \{ xs: "12px", sm: "50px" \}/);
+    assert.match(r, /paddingBottom: "max\(16px, env\(safe-area-inset-bottom\)\)"/);
+  });
+});
+
+describe('§12.12: the desktop menu rail never covers a phone screen', () => {
+  test('below the breakpoint the rail is closed; the slide-over menu is used instead', () => {
+    const nav = read('src/components/layout/vertical/Navigation.tsx');
+    assert.match(nav, /width: isBreakpointReached \? 0 : open \? drawerWidth : 60, \/\/ Adjust the width based on hover state/);
+    assert.match(nav, /width: isBreakpointReached \? 0 : open \? drawerWidth : 60,\n/);
+  });
+});

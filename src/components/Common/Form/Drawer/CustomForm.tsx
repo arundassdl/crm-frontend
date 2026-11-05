@@ -754,9 +754,9 @@ const CustomForm: React.FC<CustomFormProps> = ({
         
         <Form>
           <Box
-            sx={{ flexGrow: 1, overflowY: "auto", padding: 2, height: "100%" }}
+            sx={{ flexGrow: 1, overflowY: "auto", padding: { xs: 1, sm: 2 }, height: "100%" }}
           >
-            <Grid container spacing={6} p={5} key={110}>
+            <Grid container spacing={{ xs: 3, sm: 6 }} p={{ xs: 1, sm: 5 }} key={110}>
               {Object.entries(groupedFields).map(([section, fields]) => {
                 const isAccordion = fields.some(
                   (field) => typeof field?.sectiontype === "function" ? field.sectiontype(values) : field.sectiontype === "Accoridon"
@@ -787,8 +787,8 @@ const CustomForm: React.FC<CustomFormProps> = ({
                       <AccordionDetails>
                         <Grid
                           container
-                          spacing={6}
-                          sx={{ paddingTop: "20px", paddingLeft: "10px" }}
+                          spacing={{ xs: 3, sm: 6 }}
+                          sx={{ paddingTop: "20px", paddingLeft: { xs: 0, sm: "10px" } }}
                         >
                           {fields.map((field) => (
                             <Grid item xs={12} sm={field.fullwidth?12:6} key={field.name}>
@@ -812,8 +812,8 @@ const CustomForm: React.FC<CustomFormProps> = ({
                     {section && issection && <Typography variant="h6">{section}</Typography>}
                     <Grid
                       container
-                      spacing={6}
-                      sx={{ paddingTop: "20px", paddingLeft: "10px" }}
+                      spacing={{ xs: 3, sm: 6 }}
+                      sx={{ paddingTop: "20px", paddingLeft: { xs: 0, sm: "10px" } }}
                     >
                       {fields.map((field) => (
                         <Grid item xs={12} sm={field.fullwidth?12:6} key={field.name}>
@@ -845,6 +845,8 @@ const CustomForm: React.FC<CustomFormProps> = ({
               display: "flex",
               justifyContent: "flex-end",
               padding: 2,
+              // iPhone home indicator: keep the buttons above it.
+              paddingBottom: "max(16px, env(safe-area-inset-bottom))",
               borderTop: "1px solid #ccc",
               background: "var(--mui-palette-background-paper)",
               zIndex: 1100,
