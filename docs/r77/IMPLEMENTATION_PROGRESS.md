@@ -106,11 +106,11 @@ The dashboard add/remove-widget handlers previously used a shared process-wide i
 | New Salesbond security suite | **16/16 passed** | Sessions, CSRF, org isolation, SSRF/path policy, real RS256 claims, protected routes, mass assignment, filter preservation, mocked-transport authenticated route delegation |
 | Backend security suite | **19/19 passed** (auth/metadata), **20/20 passed** (Central follow-up) | Real cryptographic signatures and mocked Frappe permission boundaries; no database-backed bench |
 | Real Redis concurrency/expiry | **1/1 passed** | Disposable local Redis, 100 concurrent redemption attempts; exactly one success; expiry refused |
-| Production build | **Passed** | Compiled, lint/type validation and static generation; build `yUfw3aZN2BCT7HWwc4WH`, startup hook, relative org routes and repaired lockfile included |
+| Production build | **Passed** | Next 15.5.28 compiled, validated and generated routes; build `YG49s9m28wnqmkkS6QHym` |
 | Chromium/Firefox browser harness | **21/21 passed** | Local build with reserved `.test` origins and proxy redirect/CSP adaptation; fixture Central and browser-intercepted user data; no customer credentials or live Frappe |
 | Real Frappe/Insights API, role/share and schema integration | **Not run** | Required before feature activation/release |
 | Full Salesbond CRM CRUD/visual/mobile/embedded E2E | **Not passed** | Required before production approval |
-| Dependency advisory audit | **FAILED release gate: 114 findings — 4 critical, 38 high, 64 moderate, 8 low** | npm registry audit of candidate lockfile; severity is advisory classification, not proof of exploitation |
+| Dependency advisory audit | **Critical/high gate passed: 0 critical, 0 high; 54 moderate, 8 low remain** | Pre-change baseline retained; remaining findings require individual review and are not waived |
 | Metadata source validity | **24/24 JSON documents parsed** | Includes the original local CRM Lead JSON fix; not a Frappe migration test |
 | Distributed revocation/load/limiting | **Not run** | Production gate |
 
@@ -138,17 +138,17 @@ Tests start no production process and write no production database. New configur
 
 ## Git synchronization
 
-Backend commits: tenant auth `8e2a84c`; Central `aabc058` plus `f86dcaa`; metadata security `45d21b8` plus local-source preservation `4bc7260`. Frontend implementation commit: `2f662fd`; ancestry-preserving merge: `ed4ad3a22ced3f92fb2969d4a736dc95a37dbfeb`. The merge has the identical tree hash `6d5e86817e8f8df8da1477af14528886f380ba29` and both Salesbond and EVOQ R80 heads are verified ancestors. Final branch heads and mirror equality are recorded after the documentation commit.
+Backend commits: tenant auth `8e2a84c`; Central `aabc058` plus `f86dcaa`; metadata security/local preservation `45d21b8`/`4bc7260`, followed by metadata audit `c130aaf`. Frontend implementation/history commits remain `2f662fd`/`ed4ad3a`, with dependency remediation at `1e00433`. Both Salesbond and EVOQ R80 source heads remain verified ancestors. The frontend head is mirrored to both approved repositories; metadata is synchronized to confirmed `evoq-tech/sdl_metadata` only.
 
 The metadata checkout initially had a shallow boundary with a missing parent object, so its first push was rejected. Its full ancestry was recovered from the original Salesbond checkout's complete `origin/backend_sdl_metadata` history; `git fsck --connectivity-only` now passes and the integration clone is no longer shallow. No history was rewritten. The original recorded GitLab URL required credentials, but the existing complete local source provided the required ancestry. Tenant auth and Central branches are pushed to both `evoq-tech` and `arundassdl`; the metadata branch is pushed to the confirmed `evoq-tech/sdl_metadata`. The user reconfirmed `evoq-tech/sdl_metadata` as the metadata destination; no separate metadata mirror was specified. That component is published to the confirmed target only. No force-push or production-main update is authorized or planned.
 
 Source-manifest recheck after implementation found zero changes in the original Salesbond and EVOQ reference `src/tests/public` files. No new/changed generated artifacts or high-confidence server-secret patterns were found in the frontend commit inputs. Existing public Firebase client configuration remains a separate production domain/API-restriction verification item; it is not treated as a server secret. Missing mirror access is a synchronization blocker, not permission to push a backend tree into a frontend repository.
 
-## Dependency audit — additional P0 blocker
+## Dependency audit — remediated critical/high checkpoint
 
-The time-bounded `npm audit --package-lock-only --ignore-scripts --json --fetch-timeout=20000 --fetch-retries=0` request completed with a failing audit gate: **114 findings, including 4 critical and 38 high**. Critical package entries include `next`, `swiper`, `tar`, and `websocket-driver`. The audit also flags direct dependencies such as Axios, Sharp, PostCSS and development tooling. These are findings against the candidate dependency graph, not a production compromise claim or a completed exploitability assessment.
+The pre-change bounded audit recorded **114 findings, including 4 critical and 38 high**. The remediated lockfile audit records **62 findings: 0 critical, 0 high, 54 moderate and 8 low**. This closes the isolated candidate's critical/high dependency gate; it does not waive the remaining findings or prove feature/backend compatibility.
 
-Evidence is retained at `docs/r77/dependency-audit.json`. Do not use `npm audit fix --force` to replace major versions blindly: Next/React/App Router, federation, Swiper and image-processing compatibility must be upgraded and retested deliberately. No package upgrade is claimed in this checkpoint; the prior SWC lockfile repair only made the inherited versions reproducible. The CI workflow now fails closed at the critical dependency audit step. Local build/type/unit successes do not mean that overall release CI is green.
+Baseline evidence remains at `docs/r77/dependency-audit.json`; post-change evidence is at `docs/r77/dependency-audit-remediated.json`, with the complete pre-change matrix beside them. No forced audit rewrite was used. Next/App Router, Swiper, Sharp and Axios compatibility was explicitly tested, and the full build/browser fixture rerun passed. Real Frappe/API and product feature acceptance remain separate gates.
 
 Resolve runtime-critical dependencies first, then transitive and development-tool findings, and rerun this audit, real API contracts and browser/feature parity tests. This is additional P0 development work under R77, not a request for production approval.
 
@@ -160,7 +160,7 @@ The required pre-change 114-row vulnerability matrix was completed before depend
 
 This closes the critical/high dependency remediation item at the isolated-candidate level. It does not close R77: semantic API parity, metadata/report security, real disposable Frappe tenant CRUD/role/org testing, private-file enforcement, distributed rate limiting and rollout rehearsal remain blockers.
 
-0. Remediate the dependency audit, including all four critical package findings, with a deliberate compatible upgrade and regression strategy.
+0. Review/remediate the remaining 54 moderate and 8 low dependency findings; maintain the zero-critical/zero-high audit gate.
 1. Complete semantic endpoint classification and scoped replacement of retired SDK calls.
 2. Audit and secure all required metadata/report/Insights APIs, permission models, datasets and migrations. The dashboard fix alone does not certify these applications.
 3. Replace remaining browser-token presence checks with verified session/capability state; complete core module initialization and CRUD/data-contract parity.
