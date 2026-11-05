@@ -1,38 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { CONSTANTS } from "@/services/config/app-config";
+import { protectedHandler } from "@/lib/security";
+import { NextRequest, NextResponse } from "next/server";
+import { bffErrorResponse, frappeCall } from "@/lib/tenant-fetch";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
-  const contactName = searchParams.get('contact');
-
+/** Deals linked to a contact (R55). Response: { data, totalCount }. */
+async function rawGET(req: NextRequest) {
+  const contactName = req.nextUrl.searchParams.get("contact");
   if (!contactName) {
-    return NextResponse.json({ error: 'Missing contact parameter' }, { status: 400 });
-  }
- const token = req.headers.get("authorization");
-
-  const frappeUrl = `${CONSTANTS.API_BASE_URL}/api/resource/CRM Deal`;
-  const filters = JSON.stringify([["contact", "=", contactName]]);
-  const fields = JSON.stringify(["*"]);
-  const url = `${frappeUrl}?filters=${encodeURIComponent(filters)}&fields=${encodeURIComponent(fields)}&limit_page_length=0`;
- 
-  try {
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `${token}`,
+    return NextResponse.json(
+      {
+        error: "BAD_REQUEST",
+        kind: "failed",
+        message: "Missing contact parameter",
       },
+      { status: 400 },
+    );
+  }
+  try {
+    const res = await frappeCall(req, "frappe.client.get_list", {
+      doctype: "CRM Deal",
+      fields: ["*"],
+      filters: [["CRM Contacts", "contact", "=", contactName]],
+      limit_page_length: 0,
     });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      return NextResponse.json({ error: `Frappe API error: ${res.status} ${errText}` }, { status: res.status });
-    }
-
-    const data = await res.json();
-    const deals = data.data || [];
-    const totalCount = data.total || deals.length;
-    return NextResponse.json({ data: data.data,totalCount });
-  } catch (err: any) {
-    console.error('Frappe fetch failed', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const deals = Array.isArray(res?.message) ? res.message : [];
+    return NextResponse.json({ data: deals, totalCount: deals.length });
+  } catch (err) {
+    return bffErrorResponse(err, "contact-deals");
   }
 }
+
+export const GET = protectedHandler(rawGET);

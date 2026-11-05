@@ -1,37 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { CONSTANTS } from "@/services/config/app-config";
-
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const token = req.headers.get("Authorization");
-
-  const fetchUrl = `${CONSTANTS.API_BASE_URL}${CONSTANTS.API_MANDATE_PARAMS}`;
-  const bodyParams = {
-    version: CONSTANTS.VERSION,
-    method: "create_item_variants",
-    entity: "product",
-  };
-
-  const frappeRes = await fetch(fetchUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `${token}`,
-      'Content-Type': 'application/json',
+import { protectedHandler } from "@/lib/security";
+import { NextResponse } from "next/server";
+const unavailable = async () =>
+  NextResponse.json(
+    {
+      error: "FEATURE_BACKEND_NOT_VERIFIED",
+      message:
+        "This feature requires a verified organization backend capability.",
     },
-    body: JSON.stringify({
-      ...bodyParams,
-      variants: JSON.stringify(body.variants), // ✅ double encode the list
-    }),
-  });
+    { status: 501 },
+  );
 
-  // Handle timeout or non-2xx status codes gracefully
-  if (!frappeRes.ok) {
-    return NextResponse.json(
-      { error: `Frappe request failed with status ${frappeRes.status}` },
-      { status: frappeRes.status }
-    );
-  }
-
-  const data = await frappeRes.json();
-  return NextResponse.json(data);
-}
+export const GET = protectedHandler(unavailable);
+export const POST = protectedHandler(unavailable);
+export const DELETE = protectedHandler(unavailable);

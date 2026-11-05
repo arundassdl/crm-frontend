@@ -1,183 +1,106 @@
-import { NextResponse } from 'next/server';
-import type { NextFetchEvent } from 'next/server';
-import type { NextRequest } from 'next/server';
-import axios from 'axios';
-import { CONSTANTS } from '@/services/config/app-config';
-import { redirect, usePathname } from 'next/navigation'
-import { getAllowedRolesForPath } from '@/lib/route-role-utils';
-import { getAnalyticsHostPathRewrite } from '@/lib/mf/analyticsHostPathRewrite';
-import { REPORTS_DETAIL_HREF_PREFIX, REPORTS_EDIT_HREF_PREFIX, REPORTS_LIST_HREF } from '@/lib/reports/reportRoutes';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getOneSigninUrl, safeCrmPath } from "@/lib/one";
+import { embedSigninUrl, isFrameRequest } from "@/lib/embed";
 
-const notProtectedRoutes = ['/login', '/register', '/forgot-password' , '/update-password'];
+// Duplicated from lib/session.ts: that module imports Node 'crypto', which the Edge middleware cannot bundle.
+const SESSION_COOKIE_NAME = "evoq_crm_session";
 
-/** Normalize pathname for menu-based role checks (exact match only in {@link getAllowedRolesForPath}). */
-function pathForMenuRoleLookup(pathname: string): string {
-  if (
-    pathname === '/reports/create' ||
-    pathname.startsWith('/reports/create/') ||
-    pathname.startsWith('/reports/edit/') ||
-    pathname === '/reports/edit'
-  ) {
-    return '/reports'
-  }
-  if (pathname.startsWith('/reports/details/') || pathname === '/reports/details') {
-    return '/reports'
-  }
-  const detailSlashIdx = pathname.indexOf('/detail/')
-  if (detailSlashIdx !== -1) {
-    return pathname.substring(0, detailSlashIdx)
-  }
-  return pathname
-}
+/** The template's own username/password pages. EVOQ CRM has no separate login: these never render. */
+const LEGACY_AUTH_PAGES = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/update-password",
+];
 
-export async function middleware(request: NextRequest, event: NextFetchEvent) {
+/**
+ * Routing hint only: is there an unexpired session cookie? The signature is verified in the
+ * Node runtime (org layout, BFF routes); a forged cookie gets no data, only the page shell.
+ */
+function sessionLooksValid(raw: string | undefined): boolean {
+  if (!raw) return false;
+  const parts = raw.split(".");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return false;
   try {
-    /** Federated reports listing legacy URLs → CRM canonical detail route. */
-    const legacyDetail = request.nextUrl.pathname.match(/^\/details\/([^/]+)\/?$/)
-    if (legacyDetail) {
-      const url = request.nextUrl.clone()
-      url.pathname = `${REPORTS_DETAIL_HREF_PREFIX}/${legacyDetail[1]}`
-      return NextResponse.redirect(url)
-    }
-
-    /** Standalone reports-app edit path → CRM canonical edit route. */
-    const legacyEdit = request.nextUrl.pathname.match(/^\/edit\/([^/]+)\/?$/)
-    if (legacyEdit) {
-      const url = request.nextUrl.clone()
-      url.pathname = `${REPORTS_EDIT_HREF_PREFIX}/${legacyEdit[1]}`
-      return NextResponse.redirect(url)
-    }
-
-    /** Standalone reports-app listing path → CRM federated listing shell. */
-    if (
-      request.nextUrl.pathname === '/listing' ||
-      request.nextUrl.pathname === '/listing/'
-    ) {
-      const url = request.nextUrl.clone()
-      url.pathname = REPORTS_LIST_HREF
-      return NextResponse.redirect(url)
-    }
-
-    if (CONSTANTS.ENABLE_REDIRECT_FEATURE) {
-
-
-      // const userroleCookie = request.cookies.get('role_profile')?.value;
-      
-
-      const isLoggedIn = (request.cookies.get('isLoggedIn')?.value != undefined) ? request.cookies.get('isLoggedIn')?.value : "";
-
-      const AccessTokenData = (request.cookies.get('AccessTokenData')?.value != undefined) ? request.cookies.get('AccessTokenData')?.value : "";
-      // let menuListData = "";
-      // if (request.cookies.get('menuListData')?.value != undefined) {
-      //    menuListData : string = request.cookies.get('menuListData')?.value ?? 'Guest'
-      // }
-      const menuListData : string = request.cookies.get('menuListData')?.value ?? ''
-      
-      const url = request.nextUrl.clone();
-      // console.log(AccessTokenData, "currentUser", isLoggedIn, menuListData);
-      const isNotProtectedRoute = notProtectedRoutes.some((route) =>
-        url.pathname.startsWith(route)
-      );
-
-      if (url.pathname.startsWith('/_next')) {
-        return NextResponse.next();
-      }
-
-      if (url.pathname.startsWith('/reports/api/')) {
-        return NextResponse.next();
-      }
-
-      const analyticsPathRewrite = getAnalyticsHostPathRewrite(url.pathname);
-      if (analyticsPathRewrite) {
-        url.pathname = analyticsPathRewrite;
-        return NextResponse.redirect(url);
-      }
-
-      if ((!isLoggedIn || isLoggedIn == "false") && isNotProtectedRoute === false) {
-        // If the user is not authenticated and trying to access a protected route
-        url.pathname = '/login';
-        return NextResponse.redirect(url);
-      }
-
-      if (url.pathname.startsWith('/login') === true && isLoggedIn == "true" ) {
-        // If the user is authenticated and trying to access the login page, redirect to the dashboard
-        console.log('return login page to home page');
-        url.pathname = '/';
-        return NextResponse.redirect(url);
-      }
-
-      if (isLoggedIn == "true" && url.pathname.startsWith('/login') === false  && isNotProtectedRoute === false) {
-          // Allow root route (/) for all authenticated users to prevent redirect loop
-          if (url.pathname === '/') {
-            return NextResponse.next();
-          }
-
-          // console.log(url.pathname, 'url.pathname');
-          const userroleCookie = (request.cookies.get('role_profile')?.value != undefined) ? request.cookies.get('role_profile')?.value : "";
-          const resultString = pathForMenuRoleLookup(url.pathname)
-
-          // console.log(resultString, 'resultString');
-
-          // Only check roles if menuListData is available
-          if (menuListData && menuListData.trim() !== '') {
-            const allowedRoles = getAllowedRolesForPath(resultString, menuListData);
-            // console.log(allowedRoles, 'allowedRoles');
-            
-            // If no roles found for this path and menuListData exists, allow access (might be a public route)
-            // Only redirect if roles are defined and user doesn't have access
-            if (allowedRoles.length > 0 && !allowedRoles.some(role =>  role === userroleCookie )) {
-              // console.log('Unauthorized url');
-              url.pathname = '/';
-              return NextResponse.redirect(url);
-            }
-          }
-          // If menuListData is empty, allow access (menu might not be loaded yet)
-      }
-      
-
-
-      // if (allowedRoles.length > 0) {
-      //   return NextResponse.redirect(new URL("/", url));
-      // } else {
-      //   url.pathname = '/';
-      //   return NextResponse.redirect(url);
-      // }
-
-      // const redirect = await fetch(
-      //   `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}&method=get_redirecting_urls&entity=signin`,
-      //   {
-      //     method: 'GET',
-      //   }
-      // ).then((res: any) => res.json());
-
-
-      // const url = request.nextUrl.clone();
-      // if (url.pathname.startsWith('/_next')) {
-      //   return NextResponse.next();
-      // }
-      // const matchingRedirect = redirect.message.find(
-      //   (value: any) => value.from === url.pathname
-      // );
-      // if (matchingRedirect) {
-      //   url.pathname = matchingRedirect.to;
-      //   url.search = '';
-      //   return Response.redirect(url, 308);
-      // } else {
-      //   return NextResponse.next();
-      // }
-    } else {
-      console.log('Redirect feature is disabled.');
-    }
-    
-    // Return next response if no redirect was triggered
-    return NextResponse.next();
-  } catch (err) {
-    console.error('Error fetching redirect data:', err);
-    return NextResponse.next();
+    const b64 = parts[0].replace(/-/g, "+").replace(/_/g, "/");
+    const json = JSON.parse(atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4)));
+    return (
+      typeof json?.expiresAt === "number" &&
+      json.expiresAt > Date.now() &&
+      typeof json?.organization === "string"
+    );
+  } catch {
+    return false;
   }
 }
+
+/**
+ * R58 (doc 62 §3): without a valid CRM session every page goes to the Evoq One CRM page, which
+ * offers EVOQ sign-in and plans; the intended CRM path is kept as a validated relative `next`.
+ *
+ * `/api/*` (including `/api/auth/launch`, the launch-ticket redemption) is excluded by the
+ * matcher, so a launch ticket is always processed before this rule can redirect.
+ */
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const orgPath = pathname.match(/^\/org\/(TEAM-[0-9]{5,})(\/.*)?$/);
+  const modulePath = orgPath ? orgPath[2] || "/" : pathname;
+  if (pathname.startsWith("/_next")) return NextResponse.next();
+
+  const raw = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (!sessionLooksValid(raw)) {
+    // newdocs/80: inside CTRL's frame, Evoq One (which refuses frames) is replaced by a page that tells CTRL.
+    const res = NextResponse.redirect(
+      isFrameRequest(request.headers)
+        ? embedSigninUrl(request.nextUrl.origin, safeCrmPath(pathname))
+        : getOneSigninUrl(safeCrmPath(pathname)),
+      307,
+    );
+    res.headers.set("Cache-Control", "no-store");
+    if (raw)
+      res.cookies.set(SESSION_COOKIE_NAME, "", {
+        path: "/",
+        maxAge: 0,
+        httpOnly: true,
+      });
+    if (request.cookies.get("isLoggedIn"))
+      res.cookies.set("isLoggedIn", "", { path: "/", maxAge: 0 });
+    return res;
+  }
+
+  if (
+    LEGACY_AUTH_PAGES.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`),
+    )
+  ) {
+    return NextResponse.redirect(new URL("/org", request.url), 307);
+  }
+  if (
+    /^\/(roles|user\/permission|user\/users\/(add|edit|detail)|user\/roles\/(add|edit|detail))(\/|$)/.test(
+      modulePath,
+    )
+  )
+    return NextResponse.redirect(new URL("/user/roles", request.url), 307);
+  if (
+    /^\/(analytics|reports|report|dashboard-builder|setup|settings|permission)(\/|$)/.test(
+      modulePath,
+    ) ||
+    pathname.startsWith("/reports/api/")
+  ) {
+    return NextResponse.redirect(
+      new URL("/integration-unavailable", request.url),
+      307,
+    );
+  }
+  // R59: tell the server components which page this is (for a safe return after sign-in).
+  const forwarded = new Headers(request.headers);
+  forwarded.set("x-evoq-path", pathname);
+  return NextResponse.next({ request: { headers: forwarded } });
+}
+
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|assets|images|favicon.ico|logo.png|sw.js).*)'],
+  matcher: [
+    "/((?!api|embed|_next/static|_next/image|assets|images|favicon.ico|favicon.png|logo.png|sw.js).*)",
+  ],
 };
-
-

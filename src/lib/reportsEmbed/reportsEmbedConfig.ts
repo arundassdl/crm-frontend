@@ -1,16 +1,16 @@
-import { CONSTANTS } from '@/services/config/app-config'
+import { CONSTANTS } from "@/services/config/app-config";
 import {
   readAccessTokenString,
   readRoleProfileFromStorage,
-} from '@/utils/accessTokenDataStorage'
+} from "@/utils/accessTokenDataStorage";
 
 /**
  * Dropdown options for the federated **Create Report** dialog (`PrimaryModuleOption` on the reports-app side).
  */
 export type ReportsCreateReportPrimaryModuleOption = {
-  value: string
-  label: string
-}
+  value: string;
+  label: string;
+};
 
 /**
  * API/settings mirrored from CRM `CONSTANTS`, passed as React props into the federated reports remote
@@ -33,17 +33,17 @@ export type ReportsCreateReportPrimaryModuleOption = {
  * **`/reports/edit/[code]`** loads **`reports/ReportEdit`** with **`reportId`** from the path (see **`ReportsEditHost`**).
  */
 export type ReportsEmbedApiConfig = {
-  API_BASE_URL: string
-  API_MANDATE_PARAMS: string
-  VERSION: string
-  APPCODE: string
-}
+  API_BASE_URL: string;
+  API_MANDATE_PARAMS: string;
+  VERSION: string;
+  APPCODE: string;
+};
 
 /** Identity/session props read from CRM browser storage (empty until hydrated on the client). */
 export type ReportsRemoteAuthProps = {
-  username: string
-  token: string
-}
+  username: string;
+  token: string;
+};
 
 export function getReportsEmbedApiConfig(): ReportsEmbedApiConfig {
   return {
@@ -51,63 +51,42 @@ export function getReportsEmbedApiConfig(): ReportsEmbedApiConfig {
     API_MANDATE_PARAMS: CONSTANTS.API_MANDATE_PARAMS,
     VERSION: CONSTANTS.VERSION,
     APPCODE: CONSTANTS.APPCODE,
-  }
+  };
 }
 
 /** When CRM `API_BASE_URL` is empty (same-origin prod), fall back to the browser origin for MF API proxies. */
 export function resolveReportsApiBaseUrl(configured: string): string {
-  const trimmed = configured?.trim() ?? ''
-  if (trimmed) return trimmed.replace(/\/$/, '')
-  if (typeof window !== 'undefined') {
-    return window.location.origin.replace(/\/$/, '')
+  const trimmed = configured?.trim() ?? "";
+  if (trimmed) return trimmed.replace(/\/$/, "");
+  if (typeof window !== "undefined") {
+    return window.location.origin.replace(/\/$/, "");
   }
-  return ''
+  return "";
 }
 
 /**
  * Reads CRM login session for the reports remote. Safe when `window` is missing (SSR): returns empty strings.
  */
 export function readReportsRemoteAuthProps(): ReportsRemoteAuthProps {
-  if (typeof window === 'undefined') {
-    return { username: '', token: '' }
-  }
-
-  const token = readAccessTokenString() ?? ''
-
-  let username = ''
-  try {
-    const raw = window.localStorage.getItem('userProfileData')
-    if (raw && raw !== 'undefined') {
-      const p = JSON.parse(raw) as Record<string, unknown>
-      username =
-        (typeof p.email === 'string' && p.email) ||
-        (typeof p.full_name === 'string' && p.full_name) ||
-        (typeof p.name === 'string' && p.name) ||
-        ''
-    }
-  } catch {
-    /* ignore */
-  }
-
-  return { username, token }
+  return { username: "", token: "" };
 }
 
 /**
  * Session fields for **`reports/ReportDetail`**: **`userToken`** (access token) and **`userRole`** (`role_profile`).
  */
 export function readReportsRemoteSessionForDetail(): {
-  username: string
-  token: string
-  userToken: string
-  userRole: string
+  username: string;
+  token: string;
+  userToken: string;
+  userRole: string;
 } {
-  const base = readReportsRemoteAuthProps()
-  if (typeof window === 'undefined') {
-    return { ...base, userToken: base.token, userRole: '' }
+  const base = readReportsRemoteAuthProps();
+  if (typeof window === "undefined") {
+    return { ...base, userToken: base.token, userRole: "" };
   }
   return {
     ...base,
     userToken: base.token,
     userRole: readRoleProfileFromStorage(),
-  }
+  };
 }

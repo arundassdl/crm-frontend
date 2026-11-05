@@ -1,0 +1,27 @@
+{
+  "checks": 21,
+  "passed": [
+    "Next image optimizer rejects inherited wildcard SSRF path",
+    "chromium: standalone launch renders secured users fixture",
+    "chromium: session cookie HttpOnly Secure host-only Lax",
+    "chromium: browser storage has no session or authentication token",
+    "chromium: launch ticket replay rejected",
+    "chromium: browser CSRF and foreign organization requests rejected",
+    "chromium: mobile secured users page renders",
+    "chromium: CTRL iframe renders with approved frame ancestors",
+    "chromium: global logout succeeds",
+    "chromium: copied pre-logout session refused by Central cutoff",
+    "chromium: harness never accessed a production origin",
+    "firefox: standalone launch renders secured users fixture",
+    "firefox: session cookie HttpOnly Secure host-only Lax",
+    "firefox: browser storage has no session or authentication token",
+    "firefox: launch ticket replay rejected",
+    "firefox: browser CSRF and foreign organization requests rejected",
+    "firefox: mobile secured users page renders",
+    "firefox: CTRL iframe renders with approved frame ancestors",
+    "firefox: global logout succeeds",
+    "firefox: copied pre-logout session refused by Central cutoff",
+    "firefox: harness never accessed a production origin"
+  ],
+  "limitations": "Local production build with .test proxy origins and redirect/CSP origin adaptation; fixture Central and browser-intercepted user data, no live Frappe or customer credentials."
+}

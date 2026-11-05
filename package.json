@@ -7,7 +7,6 @@
     "dev:store": "tailwindcss -c tailwind.store.config.ts -i ./src/app/store/css/style.css -o ./public/store.css --watch",
     "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
     "start": "next start",
-    "prod": "next export",
     "test": "jest",
     "lint:indent": "prettier --check '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
     "sitemap": "next-sitemap --config next-sitemap.config.js",
@@ -17,7 +16,9 @@
     "build:icons": "tsx src/assets/iconify-icons/bundle-icons-css.ts",
     "postinstall": "npm run build:icons",
     "build:admin:css": "tailwindcss -c tailwind.config.ts -i ./src/app/globals.css -o ./public/admin.css --minify",
-    "build:store:css": "tailwindcss -c tailwind.store.config.ts -i ./src/app/store/css/style.css -o ./public/store.css --minify"
+    "build:store:css": "tailwindcss -c tailwind.store.config.ts -i ./src/app/store/css/style.css -o ./public/store.css --minify",
+    "test:security": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit --incremental false"
   },
   "dependencies": {
     "@emotion/cache": "latest",

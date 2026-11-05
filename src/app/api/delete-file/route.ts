@@ -1,32 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { CONSTANTS } from "@/services/config/app-config";
-const ERP_API_BASE = CONSTANTS.API_BASE_URL;
+import { protectedHandler } from "@/lib/security";
+import { NextRequest, NextResponse } from "next/server";
+import { bffErrorResponse, frappeCall } from "@/lib/tenant-fetch";
 
-
-export async function POST(req: NextRequest) {
-  const { file } = await req.json()
-  const token = req.headers.get("Authorization");
-    console.log("fileDoc?.file_url",file?.file_url);
-    
-  if (!file?.file_url) {
-    return NextResponse.json({ error: 'fileUrl is required' }, { status: 400 })
+/** Delete an attached file (R55) via frappe.client.delete. */
+async function rawPOST(req: NextRequest) {
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "BAD_REQUEST", kind: "failed", message: "Invalid request." },
+      { status: 400 },
+    );
   }
-const response = await fetch(`${ERP_API_BASE}/api/resource/File/${file.name}`, {
-            method: "DELETE",
-            headers: {
-              Authorization: `${token}`,
-            },
-          });
-
-//   const response = await fetch(`${ERP_API_BASE}/api/method/frappe.core.doctype.file.file.delete_file`, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//        Authorization: `${token}` || '', // if using login session
-//     },
-//     body: JSON.stringify({ file_url: fileUrl }),
-//   })
-
-  const data = await response.json()
-  return NextResponse.json(data)
+  const file = body?.file;
+  if (!file?.name || typeof file.name !== "string") {
+    return NextResponse.json(
+      { error: "BAD_REQUEST", kind: "failed", message: "file is required" },
+      { status: 400 },
+    );
+  }
+  try {
+    await frappeCall(req, "frappe.client.delete", {
+      doctype: "File",
+      name: file.name,
+    });
+    return NextResponse.json({ message: "ok" });
+  } catch (err) {
+    return bffErrorResponse(err, "delete-file");
+  }
 }
+
+export const POST = protectedHandler(rawPOST);

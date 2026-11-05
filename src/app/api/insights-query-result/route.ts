@@ -1,84 +1,26 @@
-export const dynamic = 'force-dynamic'
-
-import { NextResponse } from 'next/server'
-
-import { CONSTANTS } from '@/services/config/app-config'
-import { normalizeFrappeAuthorizationValue } from '@/utils/frappe-authorization'
-
-const INSIGHTS_QUERY_RESULT_PATH =
-  '/api/method/report_addon.api.insights_query.get_insights_query_result'
-
-/**
- * Proxies `report_addon.api.insights_query.get_insights_query_result`.
- * POST body: `{ name: string, filters?: unknown[], runtime_filters?: Array<{ fieldname, operator, value, valueTo? }> }`
- * Auth: `Authorization: token <api_key>:<api_secret>` header.
- *
- * `runtime_filters` are dashboard runtime filters (from the widget's "Display Component
- * Filters" configuration). They are forwarded to the backend for this request only and are
- * never persisted into the Insights Query itself.
- */
-export async function POST(req: Request) {
+import { protectedHandler } from "@/lib/security";
+import { NextRequest, NextResponse } from "next/server";
+import { frappeCall, bffErrorResponse } from "@/lib/tenant-fetch";
+import { SecurityError, securityResponse } from "@/lib/security";
+async function rawPOST(req: NextRequest, context: any) {
   try {
-    const body = await req.json()
-    const authFromHeader = req.headers.get('authorization')?.trim() ?? ''
-    const { name, filters, runtime_filters } = body ?? {}
+    const args: any = await req.json();
+    delete args.username;
+    delete args.role_profile;
+    delete args.token;
 
-    const frappeAuth = authFromHeader ? normalizeFrappeAuthorizationValue(authFromHeader) : ''
-
-    if (!name || typeof name !== 'string') {
-      return NextResponse.json(
-        { error: 'Missing name (Insights Query code, e.g. QRY-0006)' },
-        { status: 400 }
-      )
-    }
-
-    const base = CONSTANTS.API_BASE_URL.replace(/\/$/, '')
-    if (!base) {
-      return NextResponse.json({ error: 'API_BASE_URL is not configured' }, { status: 400 })
-    }
-
-    const url = `${base}${INSIGHTS_QUERY_RESULT_PATH}`
-    const upstreamHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    }
-    if (frappeAuth) upstreamHeaders.Authorization = frappeAuth
-    if (CONSTANTS.APPCODE) upstreamHeaders['X-App-Code'] = CONSTANTS.APPCODE
-
-    const upstreamRes = await fetch(url, {
-      method: 'POST',
-      headers: upstreamHeaders,
-      body: JSON.stringify({
-        name,
-        ...(Array.isArray(filters) && filters.length > 0 ? { filters } : {}),
-        ...(Array.isArray(runtime_filters) && runtime_filters.length > 0 ? { runtime_filters } : {}),
-      }),
-    })
-
-    const contentType = upstreamRes.headers.get('content-type') ?? ''
-    let data: unknown
-    if (contentType.includes('application/json')) {
-      data = await upstreamRes.json().catch(() => ({}))
-    } else {
-      const text = await upstreamRes.text()
-      try {
-        data = JSON.parse(text) as unknown
-      } catch {
-        data = { error: 'Frappe request failed', body: text }
-      }
-    }
-
-    if (!upstreamRes.ok) {
-      return NextResponse.json(
-        typeof data === 'object' && data !== null ? data : { error: 'Frappe request failed' },
-        { status: upstreamRes.status }
-      )
-    }
-
-    return NextResponse.json(data)
-  } catch (error: unknown) {
-    const err = error as { message?: string }
-    console.error('insights-query-result proxy error', err?.message ?? error)
-    return NextResponse.json({ error: 'Failed to load insights query result' }, { status: 500 })
+    const data = await frappeCall(
+      req,
+      "report_addon.api.insights_query.get_insights_query_result",
+      args,
+      "POST",
+    );
+    return NextResponse.json(data.message ?? data);
+  } catch (error) {
+    return error instanceof SecurityError
+      ? securityResponse(error)
+      : bffErrorResponse(error);
   }
 }
+
+export const POST = protectedHandler(rawPOST);

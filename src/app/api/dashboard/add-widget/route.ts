@@ -1,20 +1,15 @@
-import { NextResponse } from 'next/server'
-
-import { getDashboardFromStore, saveDashboardToStore } from '@/modules/dashboard-builder/api/serverStore'
-import type { AddWidgetPayload } from '@/modules/dashboard-builder/types'
-
-export async function POST(request: Request) {
-  const body = (await request.json()) as AddWidgetPayload
-  const existing = getDashboardFromStore(body.dashboardId)
-
-  const saved = saveDashboardToStore({
-    ...existing,
-    widgets: [...existing.widgets, body.widget],
-    layouts: {
-      ...existing.layouts,
-      lg: [...existing.layouts.lg, body.layoutItem],
+import { protectedHandler } from "@/lib/security";
+import { NextResponse } from "next/server";
+const unavailable = async () =>
+  NextResponse.json(
+    {
+      error: "FEATURE_BACKEND_NOT_VERIFIED",
+      message:
+        "This feature requires a verified organization backend capability.",
     },
-  })
+    { status: 501 },
+  );
 
-  return NextResponse.json(saved)
-}
+export const GET = protectedHandler(unavailable);
+export const POST = protectedHandler(unavailable);
+export const DELETE = protectedHandler(unavailable);

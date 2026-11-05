@@ -1,47 +1,47 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { CONSTANTS } from "@/services/config/app-config";
-import axios from 'axios';
+import { protectedHandler } from "@/lib/security";
+import { NextRequest, NextResponse } from "next/server";
+import { bffErrorResponse, frappeCall } from "@/lib/tenant-fetch";
+import { isValidDoctype } from "@/lib/frappe-list";
 
-export async function POST(req: NextRequest) {
+/**
+ * Link-field search (R55) via frappe.desk.search.search_link.
+ * Response: { data: [{ value, label?, description? }] }.
+ */
+async function rawPOST(req: NextRequest) {
+  let body: any;
   try {
-    const { txt, module, reference_doctype, filters, search_fields, display_fields } = await req.json();
-    const token = req.headers.get("Authorization");
-
-    const fetchUrl = `${CONSTANTS.API_BASE_URL}/api/method/sdl_metadata.api.lookup.search`;
-    console.log("fetchUrl", fetchUrl);
-    const body = {
-      doctype: module,
-      search_text: txt,
-      search_fields: Array.isArray(search_fields) ? search_fields.join(',') : search_fields || "",
-      display_fields: Array.isArray(display_fields) ? display_fields.join(',') : display_fields || "",
-      filters: filters || {},
-      page: 1,
-      page_length: 20
-    };
-    console.log("body", body);
-    console.log("token", token);
-
-    const response = await fetch(fetchUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `${token}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Lookup API error: ${response.status} ${response.statusText}`, errorText);
-      return NextResponse.json({ error: `Backend API error: ${response.status}`, details: errorText }, { status: response.status });
-    }
-
-    const data = await response.json();
-    console.log("Lookup API Response Data:", data);
-
-    return NextResponse.json({ data: data?.message?.results || [] });
-  } catch (error: any) {
-    console.error('Error in API route:', error);
-    return NextResponse.json({ error: 'Failed to fetch data', details: error.message }, { status: 500 });
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "BAD_REQUEST", kind: "failed", message: "Invalid request." },
+      { status: 400 },
+    );
+  }
+  const { txt, module, reference_doctype } = body || {};
+  if (!isValidDoctype(module)) {
+    return NextResponse.json(
+      { error: "BAD_REQUEST", kind: "failed", message: "Missing doctype" },
+      { status: 400 },
+    );
+  }
+  const args: Record<string, unknown> = {
+    doctype: module,
+    txt: typeof txt === "string" ? txt : "",
+    page_length: 20,
+  };
+  if (isValidDoctype(reference_doctype))
+    args.reference_doctype = reference_doctype;
+  try {
+    const res = await frappeCall(req, "frappe.desk.search.search_link", args);
+    const rows = Array.isArray(res?.message)
+      ? res.message
+      : Array.isArray(res?.results)
+        ? res.results
+        : [];
+    return NextResponse.json({ data: rows });
+  } catch (err) {
+    return bffErrorResponse(err, "search-link");
   }
 }
+
+export const POST = protectedHandler(rawPOST);

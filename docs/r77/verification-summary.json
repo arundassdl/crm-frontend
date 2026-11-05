@@ -1,0 +1,14 @@
+{
+  "reference_tests": 150,
+  "salesbond_security_tests": 16,
+  "backend_boundary_tests": 19,
+  "central_boundary_tests": 20,
+  "redis_integration_tests": 1,
+  "fixture_browser_checks": 21,
+  "production_build": "yUfw3aZN2BCT7HWwc4WH",
+  "high_confidence_secret_scan_hits": 0,
+  "new_generated_artifact_files": 0,
+  "full_crm_parity": false,
+  "production_ready": false,
+  "deployment": "HOLD"
+}

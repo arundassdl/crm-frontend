@@ -1,24 +1,44 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { CONSTANTS } from "@/services/config/app-config";
-const ERP_API_BASE = CONSTANTS.API_BASE_URL;
+import { protectedHandler } from "@/lib/security";
+import { NextRequest, NextResponse } from "next/server";
+import { bffErrorResponse, frappeCall } from "@/lib/tenant-fetch";
+import { isValidDoctype } from "@/lib/frappe-list";
 
-export async function PUT(req: NextRequest) {
-  const { doctype, docname, field, imagePath } = await req.json();
-  const token = req.headers.get("Authorization");
-
-  const res = await fetch(`${ERP_API_BASE}/api/resource/${doctype}/${docname}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `${token}`,
-    },
-    body: JSON.stringify({ [field]: imagePath }),
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    return NextResponse.json({ error: data.message || 'Failed to update' }, { status: 500 });
+/** Set an image field on a record (R55) via frappe.client.set_value. */
+async function rawPUT(req: NextRequest) {
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "BAD_REQUEST", kind: "failed", message: "Invalid request." },
+      { status: 400 },
+    );
   }
-
-  return NextResponse.json({ message: 'Primary image set successfully', data });
+  const { doctype, docname, field, imagePath } = body || {};
+  if (
+    !isValidDoctype(doctype) ||
+    !docname ||
+    !/^[A-Za-z0-9_]+$/.test(String(field || ""))
+  ) {
+    return NextResponse.json(
+      { error: "BAD_REQUEST", kind: "failed", message: "Missing fields" },
+      { status: 400 },
+    );
+  }
+  try {
+    const res = await frappeCall(req, "frappe.client.set_value", {
+      doctype,
+      name: docname,
+      fieldname: field,
+      value: imagePath,
+    });
+    return NextResponse.json({
+      message: "Primary image set successfully",
+      data: res?.message ?? null,
+    });
+  } catch (err) {
+    return bffErrorResponse(err, "set-primary");
+  }
 }
+
+export const PUT = protectedHandler(rawPUT);

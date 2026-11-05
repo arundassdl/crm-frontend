@@ -12,20 +12,23 @@
  * ```
  * Override origins with `NEXT_PUBLIC_ANALYTICS_APP_URL`, `NEXT_PUBLIC_REPORTS_APP_URL`, or full entry URLs.
  */
-const path = require('path')
+const path = require("path");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    optimizePackageImports: ['@mui/material', '@mui/icons-material', '@mui/lab'],
+    instrumentationHook: true,
+    optimizePackageImports: [
+      "@mui/material",
+      "@mui/icons-material",
+      "@mui/lab",
+    ],
   },
   env: {
     NEXT_PUBLIC_ANALYTICS_MF_BUILD_BUST:
-      process.env.NEXT_PUBLIC_ANALYTICS_MF_CACHE_BUST ||
-      String(Date.now()),
+      process.env.NEXT_PUBLIC_ANALYTICS_MF_CACHE_BUST || String(Date.now()),
     NEXT_PUBLIC_REPORTS_MF_BUILD_BUST:
-      process.env.NEXT_PUBLIC_REPORTS_MF_CACHE_BUST ||
-      String(Date.now()),
+      process.env.NEXT_PUBLIC_REPORTS_MF_CACHE_BUST || String(Date.now()),
   },
   webpack: (config, { dev, isServer }) => {
     /**
@@ -34,11 +37,11 @@ const nextConfig = {
     if (!isServer) {
       config.resolve.alias = {
         ...config.resolve.alias,
-        'next/router': path.resolve(
+        "next/router": path.resolve(
           __dirname,
-          'src/lib/mf/shims/next-router-app-shim.tsx'
+          "src/lib/mf/shims/next-router-app-shim.tsx",
         ),
-      }
+      };
     }
 
     // if (!dev && !isServer) {
@@ -47,14 +50,14 @@ const nextConfig = {
     //     maxSize: 244000,
     //   }
     // }
-    return config
+    return config;
   },
 
   compiler: {
     removeConsole:
-      process.env.NODE_ENV === 'production'
+      process.env.NODE_ENV === "production"
         ? {
-            exclude: ['error'],
+            exclude: ["error"],
           }
         : false,
   },
@@ -70,77 +73,79 @@ const nextConfig = {
   images: {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    formats: ['image/avif', 'image/webp'],
-    remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: '*',
-        port: '8012',
-        pathname: '/**',
-      },
-    ],
+    formats: ["image/avif", "image/webp"],
+    remotePatterns: [],
   },
 
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value:
+              "frame-ancestors 'self' https://ctrl.evoq.app; connect-src 'self'; base-uri 'self'; form-action 'self'",
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "no-store, private" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       {
-        source: '/listing',
-        destination: '/reports',
+        source: "/listing",
+        destination: "/reports",
         permanent: false,
       },
       /** Legacy reports-app paths → CRM canonical route (keep in sync with `REPORTS_DETAIL_HREF_PREFIX` in `src/lib/reports/reportRoutes.ts`). */
       {
-        source: '/details/:name',
-        destination: '/reports/details/:name',
+        source: "/details/:name",
+        destination: "/reports/details/:name",
         permanent: false,
       },
       /** Standalone reports-app edit path → CRM canonical edit route. */
       {
-        source: '/edit/:code',
-        destination: '/reports/edit/:code',
+        source: "/edit/:code",
+        destination: "/reports/edit/:code",
         permanent: false,
       },
       {
-        source: '/analytics/analytics/:path*',
-        destination: '/analytics/:path*',
+        source: "/analytics/analytics/:path*",
+        destination: "/analytics/:path*",
         permanent: false,
       },
       {
-        source: '/dashboard',
-        destination: '/analytics/dashboard',
+        source: "/dashboard",
+        destination: "/analytics/dashboard",
         permanent: false,
       },
       {
-        source: '/dashboard/create',
-        destination: '/analytics/dashboard/create',
+        source: "/dashboard/create",
+        destination: "/analytics/dashboard/create",
         permanent: false,
       },
-    ]
+    ];
   },
 
   /**
-   * Remote MF chunks and API routes are sometimes resolved against the CRM origin
+   * Organization aliases resolve locally; no protected API is rewritten to an external reports host.
+   * Historical remote MF chunks and API routes were sometimes resolved against the CRM origin
    * (`/reports/_next/…`, `/reports/api/…`). Proxy those to the reports app
    * (`NEXT_PUBLIC_REPORTS_APP_URL`, default dev `http://localhost:3014/reports`).
    */
   async rewrites() {
-    const reportsBase = (
-      process.env.NEXT_PUBLIC_REPORTS_APP_URL ||
-      (process.env.NODE_ENV === 'production'
-        ? 'https://devtest.socialdnalabs.com/reports'
-        : 'http://localhost:3014/reports')
-    ).replace(/\/$/, '')
     return [
       {
-        source: '/reports/_next/:path*',
-        destination: `${reportsBase}/_next/:path*`,
+        source:
+          "/org/:orgid/:module(leads|deals|contacts|accounts|tasks|user|roles|permission|settings|setup|reports|report|dashboard-builder|integration-unavailable)/:path*",
+        destination: "/:module/:path*",
       },
-      {
-        source: '/reports/api/:path*',
-        destination: `${reportsBase}/api/:path*`,
-      },
-    ]
+    ];
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
