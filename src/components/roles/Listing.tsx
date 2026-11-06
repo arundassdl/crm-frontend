@@ -1,4 +1,3 @@
-import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage'
 import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   Box,
@@ -12,9 +11,6 @@ import {
 } from "@mui/material";
 import { ListBullets, Tree } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import {
-  fetchRawDataGridListing,
-} from "@/services/api/common-erpnext-api/listing-api-get";
 import AddEditRoleDrawer from "@/components/roles/createrole";
 import {
   deleteClient,
@@ -27,7 +23,7 @@ import { RootState } from "@/store/store";
 import TreeviewBoard from "@/components/Common/TreeViewBoard";
 import RoleTreeView from "@/components/roles/Treeview";
 import RolesSettingsListView from "@/components/roles/RolesSettingsListView";
-import { delete_role } from "@/services/api/roles/roles-api";
+import { delete_role, getRolesListDatagrid } from "@/services/api/roles/roles-api";
 
 interface RoleListingProps {
   link_name?: string
@@ -44,12 +40,6 @@ const RoleListing: React.FC<RoleListingProps> = ({
   const module = "SDL Role";
   const module_name = "Roles";
   const router = useRouter();
-  const [userToken, setUserToken] = useState<any>(() => {
-    const initialValue = JSON.parse(
-      readAccessTokenDataRaw()
-    );
-    return initialValue || "";
-  });
   const [operation, setOperation] = useState("");
   const [open, setOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>([]);
@@ -98,7 +88,7 @@ const RoleListing: React.FC<RoleListingProps> = ({
         name: id, // or role name depending on your data structure
       };
 
-      const deleteResponse = await delete_role(request, userToken?.access_token);
+      const deleteResponse = await delete_role(request);
 
       if (deleteResponse?.msg === "success") {
         showToast("Role deleted successfully", "success");
@@ -153,24 +143,7 @@ const RoleListing: React.FC<RoleListingProps> = ({
   // const include_address = "True";
   const wherecondition =
     " AND `tabSDL Role`.role_name != 'Super Admin' ";
-  const fetchDataWrapper = (fetchFunction, params, token) => {
-    /* fetchRawDataGridListing: … relatedDocs, include_contact, include_address,
-       linkedDoctypes, Joinquery, wherecondition, role_profile, username */
-    return fetchFunction(
-      params,
-      token,
-      colFields,
-      module,
-      [],
-      "",
-      "",
-      [],
-      "",
-      wherecondition,
-      userToken?.role_profile,
-      userToken?.username
-    );
-  };
+  const fetchDataWrapper = (_fetchFunction, params, _token) => getRolesListDatagrid(params);
 
   const listfields = [];
 
@@ -265,7 +238,6 @@ const RoleListing: React.FC<RoleListingProps> = ({
               <RolesSettingsListView
                 refreshKey={refreshKey}
                 onSelectRole={handleSelectRoleFromSettings}
-                userToken={userToken}
                 settingsDetailKey={settingsDetailKey}
               />
             </Suspense>
@@ -297,7 +269,7 @@ const RoleListing: React.FC<RoleListingProps> = ({
           colFields={colFields}
           columnDefinitions={columnsConfig.roles}
           fetchDataFunction={(p, t, q) =>
-            fetchDataWrapper(fetchRawDataGridListing, p, t)
+            fetchDataWrapper(getRolesListDatagrid, p, t)
           }
           refreshKey={refreshKey}
           multipleViews={true}

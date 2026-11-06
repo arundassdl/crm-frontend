@@ -1,372 +1,76 @@
-import axios from 'axios';
-import { CONSTANTS } from '../../config/app-config';
-import { client } from '../general_apis/cookie-instance-api';
-import { API_CONFIG } from '../../config/api-config';
-// import { URLSearchParams } from "url"
-import { useSearchParams } from 'next/navigation'
+/** Signed-session Role administration client. Browser credentials are never accepted. */
 
-export const getRolesListDatagrid = async (query: any, token: any) => {
-  let response: any;
-  const version = CONSTANTS.VERSION;
-  const method = 'get_roles_lists';
-  const entity = 'roles';
-  console.log(query, 'body');
-  const params = `?version=${version}&method=${method}&entity=${entity}`;
+async function request(view: string, init?: RequestInit, query: Record<string, unknown> = {}) {
+  const params = new URLSearchParams({ view });
+  for (const [key, value] of Object.entries(query))
+    if (value !== undefined && value !== null && value !== "") params.set(key, String(value));
+  const response = await fetch(`/api/roles?${params}`, {
+    credentials: "same-origin",
+    ...init,
+    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.message || "Role operation failed");
+  return data;
+}
 
+function formBody(input: any): Record<string, unknown> {
+  const raw = input instanceof FormData
+    ? Object.fromEntries(input.entries())
+    : input && typeof input === "object" ? { ...input } : {};
+  if (raw.data_share === undefined && raw.share_data_with_peers !== undefined)
+    raw.data_share = raw.share_data_with_peers;
+  const allowed = ["name", "role_name", "role_description", "permission", "reports_to", "data_share", "disabled"];
+  return Object.fromEntries(allowed.filter(key => raw[key] !== undefined).map(key => [key, raw[key]]));
+}
 
-  let page_no = 0;
-  let limit = 20;
-  page_no = query?.page;
-  page_no = (page_no != undefined) ? page_no : 1;
-  limit = (query?.rowsPerPage) ? query?.rowsPerPage : query?.limit;
-
-  let q = query?.q;
-
-  let searchparams = (q != '' && q != null) ? `&q=${q}` : ''
-  let filterQuery = ""
-  if (query.items?.length > 0) {
-    filterQuery = query.items
-      .map(item => `field=${item.field}&value=${item.value}&operator=${item.operator}`)
-      .join('&');
-  }
-  let sortParams = "";
-  if (query?.sortModel) {
-    const sortQuery = query.sortModel.map(item => `${item.field}=${item.sort}`)
-      .join('&');
-    if (sortQuery != '') {
-      sortParams = `&sort=[${sortQuery}]`
-    }
-  }
-  console.log('token before');
-
-  const config = {
-    headers: {
-      Authorization: token,
-    },
+export const getRolesListDatagrid = async (query: any, _token?: unknown) => {
+  const page = Math.max(0, Number(query?.page ?? 0));
+  const pageSize = Math.min(100, Math.max(1, Number(query?.rowsPerPage ?? query?.limit ?? 20)));
+  const result = await request("list", undefined, {
+    search: query?.q || query?.search || "",
+    start: page * pageSize,
+    page_length: pageSize,
+  });
+  return {
+    data: result.records || [], totalCount: result.total_count || 0,
+    list: result.records || [], count: result.total_count || 0,
   };
-  console.log('tokentoken', token);
-
-  const url = `${CONSTANTS.API_BASE_URL}${CONSTANTS.API_MANDATE_PARAMS}?version=${version}&method=${method}&entity=${entity}&page_no=${page_no}&limit=${limit}&${filterQuery}${sortParams}${searchparams}`;
-
-  //    const val= JSON.stringify(body)
-
-  await axios
-    .get(`${url}`, { ...config, timeout: 5000 })
-    .then((res) => {
-      console.log('filters check in roles list api res successful', res);
-      response = res?.data?.message?.data;
-    })
-    .catch((err) => {
-      if (err.code === 'ECONNABORTED') {
-        response = 'Request timed out';
-      } else if (err.code === 'ERR_BAD_REQUEST') {
-        response = 'Bad Request';
-      } else if (err.code === 'ERR_INVALID_URL') {
-        response = 'Invalid URL';
-      } else {
-        response = err;
-      }
-    });
-  return response;
 };
 
-export const fetchpermissionmodule = async (token: any) => {
-  let response: any;
-  const version = CONSTANTS.VERSION;
-  const method = 'get_all_modules_lists';
-  const entity = 'roles';
-  const appcode = CONSTANTS.APPCODE;
+export const fetchpermissionmodule = async (_token?: unknown) => request("modules");
+export const get_roleby_name = async (input: any, _token?: unknown) =>
+  request("detail", undefined, { name: input?.name || input?.rolename });
+export const get_full_roles_tree = async () => request("tree");
+export const get_full_roles_withouttree = async (_roleName?: unknown) =>
+  request("tree", undefined, { flat: 1 });
+export const get_role_timeline = async (name: string) => request("timeline", undefined, { name });
 
-  const config = {
-    headers: {
-      Authorization: token,
-    },
-  };
-
-  const url = `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}?version=${version}&method=${method}&entity=${entity}&appname=${appcode}`;
-  console.log('fetchpermission', url);
-  await axios
-    .get(`${url}`, { ...config, timeout: 5000 })
-    .then((res) => {
-      console.log('filters check in permission module api res successful', res);
-      response = res?.data?.message?.data;
-    })
-    .catch((err) => {
-      if (err.code === 'ECONNABORTED') {
-        response = 'Request timed out';
-      } else if (err.code === 'ERR_BAD_REQUEST') {
-        response = 'Bad Request';
-      } else if (err.code === 'ERR_INVALID_URL') {
-        response = 'Invalid URL';
-      } else {
-        response = err;
-      }
-    });
-  return response;
-};
-
-
-export const submit_addroles = async (request: any, token: any) => {
-  let response: any;
-  const version = CONSTANTS.VERSION;
-  const method = 'add_roles';
-  const entity = 'roles';
-  const appcode = CONSTANTS.APPCODE;
-  console.log(request, 'body');
-  const params = `?version=${version}&method=${method}&entity=${entity}&app_code=${appcode}`;
-  let url: any
-  console.log('request', request);
-
-  url = `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}${params}`
-
-  const config = {
-    headers: {
-      Authorization: token,
-      Accept: 'application/json',
-    },
-  };
-  try {
-    const res = await axios.post(url, request, {
-      ...config,
-    });
-
-    response = res?.data?.message;
-    console.log('Submit Roles:', response);
-  } catch (error: any) {
-    console.error('Error uploading images:', error);
-    if (error.code === 'ECONNABORTED') {
-      response = 'Request timed out';
-    } else if (error.code === 'ERR_BAD_REQUEST') {
-      response = 'Bad Request';
-    } else if (error.code === 'ERR_INVALID_URL') {
-      response = 'Invalid URL';
-    } else {
-      response = error;
-    }
-  }
-  return response;
-};
-
-export const get_roleby_name = async (request: any, token: any) => {
-  let response: any;
-  const version = CONSTANTS.VERSION;
-  const method = 'get_roleby_name';
-  const entity = 'roles';
-  const appcode = CONSTANTS.APPCODE;
-
-  const config = {
-    headers: {
-      Authorization: token,
-    },
-  };
-
-  const url = `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}?version=${version}&method=${method}&entity=${entity}&appname=${appcode}&role_name=${request.rolename}`;
-  console.log('fetchpermission', url);
-  await axios
-    .get(`${url}`, { ...config, timeout: 5000 })
-    .then((res) => {
-      console.log('filters check in permission module api res successful', res);
-      response = res?.data?.message?.data;
-    })
-    .catch((err) => {
-      if (err.code === 'ECONNABORTED') {
-        response = 'Request timed out';
-      } else if (err.code === 'ERR_BAD_REQUEST') {
-        response = 'Bad Request';
-      } else if (err.code === 'ERR_INVALID_URL') {
-        response = 'Invalid URL';
-      } else {
-        response = err;
-      }
-    });
-  return response;
-};
-
-
-export const submit_editroles = async (request: any, token: any) => {
-  let response: any;
-  const version = CONSTANTS.VERSION;
-  const method = 'edit_roles';
-  const entity = 'roles';
-  const appcode = CONSTANTS.APPCODE;
-  console.log(request, 'body');
-  const params = `?version=${version}&method=${method}&entity=${entity}&app_code=${appcode}`;
-  let url: any
-  console.log('request', request);
-
-  url = `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}${params}`
-
-  const config = {
-    headers: {
-      Authorization: token,
-      Accept: 'application/json',
-    },
-  };
-  try {
-    const res = await axios.post(url, request, {
-      ...config,
-    });
-
-    response = res?.data?.message;
-    console.log('Submit Roles:', response);
-  } catch (error: any) {
-    console.error('Error uploading images:', error);
-    if (error.code === 'ECONNABORTED') {
-      response = 'Request timed out';
-    } else if (error.code === 'ERR_BAD_REQUEST') {
-      response = 'Bad Request';
-    } else if (error.code === 'ERR_INVALID_URL') {
-      response = 'Invalid URL';
-    } else {
-      response = error;
-    }
-  }
-  return response;
-};
-
-
-export const get_rolesname_list = async (token: any) => {
-  let response: any;
-  const version = CONSTANTS.VERSION;
-  const stateMethod = 'get_rolename_lists';
-  const entity = 'roles';
-  const appcode = CONSTANTS.APPCODE;
-  const stateParams = `?version=${version}&method=${stateMethod}&entity=${entity}&appname=${appcode}`;
-  const config = {
-    headers: {
-      Authorization: token,
-    },
-  };
-  await axios
-    .get(
-      `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}${stateParams}`,
-      config
-    )
-    .then((res: any) => {
-      console.log('get_rolesname', res);
-      response = res?.data?.message?.data;
-    })
-    .catch((err: any) => {
-      console.log('err', err);
-    });
-  return response;
+export const get_rolesname_list = async (_token?: unknown) => {
+  const rows = await request("tree", undefined, { flat: 1 });
+  return Array.isArray(rows)
+    ? rows.map((row: any) => ({ value: row.name, label: row.role_name || row.name, ...row }))
+    : [];
 };
 
 export const get_array_from_roledoctype = async () => {
-  let response: any;
-  const version = CONSTANTS.VERSION;
-  const stateMethod = 'get_array_from_roledoctype';
-  const entity = 'roles';
-  const appcode = CONSTANTS.APPCODE;
-  const stateParams = `?version=${version}&method=${stateMethod}&entity=${entity}&app_code=${appcode}`;
-
-  await axios
-    .get(
-      `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}${stateParams}`, {
-      timeout: 5000,
-    })
-    .then((res: any) => {
-      console.log('get_rolesname', res);
-      response = res?.data?.message?.data;
-      console.log('get_rolesname response', response);
-      localStorage.setItem('menuListData', JSON.stringify(response));
-      document.cookie = "menuListData=" + JSON.stringify(response);
-    })
-    .catch((err: any) => {
-      console.log('err', err);
-    });
-  return response;
-};
-
-export const get_full_roles_tree = async () => {
-  let response: any;
-  const version = CONSTANTS.VERSION;
-  const stateMethod = 'get_full_roles_tree';
-  const entity = 'roles';
-  const appcode = CONSTANTS.APPCODE;
-  const stateParams = `?version=${version}&method=${stateMethod}&entity=${entity}&appname=${appcode}`;
-
-  await axios
-    .get(
-      `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}${stateParams}`, {
-      timeout: 5000,
-    })
-    .then((res: any) => {
-      console.log('get_full_rolesname', res);
-      response = res?.data?.message?.data;
-    })
-    .catch((err: any) => {
-      console.log('err', err);
-    });
-  return response;
-};
-
-//get_full_roles_withouttree
-
-export const get_full_roles_withouttree = async (role_name: any) => {
-  let response: any;
-  const version = CONSTANTS.VERSION;
-  const stateMethod = 'get_full_roles_withouttree';
-  const entity = 'roles';
-  const appcode = CONSTANTS.APPCODE;
-  const stateParams = `?version=${version}&method=${stateMethod}&entity=${entity}&app_code=${appcode}&role_name=${role_name}`;
-
-  await axios
-    .get(
-      `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}${stateParams}`, {
-      timeout: 5000,
-    })
-    .then((res: any) => {
-      console.log('get_full_rolesname', res);
-      response = res?.data?.message?.data;
-    })
-    .catch((err: any) => {
-      console.log('err', err);
-    });
-  return response;
-};
-
-export const delete_role = async (request: any, token: any) => {
-  let response: any;
-  const version = CONSTANTS.VERSION;
-  const method = 'delete_roles';
-  const entity = 'roles';
-  const appcode = CONSTANTS.APPCODE;
-
-  console.log('Delete role request:', request);
-  const params = `?version=${version}&method=${method}&entity=${entity}&app_code=${appcode}`;
-
-  const url = `${CONSTANTS.API_BASE_URL}/${CONSTANTS.API_MANDATE_PARAMS}${params}`;
-
-  const config = {
-    headers: {
-      Authorization: token,
-      Accept: 'application/json',
-      'Content-Type': 'multipart/form-data',
-    },
-  };
-
-  try {
-    const res = await axios.post(url, request, {
-      ...config,
-      timeout: 5000,
-    });
-
-    response = res?.data?.message;
-    console.log('Delete Role Response:', response);
-  } catch (error: any) {
-    console.error('Error deleting role:', error);
-    if (error.code === 'ECONNABORTED') {
-      response = 'Request timed out';
-    } else if (error.code === 'ERR_BAD_REQUEST') {
-      response = 'Bad Request';
-    } else if (error.code === 'ERR_INVALID_URL') {
-      response = 'Invalid URL';
-    } else {
-      response = error;
-    }
+  const result = await request("menu");
+  if (typeof window !== "undefined") {
+    localStorage.setItem("menuListData", JSON.stringify(result));
+    document.cookie = `menuListData=${encodeURIComponent(JSON.stringify(result))}; Path=/; SameSite=Lax`;
   }
-  return response;
+  return result;
 };
 
+async function mutate(method: "POST" | "PUT" | "DELETE", input: any) {
+  try {
+    const data = await request("list", { method, body: JSON.stringify(formBody(input)) });
+    return { msg: "success", data };
+  } catch (error) {
+    return { msg: "error", error: error instanceof Error ? error.message : "Role operation failed" };
+  }
+}
 
+export const submit_addroles = async (input: any, _token?: unknown) => mutate("POST", input);
+export const submit_editroles = async (input: any, _token?: unknown) => mutate("PUT", input);
+export const delete_role = async (input: any, _token?: unknown) => mutate("DELETE", input);

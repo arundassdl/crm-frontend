@@ -1,4 +1,3 @@
-import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage'
 import React, { useState, useEffect } from "react";
 import { Button, Tooltip, CircularProgress } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
@@ -87,14 +86,6 @@ const PermissionMatrix: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"matrix" | "summary">("matrix");
 
-  const [userToken] = useState<any>(() => {
-    try {
-      return JSON.parse(readAccessTokenDataRaw()) || "";
-    } catch {
-      return "";
-    }
-  });
-
   // ── Core permission update logic (preserved from original) ──
   const updatePermission = (module: string, role: string, action: keyof Permission, value: boolean) => {
     setPermissions(prev => {
@@ -163,15 +154,15 @@ const PermissionMatrix: React.FC = () => {
         setLoading(true);
         setError(null);
         const [rolesResponse, modulesResponse, permissionsResponse] = await Promise.all([
-          getAllRoles(userToken?.access_token).catch((err: any) => {
+          getAllRoles().catch((err: any) => {
             console.error('Error loading roles:', err);
             throw new Error(`Failed to load roles: ${err.message || 'Unknown error'}`);
           }),
-          getAllModules(userToken?.access_token).catch((err: any) => {
+          getAllModules().catch((err: any) => {
             console.error('Error loading modules:', err);
             throw new Error(`Failed to load modules: ${err.message || 'Unknown error'}`);
           }),
-          getPermissionsMatrix(userToken?.access_token).catch((err: any) => {
+          getPermissionsMatrix().catch((err: any) => {
             console.error('Error loading permissions:', err);
             throw new Error(`Failed to load permissions: ${err.message || 'Unknown error'}`);
           }),
@@ -203,7 +194,7 @@ const PermissionMatrix: React.FC = () => {
     try {
       setSaving(true);
       setError(null);
-      const response = await savePermissionsMatrix(userToken?.access_token, permissions);
+      const response = await savePermissionsMatrix(undefined, permissions);
       if (response && response.message && response.message.msg === 'success') {
         showToast('Permissions saved successfully', 'success');
         setSaved(true);

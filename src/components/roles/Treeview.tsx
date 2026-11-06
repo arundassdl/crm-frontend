@@ -1,6 +1,4 @@
 "use client";
-import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage'
-
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -66,13 +64,6 @@ export default function RoleTreeView({
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [treeRoleData, setTreeRoleData] = useState<any>([]);
   const [err, setErr] = useState<boolean>(false);
-
-  const [userToken, setUserToken] = useState<any>(() => {
-    const initialValue = JSON.parse(
-      readAccessTokenDataRaw()
-    );
-    return initialValue || "";
-  });
 
   const [roles, setRoles] = useState<Role[]>([]);
 

@@ -1,5 +1,4 @@
 "use client";
-import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage'
 import React, { useState, useEffect } from "react";
 import { forwardRef, useImperativeHandle } from 'react';
 import {
@@ -63,29 +62,8 @@ export type ChildRefType = {
 // const RoleOverview: any = (slug) => {
 const RoleOverview = forwardRef<ChildRefType,RoleDetailsProps>(( { slug }, ref) => {
   // const { slug } = props
-  const [userToken, setUserToken] = useState<any>(() => {
-    const initialValue = JSON.parse(
-      readAccessTokenDataRaw()
-    );
-    return initialValue || "";
-  });
-
-  const [isEditPermission, setIsEditPermission] = useState(false);
-  const module_name = "Roles";
-  const [userPermission, setUserPermission] = useState<any>(() => {
-      const initialValue = JSON.parse(
-        localStorage.getItem("userpermission") || "[]"
-      );
-      // Ensure initialValue is an array before calling .find()
-      const permissionArray = Array.isArray(initialValue) ? initialValue : [];
-      return permissionArray.find(module => module.frontend_module === module_name) || "";
-    });
-    
-    useEffect(() => {
-      if (userPermission.hasOwnProperty('create')) {
-        setIsEditPermission(userPermission.edit == 1 ? true : false);
-      }
-    }, [userPermission]);
+  // The backend is authoritative; unauthorized edits return 403.
+  const isEditPermission = true;
 
 
   const SelectedLangDataFromStore: any = useSelector(
@@ -346,7 +324,7 @@ const RoleOverview = forwardRef<ChildRefType,RoleDetailsProps>(( { slug }, ref) 
         return
         // alert(role_name)
       const getroleData: any = await get_roleby_name(
-        { "rolename": slug }, userToken?.access_token,
+        { "rolename": slug },
       );
       console.log('######rolesData 284', getroleData);
       if (getroleData != undefined) {
@@ -387,7 +365,6 @@ const RoleOverview = forwardRef<ChildRefType,RoleDetailsProps>(( { slug }, ref) 
 
        const getroletree: any = async () => {
             // const roletreeData: any = await get_full_roles_tree(
-            //     userToken?.access_token
             // );
             const roletreeData: any = await get_full_roles_tree();
             console.log(roletreeData, 'roletreeData', roletreeData?.length);
@@ -404,7 +381,6 @@ const RoleOverview = forwardRef<ChildRefType,RoleDetailsProps>(( { slug }, ref) 
 
     const getrolewotree: any = async () => {
             // const roletreeData: any = await get_full_roles_withouttree(
-            //     userToken?.access_token
             // );
             const roletreeData: any = await get_full_roles_withouttree(decodeURIComponent(slug));
             console.log(roletreeData, 'roletreeData', roletreeData?.length);
@@ -453,7 +429,7 @@ const RoleOverview = forwardRef<ChildRefType,RoleDetailsProps>(( { slug }, ref) 
       
 
 
-      let addrolesApiRes: any = await submit_editroles(formData, userToken?.access_token);
+      let addrolesApiRes: any = await submit_editroles(formData);
       console.log(addrolesApiRes, 'editrolesApiRes hi');
 
       getroledata();

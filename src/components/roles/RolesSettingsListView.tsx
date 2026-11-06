@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Checkbox, CircularProgress, InputBase, TablePagination } from '@mui/material'
 import { MagnifyingGlass } from '@phosphor-icons/react'
-import { fetchRawDataGridListing } from '@/services/api/common-erpnext-api/listing-api-get'
+import { getRolesListDatagrid } from '@/services/api/roles/roles-api'
 import type { GridFilterModel, GridSortModel } from '@mui/x-data-grid'
 
 const ROLE_DOCTYPE = 'SDL Role'
@@ -38,14 +38,12 @@ function rowDetailKey(row: Record<string, unknown>): string {
 type RolesSettingsListViewProps = {
   refreshKey: number
   onSelectRole: (key: string) => void
-  userToken: { access_token?: string; role_profile?: string; username?: string }
   settingsDetailKey?: string
 }
 
 export default function RolesSettingsListView({
   refreshKey,
   onSelectRole,
-  userToken,
   settingsDetailKey = '',
 }: RolesSettingsListViewProps) {
   const normalizedSelection = useMemo(
@@ -74,25 +72,7 @@ export default function RolesSettingsListView({
     setPaginationModel((p) => ({ ...p, page: 0 }))
   }, [debouncedSearch])
 
-  const fetchDataWrapper = useCallback(
-    (params: any, token: string | undefined) => {
-      return fetchRawDataGridListing(
-        params,
-        token ?? '',
-        colFields,
-        ROLE_DOCTYPE,
-        [],
-        '',
-        '',
-        [],
-        '',
-        wherecondition,
-        userToken?.role_profile,
-        userToken?.username
-      )
-    },
-    [userToken?.role_profile, userToken?.username]
-  )
+  const fetchDataWrapper = useCallback((params: any) => getRolesListDatagrid(params), [])
 
   useEffect(() => {
     let cancelled = false
@@ -110,7 +90,7 @@ export default function RolesSettingsListView({
         sort: sortModel,
       }
       try {
-        const result: unknown = await fetchDataWrapper(dataParams, userToken?.access_token)
+        const result: unknown = await fetchDataWrapper(dataParams)
         if (cancelled) return
         let nextRows: any[] = []
         let nextCount = 0
@@ -143,7 +123,6 @@ export default function RolesSettingsListView({
     }
   }, [
     fetchDataWrapper,
-    userToken?.access_token,
     paginationModel.page,
     paginationModel.pageSize,
     debouncedSearch,

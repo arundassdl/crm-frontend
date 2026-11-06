@@ -1,5 +1,4 @@
 "use client"
-import { readAccessTokenDataParsed } from '@/utils/accessTokenDataStorage'
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,7 +8,6 @@ import { FormControl, Grid, TextField, Checkbox } from "@mui/material";
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { SelectedFilterLangDataFromStore } from "../../store/slices/general_slices/selected-multilanguage-slice";
 import { useDispatch, useSelector } from "react-redux";
-import { get_access_token } from "../../store/slices/auth/token-login-slice";
 import { fetchpermissionmodule, submit_addroles } from "../../services/api/roles/roles-api";
 import { roleFormValidation } from "../../validation/roleFormValidation";
 import { showToast } from "../ToastNotificationNew";
@@ -54,12 +52,6 @@ const VisuallyHiddenInput = styled('input')({
 const AddRole: any = () => {
     const router = useRouter();
     const dispatch = useDispatch();
-    const TokenFromStore: any = useSelector(get_access_token);
-
-    const [userToken, setUserToken] = useState<any>(() => {
-        const initialValue = readAccessTokenDataParsed();
-        return initialValue || "";
-    });
 
     const SelectedLangDataFromStore: any = useSelector(
         SelectedFilterLangDataFromStore
@@ -82,16 +74,6 @@ const AddRole: any = () => {
     const [activeStep, setActiveStep] = React.useState(0);
     const [open, setOpen] = React.useState(true);
 
-    let userData: any;
-    let userAddress: any;
-    if (typeof window !== 'undefined') {
-        if (localStorage.getItem('userProfileData') != 'undefined') {
-            // alert(localStorage.getItem('userData'))
-            userData = JSON.parse(localStorage.getItem('userProfileData') || '[]')
-        }
-
-    }
-    console.log("userData", userData)
   
     interface IValue {
         role_name: string,
@@ -118,9 +100,7 @@ const AddRole: any = () => {
         console.log('auth()', 'currentUser');
 
         const getPermissions: any = async () => {
-            const permissionmoduleData: any = await fetchpermissionmodule(
-                userToken?.access_token
-            );
+            const permissionmoduleData: any = await fetchpermissionmodule();
             console.log(permissionmoduleData, 'permissionmoduleData', permissionmoduleData?.length);
 
             if (Array.isArray(permissionmoduleData) && permissionmoduleData?.length > 0) {
@@ -152,7 +132,7 @@ const AddRole: any = () => {
 
         console.log('valuesdddformData', formData);
         // // return false;
-        let AddRoleApiRes: any = await submit_addroles(formData, userToken?.access_token);
+        let AddRoleApiRes: any = await submit_addroles(formData);
         setTimeout(() => {
             console.log('here', AddRoleApiRes);
             if (AddRoleApiRes?.msg === "success") {
@@ -250,7 +230,6 @@ const AddRole: any = () => {
             // alert(JSON.stringify(values, null, 2));
             const requestParams = {
                 value: { ...values },
-                token: userToken?.access_token,
             };
             handlesubmit(values, action);
         },

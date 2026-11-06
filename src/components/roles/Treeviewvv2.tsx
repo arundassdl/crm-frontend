@@ -225,7 +225,6 @@
 //     // try {
 //     //   const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-7607dae0/roles`, {
 //     //     headers: {
-//     //       'Authorization': `Bearer ${accessToken}`,
 //     //       'Content-Type': 'application/json'
 //     //     }
 //     //   })
@@ -331,7 +330,6 @@
 //       const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-7607dae0/roles`, {
 //         method: editingRole ? 'PATCH' : 'POST',
 //         headers: {
-//           'Authorization': `Bearer ${accessToken}`,
 //           'Content-Type': 'application/json'
 //         },
 //         body: JSON.stringify(roleData)

@@ -1,4 +1,3 @@
-import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage'
 import React, { useEffect, useState } from "react";
 import {
   Formik,
@@ -33,7 +32,7 @@ import { showToast } from "@/components/ToastNotificationNew";
 import { fetchpermissionmodule, submit_addroles, get_roleby_name, submit_editroles, get_full_roles_tree, get_full_roles_withouttree } from "@/services/api/roles/roles-api";
 
 import { useSelector } from "react-redux";
-import { get_access_token } from "@/store/slices/auth/token-login-slice";
+import { useCrmSession } from "@/components/CrmSessionContext";
 import CloseIcon from "@mui/icons-material/Close";
 import { GridExpandMoreIcon } from "@mui/x-data-grid";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -80,7 +79,7 @@ const formInitialValues: FormValueType = {
     is_admin : false,
     username: "",
     useremailid: ""
-  
+
 };
 
 interface AddEditRoleDrawerProps {
@@ -98,6 +97,7 @@ export default function AddEditRoleDrawer({
   operation,
   onSubmit,
 }: AddEditRoleDrawerProps) {
+  const session = useCrmSession();
 
   const [selectedMultiLangData, setSelectedMultiLangData] = useState<any>();
 
@@ -117,8 +117,6 @@ export default function AddEditRoleDrawer({
 
   useEffect(() => {
     
-    console.log('userToken', userToken?.username);
-    
     if (Object.keys(initialValues).length > 0) {
       const mergedValues: FormValueType = {
         ...initialValues, // Override with actual data
@@ -130,8 +128,8 @@ export default function AddEditRoleDrawer({
       formik.setValues(formInitialValues);
     }
 
-    const username = userToken?.username ?? userToken?.full_name ?? localStorage.getItem('username') ?? '';
-    const useremailid = userToken?.email ?? userToken?.email_id ?? localStorage.getItem('loginemail') ?? '';
+    const username = session?.userId ?? '';
+    const useremailid = session?.userId ?? '';
     formik.setFieldValue('username', username);
     formik.setFieldValue('useremailid', useremailid);
   }, [initialValues]);
@@ -150,9 +148,7 @@ export default function AddEditRoleDrawer({
         console.log('auth()', 'currentUser');
 
         const getPermissions: any = async () => {
-            const permissionmoduleData: any = await fetchpermissionmodule(
-                userToken?.access_token
-            );
+            const permissionmoduleData: any = await fetchpermissionmodule();
             console.log(permissionmoduleData, 'permissionmoduleData', permissionmoduleData?.length);
 
             if (Array.isArray(permissionmoduleData) && permissionmoduleData?.length > 0) {
@@ -172,7 +168,7 @@ export default function AddEditRoleDrawer({
             return
             // alert(role_name)
           const getroleData: any = await get_roleby_name(
-            { "rolename": formik.values.role_name }, userToken?.access_token,
+            { "rolename": formik.values.role_name },
           );
           console.log('######rolesData', getroleData?.permission);
           if (getroleData != undefined) {
@@ -240,7 +236,7 @@ export default function AddEditRoleDrawer({
             return
             // alert(role_name)
           const getroleData: any = await get_roleby_name(
-            { "rolename": formik.values.role_name }, userToken?.access_token,
+            { "rolename": formik.values.role_name },
           );
           console.log('######rolesData', getroleData?.permission);
           if (getroleData != undefined) {
@@ -269,15 +265,6 @@ export default function AddEditRoleDrawer({
 
 
 
-  const [userToken, setUserToken] = useState<any>(() => {
-    const initialValue = JSON.parse(
-      readAccessTokenDataRaw()
-    );
-    return initialValue || "";
-  });
-
-  const TokenFromStore: any = useSelector(get_access_token);
-  
   const router = useRouter();
 
 
@@ -303,7 +290,6 @@ export default function AddEditRoleDrawer({
     onSubmit: async (values, action) => {
       const requestParams = {
         value: { ...values },
-        token: userToken?.access_token,
       };
       handlesubmit(values, action);
     },
@@ -459,8 +445,8 @@ export default function AddEditRoleDrawer({
 
   const handlesubmit: any = async (values, action) => {
     // Resolve username/email from token (API uses full_name, email_id) or localStorage (login sets username, loginemail)
-    const username = userToken?.username ?? userToken?.full_name ?? localStorage.getItem('username') ?? '';
-    const useremailid = userToken?.email ?? userToken?.email_id ?? localStorage.getItem('loginemail') ?? '';
+    const username = session?.userId ?? '';
+    const useremailid = session?.userId ?? '';
 
     formik.setFieldValue('username', username);
     formik.setFieldValue('useremailid', useremailid);
@@ -484,10 +470,9 @@ export default function AddEditRoleDrawer({
       console.log("values form Data", values);
 
       if (operation == 'New') {
-        let addrolesApiRes: any = await submit_addroles(formData, userToken?.access_token);
+        let addrolesApiRes: any = await submit_addroles(formData);
         console.log(addrolesApiRes, 'addrolesApiRes hi');
 
-        // let jobApiRes: any = await submit_addjob(formData, userToken?.access_token);
           if (addrolesApiRes?.msg === "success") {
               showToast(addrolesApiRes?.data.msg, "success");
               action.resetForm();
@@ -500,10 +485,9 @@ export default function AddEditRoleDrawer({
           }
 
       } else {
-        let addrolesApiRes: any = await submit_editroles(formData, userToken?.access_token);
+        let addrolesApiRes: any = await submit_editroles(formData);
         console.log(addrolesApiRes, 'editrolesApiRes hi');
 
-         // let jobApiRes: any = await submit_addjob(formData, userToken?.access_token);
           if (addrolesApiRes?.msg === "success") {
               showToast(addrolesApiRes?.data.msg, "success");
               action.resetForm();
@@ -800,4 +784,4 @@ export default function AddEditRoleDrawer({
     </DrawerComponent>
   );
 }
-  
+

@@ -1,5 +1,4 @@
 "use client"
-import { readAccessTokenDataParsed } from '@/utils/accessTokenDataStorage'
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -9,7 +8,6 @@ import { FormControl, Grid, TextField, Checkbox } from "@mui/material";
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { SelectedFilterLangDataFromStore } from "../../store/slices/general_slices/selected-multilanguage-slice";
 import { useDispatch, useSelector } from "react-redux";
-import { get_access_token } from "../../store/slices/auth/token-login-slice";
 import { fetchpermissionmodule, submit_addroles , get_roleby_name} from "../../services/api/roles/roles-api";
 import { roleFormValidation } from "../../validation/roleFormValidation";
 import { showToast } from "../ToastNotificationNew";
@@ -60,12 +58,6 @@ const RoleDetails = ({ role_name: roleNameProp }: RoleDetailsProps) => {
     const router = useRouter();
     const params = useParams() as { slug?: string };
     const dispatch = useDispatch();
-    const TokenFromStore: any = useSelector(get_access_token);
-
-    const [userToken, setUserToken] = useState<any>(() => {
-        const initialValue = readAccessTokenDataParsed();
-        return initialValue || "";
-    });
 
     const SelectedLangDataFromStore: any = useSelector(
         SelectedFilterLangDataFromStore
@@ -88,16 +80,6 @@ const RoleDetails = ({ role_name: roleNameProp }: RoleDetailsProps) => {
     const [activeStep, setActiveStep] = React.useState(0);
     const [open, setOpen] = React.useState(true);
 
-    let userData: any;
-    let userAddress: any;
-    if (typeof window !== 'undefined') {
-        if (localStorage.getItem('userProfileData') != 'undefined') {
-            // alert(localStorage.getItem('userData'))
-            userData = JSON.parse(localStorage.getItem('userProfileData') || '[]')
-        }
-
-    }
-    console.log("userData", userData)
   
     interface IValue {
         role_name: string,
@@ -125,7 +107,6 @@ const RoleDetails = ({ role_name: roleNameProp }: RoleDetailsProps) => {
 
     //     const getPermissions: any = async () => {
     //         const permissionmoduleData: any = await fetchpermissionmodule(
-    //             userToken?.access_token
     //         );
     //         console.log(permissionmoduleData, 'permissionmoduleData', permissionmoduleData?.length);
 
@@ -151,7 +132,7 @@ const RoleDetails = ({ role_name: roleNameProp }: RoleDetailsProps) => {
             return
             // alert(role_name)
           const getroleData: any = await get_roleby_name(
-            { "rolename": role_name }, userToken?.access_token,
+            { "rolename": role_name },
           );
           console.log('######rolesData', getroleData?.permission);
           if (getroleData != undefined) {
@@ -170,7 +151,7 @@ const RoleDetails = ({ role_name: roleNameProp }: RoleDetailsProps) => {
         getroledata();
     
     
-      }, [role_name, userToken?.access_token]);
+      }, [role_name]);
 
 
     const handlesubmit: any = async (values: IValue, action: any) => {
@@ -188,7 +169,7 @@ const RoleDetails = ({ role_name: roleNameProp }: RoleDetailsProps) => {
 
         console.log('valuesdddformData', formData);
         // // return false;
-        let AddRoleApiRes: any = await submit_addroles(formData, userToken?.access_token);
+        let AddRoleApiRes: any = await submit_addroles(formData);
         setTimeout(() => {
             console.log('here', AddRoleApiRes);
             if (AddRoleApiRes?.msg === "success") {
@@ -284,7 +265,6 @@ const RoleDetails = ({ role_name: roleNameProp }: RoleDetailsProps) => {
             // alert(JSON.stringify(values, null, 2));
             const requestParams = {
                 value: { ...values },
-                token: userToken?.access_token,
             };
             handlesubmit(values, action);
         },

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SelectedFilterLangDataFromStore } from "../../store/slices/general_slices/selected-multilanguage-slice";
 import { useSelector } from "react-redux";
-import { get_access_token } from "../../store/slices/auth/token-login-slice";
 import { usePathname, useSearchParams } from 'next/navigation'
 import { showToast } from "../ToastNotificationNew";
 import { getRolesListDatagrid } from "../../services/api/roles/roles-api";
@@ -118,7 +117,6 @@ export default function RolesList(props) {
   const limit = (safeSearchParams.get('limit')) ? safeSearchParams.get('limit') : 20
   const [loading, setLoading] = React.useState(false);
 
-  const TokenFromStore: any = useSelector(get_access_token);
   const SelectedLangDataFromStore: any = useSelector(
     SelectedFilterLangDataFromStore
   );
@@ -148,15 +146,6 @@ export default function RolesList(props) {
     inst_status_icn: React.JSX.Element
   }
 
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (localStorage.getItem('userProfileData') != 'undefined') {
-        // alert(localStorage.getItem('userData'))
-        setuserData(JSON.parse(localStorage.getItem('userProfileData') || '[]'))
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (
@@ -390,7 +379,7 @@ export default function RolesList(props) {
     router.push(url.search)
     try {
       console.log('inside try before get roleslistdatagrid')
-      const RolesListss: any = await getRolesListDatagrid(filterModel, TokenFromStore?.token);
+      const RolesListss: any = await getRolesListDatagrid(filterModel);
       console.log('RolesListss>>>>', RolesListss)
       setRolesList(RolesListss?.list || []);
       setRolesCount(RolesListss?.count || 0);

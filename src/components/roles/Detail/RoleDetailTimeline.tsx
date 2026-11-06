@@ -1,6 +1,4 @@
 "use client";
-import { readAccessTokenDataParsed } from '@/utils/accessTokenDataStorage'
-
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ClockCounterClockwise,
@@ -11,7 +9,7 @@ import {
 
 import DealSkeleton from "@/components/Common/Skeletons/DealSkeleton";
 import { SettingCard } from "@/components/Users/Users/Detail/ProfileCards";
-import { fetchTimelineComments } from "@/services/api/common-erpnext-api/create-update-custom-api";
+import { get_role_timeline } from "@/services/api/roles/roles-api";
 
 const SDL_ROLE_DOCTYPE = "SDL Role";
 
@@ -130,31 +128,19 @@ const RoleDetailTimeline: React.FC<RoleDetailTimelineProps> = ({
   recordName,
   active,
 }) => {
-  const [userToken] = useState<any>(() => {
-    try {
-      return readAccessTokenDataParsed() || {};
-    } catch {
-      return {};
-    }
-  });
-
   const [timelineComments, setTimelineComments] = useState<
     TimelineCommentEntry[]
   >([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
 
   const loadTimeline = useCallback(async () => {
-    if (!recordName || !userToken?.access_token) {
+    if (!recordName) {
       setTimelineComments([]);
       return;
     }
     try {
       setTimelineLoading(true);
-      const res: any = await fetchTimelineComments(
-        SDL_ROLE_DOCTYPE,
-        recordName,
-        userToken.access_token
-      );
+      const res: any = await get_role_timeline(recordName);
       const commentsArray = Array.isArray(res) ? res : res?.data || [];
       setTimelineComments(commentsArray);
     } catch {
@@ -162,7 +148,7 @@ const RoleDetailTimeline: React.FC<RoleDetailTimelineProps> = ({
     } finally {
       setTimelineLoading(false);
     }
-  }, [recordName, userToken?.access_token]);
+  }, [recordName]);
 
   useEffect(() => {
     if (!active || !recordName) return;
