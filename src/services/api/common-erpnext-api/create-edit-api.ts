@@ -177,7 +177,7 @@ export const updateSaveDocs = async (
 export const createResource = async (
   doctype: string,
   formData: any,
-  token: string,
+  _token: string,
   links?: { link_doctype: string; link_name: string }[]
 ) => {
   try {
@@ -199,18 +199,9 @@ export const createResource = async (
     }
 
     // Send API request
-    const response = await axios.post(
-      `${CONSTANTS.API_BASE_URL}/api/resource/${doctype}`,
-      payload,
-      {
-        headers: {
-          Authorization: `${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await axios.post("/api/create", { doctype, data: payload });
 
-    return { success: true, data: response.data.data };
+    return { success: true, data: response.data };
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
       return { error: error.response?.data || "API request failed" };

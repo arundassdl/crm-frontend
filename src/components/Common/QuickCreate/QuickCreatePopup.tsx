@@ -1,6 +1,4 @@
 "use client";
-import { readAccessTokenDataRaw, readAccessTokenString, readRoleProfileFromStorage } from '@/utils/accessTokenDataStorage'
-
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
@@ -17,6 +15,7 @@ import { createResource } from "@/services/api/common-erpnext-api/create-edit-ap
 import { getQuickCreateFormFields } from "@/services/api/general_apis/layout-api";
 import { showToast } from "@/components/ToastNotificationNew";
 import { v4 as uuidv4 } from "uuid";
+import { useCrmSession } from "@/components/CrmSessionContext";
 
 // Avoid static import to prevent a circular dependency:
 // LookupField -> QuickCreatePopup -> CustomForm -> LookupField
@@ -65,15 +64,8 @@ export default function QuickCreatePopup({
   role,
   onCreated,
 }: QuickCreatePopupProps) {
-  const currentUser = useMemo(() => {
-    try {
-      const tokenDataRaw = readAccessTokenDataRaw();
-      const tokenData = JSON.parse(tokenDataRaw);
-      return tokenData?.username || tokenData?.email || "";
-    } catch {
-      return "";
-    }
-  }, []);
+  const session = useCrmSession();
+  const currentUser = session?.userId || "";
 
   const [fieldsLoading, setFieldsLoading] = useState(false);
   const [qcLayoutId, setQcLayoutId] = useState<string>("");
@@ -84,11 +76,8 @@ export default function QuickCreatePopup({
     const fetchFields = async () => {
       if (!open) return;
 
-      const token = readAccessTokenString();
-      const roleProfile = role || readRoleProfileFromStorage() || "Super Admin";
-
-      if (!token) {
-        showToast("Missing access token. Please login again.", "warning");
+      if (!session) {
+        showToast("Your CRM session has ended. Please launch CRM again.", "warning");
         return;
       }
       if (!moduleForApi || !createDoctype) {
@@ -100,8 +89,8 @@ export default function QuickCreatePopup({
       try {
         const res = await getQuickCreateFormFields(
           moduleForApi,
-          roleProfile,
-          token
+          role || "",
+          ""
         );
         const message = res?.message ?? res;
 
@@ -154,7 +143,7 @@ export default function QuickCreatePopup({
     };
 
     fetchFields();
-  }, [open, moduleForApi, createDoctype, role]);
+  }, [open, moduleForApi, createDoctype, role, session]);
 
   const initialValues = useMemo(() => {
     const base: Record<string, any> = {};
@@ -171,9 +160,8 @@ export default function QuickCreatePopup({
   }, [qcFields, qcLayoutId, currentUser]);
 
   const handleSubmit = async (values: any, action: any) => {
-    const token = readAccessTokenString();
-    if (!token) {
-      showToast("Missing access token. Please login again.", "warning");
+    if (!session) {
+      showToast("Your CRM session has ended. Please launch CRM again.", "warning");
       action.setSubmitting(false);
       return;
     }
@@ -221,7 +209,7 @@ export default function QuickCreatePopup({
         const addressRes: any = await createResource(
           "Address",
           addressPayload,
-          token
+          ""
         );
 
         if (!addressRes?.success || !addressRes?.data?.name) {
@@ -303,10 +291,10 @@ export default function QuickCreatePopup({
             delete dataWithLayout.first_name_salutation;
           }
 
-          return createResource(createDoctype, dataWithLayout, token);
+          return createResource(createDoctype, dataWithLayout, "");
         }
 
-        return createResource(createDoctype, payload, token);
+        return createResource(createDoctype, payload, "");
       })();
 
       if (!res?.success) {

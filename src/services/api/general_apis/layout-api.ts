@@ -119,11 +119,11 @@ export async function deleteLinkedComponentStageProbabilityForLayout(
 }
 
 /** Fetch layout list for a module; returns array of { value, label } or raw message. Used to get default layout_id for getFormFields. */
-export const getLayoutList = async (module: string, token: string, role_profile: string) => {
+export const getLayoutList = async (module: string, _token: string, role_profile: string) => {
     const method = '/api/method/sdl_metadata.api.layout.get_layout_list';
     const params = `?module=${encodeURIComponent(module)}&role_profile=${encodeURIComponent(role_profile || '')}`;
     const url = `${CONSTANTS.API_BASE_URL}${method}${params}`;
-    const config = { headers: { Authorization: token }, timeout: 5000 };
+    const config = { timeout: 5000 };
     try {
         const res = await axios.get(url, config);
         const message = res?.data?.message;
@@ -143,23 +143,15 @@ export const getLayoutList = async (module: string, token: string, role_profile:
     }
 };
 
-export const getFormFields = async (module: string, token: string, role_profile: string, layout_id) => {
+export const getFormFields = async (module: string, _token: string, role_profile: string, layout_id) => {
     let response: any;
-    const version = CONSTANTS.VERSION;
     const method = '/api/method/sdl_metadata.api.layout.get_formFields';
-    const params = `?module=${module}&role_profile=${role_profile}&layout_id=${layout_id}`;
-
-
-    const config = {
-        headers: {
-            Authorization: token,
-        },
-    };
+    const params = `?module=${encodeURIComponent(module)}&role_profile=${encodeURIComponent(role_profile || '')}&layout_id=${encodeURIComponent(layout_id || '')}`;
     const apiUrl = `${CONSTANTS.API_BASE_URL}${method}${params}`;
     console.log(apiUrl, 'apiUrl layout');
 
     try {
-        const res = await axios.get(apiUrl, { ...config, timeout: 5000 });
+        const res = await axios.get(apiUrl, { timeout: 5000 });
         response = res?.data?.message;
         console.log(response, 'response layout');
     } catch (error: any) {
@@ -173,12 +165,12 @@ export const getFormFields = async (module: string, token: string, role_profile:
 export const getQuickCreateFormFields = async (
     module: string,
     role: string,
-    token: string
+    _token: string
 ) => {
     let response: any;
     const method = '/api/method/sdl_metadata.api.layout.get_quickcreate_form_fields';
     const params = `?module=${encodeURIComponent(module)}&role=${encodeURIComponent(role || '')}`;
-    const config = { headers: { Authorization: token }, timeout: 5000 };
+    const config = { timeout: 5000 };
     const apiUrl = `${CONSTANTS.API_BASE_URL}${method}${params}`;
 
     try {
@@ -192,11 +184,11 @@ export const getQuickCreateFormFields = async (
     return response;
 };
 
-export const getRelatedList = async (module: string, layout_name: string, token: string) => {
+export const getRelatedList = async (module: string, layout_name: string, _token: string) => {
     const method = '/api/method/sdl_metadata.api.layout.get_relatedlist';
     const params = `?module=${encodeURIComponent(module)}&layout_name=${encodeURIComponent(layout_name)}`;
     const url = `${CONSTANTS.API_BASE_URL}${method}${params}`;
-    const config = { headers: { Authorization: token }, timeout: 5000 };
+    const config = { timeout: 5000 };
     try {
         const res = await axios.get(url, config);
         return res?.data?.message || [];
