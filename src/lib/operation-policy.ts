@@ -114,11 +114,13 @@ export function allowedMethod(
         "list_role_profiles",
         "set_role_profile",
         "set_status",
+        "list_memberships",
+        "set_membership",
       ]).has(method.slice("sdl_user_management.um.".length))
     )
       throw new SecurityError(403, "METHOD_FORBIDDEN");
     if (
-      ["update_me", "set_role_profile", "set_status"].some((s) =>
+      ["update_me", "set_role_profile", "set_status", "set_membership"].some((s) =>
         method.endsWith("." + s),
       ) &&
       verb !== "POST"

@@ -33,6 +33,7 @@ export interface MyAccount extends ManagedUser {
 
 const METHOD = "sdl_user_management.um.";
 const EMAIL = /^[^\s@]{1,128}@[^\s@]{1,125}$/;
+const TEAM = /^[A-Za-z0-9][A-Za-z0-9 ._()/-]{0,139}$/;
 
 export function validUser(value: unknown): string {
   if (typeof value !== "string" || !EMAIL.test(value.trim())) {
@@ -59,6 +60,18 @@ export function validProfile(value: unknown): RoleProfile {
     );
   }
   return value as RoleProfile;
+}
+
+export function validTeam(value: unknown): string {
+  if (typeof value !== "string" || !TEAM.test(value.trim())) {
+    throw new BffError(
+      400,
+      "INVALID_TEAM",
+      "validation",
+      "Choose a CRM team from your organization.",
+    );
+  }
+  return value.trim();
 }
 
 export function validName(value: unknown, field: string): string | undefined {

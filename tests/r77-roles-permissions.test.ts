@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { allowedMethod } from "../src/lib/operation-policy";
 import { submit_addroles, submit_editroles, delete_role } from "../src/services/api/roles/roles-api";
 import { savePermissionsMatrix } from "../src/services/api/permissions/permissions-api";
-import { validProfile, validUser } from "../src/lib/user-management";
+import { validProfile, validTeam, validUser } from "../src/lib/user-management";
 
 test("role and permission UI cannot read or transmit browser credentials", async () => {
   const files = [
@@ -37,6 +37,12 @@ test("user role assignment accepts only approved tenant profiles", () => {
   assert.throws(() => validProfile("Administrator"));
   assert.throws(() => validProfile("System Manager"));
   assert.throws(() => validUser("TEAM-OTHER/member"));
+});
+
+test("team membership identifiers reject control characters and URLs", () => {
+  assert.equal(validTeam("North Sales"), "North Sales");
+  assert.throws(() => validTeam("https://attacker.example/team"));
+  assert.throws(() => validTeam("North\nAdmin"));
 });
 
 test("role mutations discard browser identity and administrative escalation fields", async () => {
