@@ -243,6 +243,19 @@ test("SDK/admin/unaudited addons and privilege Doctypes fail closed", () => {
   allowedMethod("sdl_user_management.um.me", "GET");
   allowedMethod("frappe.client.get", "GET", { doctype: "CRM Lead" });
 });
+test("only individually certified metadata methods pass the BFF policy", () => {
+  allowedMethod("sdl_metadata.api.layout.get_layout", "GET");
+  allowedMethod("sdl_metadata.api.lead_conversion.convert_lead", "POST");
+  assert.throws(() =>
+    allowedMethod("sdl_metadata.api.lead_conversion.convert_lead", "GET"),
+  );
+  for (const method of [
+    "sdl_metadata.api.dashboard.delete_everything",
+    "sdl_metadata.api.custom_field.unknown",
+    "sdl_metadata.api.layout.run_sql",
+  ])
+    assert.throws(() => allowedMethod(method, "POST"));
+});
 test("route wrapper refuses unauthenticated API before business code; errors are non-cacheable", async () => {
   let called = false;
   const guarded = protectedHandler(async (_req: NextRequest, _context: any) => {

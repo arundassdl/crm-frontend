@@ -19,6 +19,43 @@ const WRITE = new Set([
   "frappe.desk.form.utils.add_note",
   "upload_file",
 ]);
+const METADATA_READ = new Set([
+  "sdl_metadata.api.component_picklist.get_component_picklist",
+  "sdl_metadata.api.component_picklist.unused_picklist_option",
+  "sdl_metadata.api.conversionmap.get_conversion_map",
+  "sdl_metadata.api.custom_field.list_custom_fields",
+  "sdl_metadata.api.custom_field.get_custom_fields",
+  "sdl_metadata.api.custom_field.get_customize_field",
+  "sdl_metadata.api.deal.get_stagehistory",
+  "sdl_metadata.api.layout.get_layout",
+  "sdl_metadata.api.layout.get_layout_list",
+  "sdl_metadata.api.layout.list_layouts",
+  "sdl_metadata.api.layout.get_module_layout_list",
+  "sdl_metadata.api.layout.get_relatedlist",
+  "sdl_metadata.api.layout.get_formFields",
+  "sdl_metadata.api.layout.get_quickcreate_form_fields",
+  "sdl_metadata.api.lookup.search",
+  "sdl_metadata.api.modules.get_modulelisting",
+  "sdl_metadata.api.permission.get_field_permissions",
+  "sdl_metadata.api.stage_probability.get_component_stage_probability",
+  "sdl_metadata.api.stage_probability.get_component_stageprobability",
+  "sdl_metadata.api.stage_probability.unused_stage_probability_option",
+]);
+const METADATA_WRITE = new Set([
+  "sdl_metadata.api.component_picklist.add_component_picklist",
+  "sdl_metadata.api.component_picklist.update_component_picklist",
+  "sdl_metadata.api.conversionmap.save_conversion_map",
+  "sdl_metadata.api.custom_field.create_custom_field",
+  "sdl_metadata.api.custom_field.update_custom_field",
+  "sdl_metadata.api.custom_field.delete_custom_field",
+  "sdl_metadata.api.layout.save_layout",
+  "sdl_metadata.api.layout.set_default",
+  "sdl_metadata.api.layout.set_default_layout",
+  "sdl_metadata.api.lead_conversion.convert_lead",
+  "sdl_metadata.api.permission.save_field_permission",
+  "sdl_metadata.api.stage_probability.add_component_stage_probability",
+  "sdl_metadata.api.stage_probability.update_component_stage_probability",
+]);
 export const CRM_DOCTYPES = new Set([
   "CRM Lead",
   "CRM Deal",
@@ -72,6 +109,12 @@ export function allowedMethod(
       ) &&
       verb !== "POST"
     )
+      throw new SecurityError(405, "METHOD_NOT_ALLOWED");
+    return;
+  }
+  if (METADATA_READ.has(method)) return;
+  if (METADATA_WRITE.has(method)) {
+    if (verb !== "POST")
       throw new SecurityError(405, "METHOD_NOT_ALLOWED");
     return;
   }
