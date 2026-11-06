@@ -1,5 +1,3 @@
-import axios from "axios";
-import { CONSTANTS } from "@/services/config/app-config";
 import {
     getConversionMap,
     type ConversionMapMessage,
@@ -77,10 +75,9 @@ export interface ConvertLeadResponseMessage {
  */
 export async function fetchLeadConversionMapping(
     sourceModule: string,
-    sourceLayout: string,
-    token: string
+    sourceLayout: string
 ): Promise<ConversionMapMessage | null> {
-    return getConversionMap(sourceModule, sourceLayout, token);
+    return getConversionMap(sourceModule, sourceLayout, "");
 }
 
 /** Coerce numeric deal fields by field name (dynamic layout keys). */
@@ -126,11 +123,8 @@ function buildDealValueArray(
  * - `deal_value` — array of `{ fieldname, value }` for dynamic deal layout fields (deal_name, amount, stage, …)
  */
 export async function postConvertLead(
-    payload: ConvertLeadPayload,
-    token: string
+    payload: ConvertLeadPayload
 ): Promise<{ data: { message?: ConvertLeadResponseMessage } }> {
-    const url = `${CONSTANTS.API_BASE_URL}/api/method/sdl_metadata.api.lead_conversion.convert_lead`;
-
     const optionsObj: Record<string, string | number | boolean> = {
         create_account: payload.create_account ? 1 : 0,
         create_contact: payload.create_contact ? 1 : 0,
@@ -176,12 +170,17 @@ export async function postConvertLead(
         }
     }
 
-    const res = await axios.post(url, body, {
-        headers: {
-            Authorization: token,
-            "Content-Type": "application/json",
-        },
-        timeout: 120000,
+    const res = await fetch("/api/leads/convert", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
     });
-    return res;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const error = new Error(data?.message || "Conversion failed");
+        Object.assign(error, { response: { data, status: res.status } });
+        throw error;
+    }
+    return { data };
 }

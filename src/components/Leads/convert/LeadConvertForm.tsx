@@ -1,6 +1,4 @@
 "use client";
-import { readAccessTokenDataParsed } from '@/utils/accessTokenDataStorage'
-
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -23,6 +21,7 @@ import {
     type LeadConversionDuplicateContactRow,
     type LeadConversionDuplicateInfo,
 } from "@/services/api/crm/lead-convert-duplicate-api";
+import { useCrmSession } from "@/components/CrmSessionContext";
 
 export interface LeadConvertFormProps {
     leadId: string;
@@ -343,17 +342,7 @@ export default function LeadConvertForm({
     onCancel,
 }: LeadConvertFormProps) {
     const router = useRouter();
-    const [userToken] = useState<any>(() => {
-        if (typeof window === "undefined") return {};
-        try {
-            return readAccessTokenDataParsed();
-        } catch {
-            return {};
-        }
-    });
-
-    const token = userToken?.access_token ?? "";
-    const roleProfile = userToken?.role_profile ?? "";
+    const session = useCrmSession();
 
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -475,14 +464,14 @@ export default function LeadConvertForm({
     );
 
     useEffect(() => {
-        if (!token || !sourceLayout) {
+        if (!session || !sourceLayout) {
             setLeadLayoutFields([]);
             setLeadFieldsFlatForLookup([]);
             return;
         }
         let cancelled = false;
         (async () => {
-            const res: any = await getFormFields("Leads", token, roleProfile, sourceLayout);
+            const res: any = await getFormFields("Leads", "", "", sourceLayout);
             if (cancelled) return;
             let fieldsData: any[] = getVisibleFormFieldsForMapping(res);
             if (fieldsData.length === 0) {
@@ -496,16 +485,16 @@ export default function LeadConvertForm({
         return () => {
             cancelled = true;
         };
-    }, [token, roleProfile, sourceLayout]);
+    }, [session, sourceLayout]);
 
     /** Load Accounts layout field meta so duplicate copy uses Account module labels (e.g. Account Name). */
     useEffect(() => {
-        if (!token) return;
+        if (!session) return;
         let cancelled = false;
         (async () => {
             let layoutId = getAccountsTargetLayoutIdFromMapping(mapping);
             if (!layoutId) {
-                const list = await getLayoutList("Accounts", token, roleProfile);
+                const list = await getLayoutList("Accounts", "", "");
                 layoutId = Array.isArray(list) && list[0]?.value ? String(list[0].value) : "";
             }
             if (!layoutId || cancelled) {
@@ -513,7 +502,7 @@ export default function LeadConvertForm({
                 setAccountFieldsFlatForDup([]);
                 return;
             }
-            const res: any = await getFormFields("Accounts", token, roleProfile, layoutId);
+            const res: any = await getFormFields("Accounts", "", "", layoutId);
             if (cancelled) return;
             let fieldsData: any[] = getVisibleFormFieldsForMapping(res);
             if (fieldsData.length === 0) {
@@ -527,16 +516,16 @@ export default function LeadConvertForm({
         return () => {
             cancelled = true;
         };
-    }, [token, roleProfile, mapping]);
+    }, [session, mapping]);
 
     /** Load Contacts layout field meta — duplicate line uses Contact module label for mapped email field. */
     useEffect(() => {
-        if (!token) return;
+        if (!session) return;
         let cancelled = false;
         (async () => {
             let layoutId = getContactsTargetLayoutIdFromMapping(mapping);
             if (!layoutId) {
-                const list = await getLayoutList("Contacts", token, roleProfile);
+                const list = await getLayoutList("Contacts", "", "");
                 layoutId = Array.isArray(list) && list[0]?.value ? String(list[0].value) : "";
             }
             if (!layoutId || cancelled) {
@@ -544,7 +533,7 @@ export default function LeadConvertForm({
                 setContactFieldsFlatForDup([]);
                 return;
             }
-            const res: any = await getFormFields("Contacts", token, roleProfile, layoutId);
+            const res: any = await getFormFields("Contacts", "", "", layoutId);
             if (cancelled) return;
             let fieldsData: any[] = getVisibleFormFieldsForMapping(res);
             if (fieldsData.length === 0) {
@@ -558,15 +547,15 @@ export default function LeadConvertForm({
         return () => {
             cancelled = true;
         };
-    }, [token, roleProfile, mapping]);
+    }, [session, mapping]);
 
     const loadMappingAndPreview = useCallback(async () => {
-        if (!token || !sourceLayout) return;
+        if (!session || !sourceLayout) return;
         setLoading(true);
         setDupLoading(true);
         let mapMsg: ConversionMapMessage | null = null;
         try {
-            const mapRes = await fetchLeadConversionMapping(sourceModule, sourceLayout, token);
+            const mapRes = await fetchLeadConversionMapping(sourceModule, sourceLayout);
             mapMsg = mapRes;
             setMapping(mapMsg);
             setConvertPreviewDefaults({});
@@ -586,8 +575,7 @@ export default function LeadConvertForm({
             setContactName(person);
             const own =
                 pickLeadDisplay(lead, "owner") ||
-                userToken?.email ||
-                userToken?.username ||
+                session?.userId ||
                 "";
             setOwnerValue(own);
         } catch (e: any) {
@@ -595,7 +583,7 @@ export default function LeadConvertForm({
         } finally {
             setLoading(false);
             try {
-                const dup = await fetchLeadConversionDuplicateInfo(lead, token, mapMsg);
+                const dup = await fetchLeadConversionDuplicateInfo(lead, mapMsg);
                 setDupInfo(dup);
                 if (dup.scenario === "account" && dup.has_duplicate && dup.accounts.length > 0) {
                     const first = dup.accounts[0].name;
@@ -620,7 +608,7 @@ export default function LeadConvertForm({
                 setDupLoading(false);
             }
         }
-    }, [token, sourceLayout, sourceModule, leadId, lead, userToken]);
+    }, [session, sourceLayout, sourceModule, leadId, lead]);
 
     useEffect(() => {
         loadMappingAndPreview();
@@ -628,12 +616,12 @@ export default function LeadConvertForm({
 
     /** Duplicate detection without a source layout has no conversion map — email/phone overlap only. */
     useEffect(() => {
-        if (!token || !leadId || sourceLayout) return;
+        if (!session || !leadId || sourceLayout) return;
         let cancelled = false;
         setDupLoading(true);
         (async () => {
             try {
-                const info = await fetchLeadConversionDuplicateInfo(lead, token, null);
+                const info = await fetchLeadConversionDuplicateInfo(lead, null);
                 if (cancelled) return;
                 setDupInfo(info);
                 if (info.scenario === "account" && info.has_duplicate && info.accounts.length > 0) {
@@ -664,16 +652,16 @@ export default function LeadConvertForm({
         return () => {
             cancelled = true;
         };
-    }, [token, leadId, lead, sourceLayout]);
+    }, [session, leadId, lead, sourceLayout]);
 
     useEffect(() => {
-        if (!token) return;
+        if (!session) return;
         let cancelled = false;
         (async () => {
             const users = await fetchDataBySearch(
                 "",
                 "User",
-                token,
+                "",
                 undefined,
                 undefined,
                 ["full_name", "name", "email"],
@@ -689,13 +677,13 @@ export default function LeadConvertForm({
         return () => {
             cancelled = true;
         };
-    }, [token]);
+    }, [session]);
 
     useEffect(() => {
-        if (!token) return;
+        if (!session) return;
         let cancelled = false;
         (async () => {
-            const list = await getLayoutList("Deals", token, roleProfile);
+            const list = await getLayoutList("Deals", "", "");
             const opts = (Array.isArray(list) ? list : []).map((l: any) => ({
                 value: String(l.value ?? ""),
                 label: String(l.label ?? l.value ?? ""),
@@ -717,11 +705,11 @@ export default function LeadConvertForm({
         return () => {
             cancelled = true;
         };
-    }, [token, roleProfile, dealLayoutFromMapping]);
+    }, [session, dealLayoutFromMapping]);
 
     /** Deal fields to show: `validate: true` from get_formFields only (per SDL layout metadata). */
     useEffect(() => {
-        if (!token || !createDeal || !selectedDealLayoutId) {
+        if (!session || !createDeal || !selectedDealLayoutId) {
             setMandatoryDealFields([]);
             return;
         }
@@ -729,8 +717,8 @@ export default function LeadConvertForm({
         (async () => {
             const res: any = await getFormFields(
                 "Deals",
-                token,
-                roleProfile,
+                "",
+                "",
                 selectedDealLayoutId
             );
             if (cancelled) return;
@@ -764,7 +752,7 @@ export default function LeadConvertForm({
         return () => {
             cancelled = true;
         };
-    }, [token, roleProfile, createDeal, selectedDealLayoutId]);
+    }, [session, createDeal, selectedDealLayoutId]);
 
     /** Prefill deal fields from conversion mapping + preview defaults. */
     useEffect(() => {
@@ -797,7 +785,7 @@ export default function LeadConvertForm({
 
     /** Stage probability options for mandatory Stage field (dynamic field name). */
     useEffect(() => {
-        if (!token || !createDeal || !stageFieldMeta) {
+        if (!session || !createDeal || !stageFieldMeta) {
             setStagePipelineOptions([]);
             return;
         }
@@ -821,7 +809,7 @@ export default function LeadConvertForm({
                 "Deals",
                 layoutName,
                 fieldName,
-                token
+                ""
             );
             if (cancelled) return;
             const opts = (stages || []).map((s) => ({
@@ -842,7 +830,7 @@ export default function LeadConvertForm({
             cancelled = true;
         };
     }, [
-        token,
+        session,
         createDeal,
         stageFieldMeta,
         selectedDealLayoutId,
@@ -851,7 +839,7 @@ export default function LeadConvertForm({
     ]);
 
     const handleSubmit = async () => {
-        if (!token) {
+        if (!session) {
             showToast("Please sign in again.", "error");
             return;
         }
@@ -924,8 +912,7 @@ export default function LeadConvertForm({
                     notify_record_owner: notifyOwner,
                     source_module: sourceModule,
                     source_layout: sourceLayout,
-                },
-                token
+                }
             );
 
             const raw = res?.data?.message;

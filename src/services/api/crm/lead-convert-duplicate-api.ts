@@ -1,5 +1,3 @@
-import { CONSTANTS } from "@/services/config/app-config";
-import { fetchFromERPNext } from "@/services/api/common-erpnext-api/listing-api-get";
 import type { ConversionMapMessage } from "@/services/api/general_apis/layout-api";
 
 export type DuplicateMatchReason = "company" | "email" | "phone";
@@ -176,17 +174,34 @@ function parseMappingJsonRow(raw: unknown): Record<string, string> | null {
     return null;
 }
 
-/** Frappe `/api/resource` list responses may use `data` or nested `message`. */
-function extractResourceList(res: unknown): any[] {
-    if (!res || typeof res !== "object") return [];
-    const r = res as Record<string, unknown>;
-    if (Array.isArray(r.data)) return r.data;
-    const msg = r.message;
-    if (msg && typeof msg === "object") {
-        const m = msg as Record<string, unknown>;
-        if (Array.isArray(m.data)) return m.data;
-    }
-    return [];
+async function bffGetList(doctype: string, params: Record<string, unknown>): Promise<any[]> {
+    const response = await fetch("/api/datalist", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            doctype,
+            fields: JSON.parse(String(params.fields || "[]")),
+            filters: JSON.parse(String(params.filters || "[]")),
+            limit_page_length: Number(params.limit_page_length || 20),
+            limit_start: 0,
+        }),
+    });
+    if (!response.ok) throw new Error("Duplicate lookup failed");
+    const data = await response.json();
+    return Array.isArray(data?.records) ? data.records : [];
+}
+
+async function bffGetDocument(doctype: string, docname: string): Promise<Record<string, any> | null> {
+    const response = await fetch("/api/detail-data", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ doctype, docname }),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data?.record && typeof data.record === "object" ? data.record : null;
 }
 
 function accountsTargetFromMappingJson(mj: Record<string, string>): string {
@@ -410,8 +425,7 @@ function mergeOrgMappingLabel(
 const CRM_ORG_LIST_FIELDS = ["name", "organization_name"];
 
 async function findOrgsByExactDocumentNameOnly(
-    name: string,
-    token: string
+    name: string
 ): Promise<Record<string, any>[]> {
     const c = name.trim();
     if (!c) return [];
@@ -421,8 +435,7 @@ async function findOrgsByExactDocumentNameOnly(
             fields: JSON.stringify(CRM_ORG_LIST_FIELDS),
             limit_page_length: 20,
         };
-        const res = await fetchFromERPNext("CRM Organization", params, token);
-        return extractResourceList(res);
+        return await bffGetList("CRM Organization", params);
     } catch {
         return [];
     }
@@ -437,8 +450,7 @@ function normPhone(s: string): string {
 }
 
 async function safeFetchOrgByName(
-    name: string,
-    token: string
+    name: string
 ): Promise<Record<string, any> | null> {
     if (!name.trim()) return null;
     try {
@@ -447,8 +459,7 @@ async function safeFetchOrgByName(
             fields: JSON.stringify(CRM_ORG_LIST_FIELDS),
             limit_page_length: 1,
         };
-        const res = await fetchFromERPNext("CRM Organization", params, token);
-        const list = extractResourceList(res);
+        const list = await bffGetList("CRM Organization", params);
         const row = list[0];
         return row && typeof row === "object" ? row : null;
     } catch {
@@ -456,7 +467,7 @@ async function safeFetchOrgByName(
     }
 }
 
-async function findOrgsByCompanyName(company: string, token: string): Promise<Record<string, any>[]> {
+async function findOrgsByCompanyName(company: string): Promise<Record<string, any>[]> {
     const c = company.trim();
     if (!c) return [];
     const out: Record<string, any>[] = [];
@@ -468,8 +479,7 @@ async function findOrgsByCompanyName(company: string, token: string): Promise<Re
                 fields: JSON.stringify(CRM_ORG_LIST_FIELDS),
                 limit_page_length: 20,
             };
-            const res = await fetchFromERPNext("CRM Organization", params, token);
-            for (const row of extractResourceList(res)) {
+            for (const row of await bffGetList("CRM Organization", params)) {
                 if (row?.name && !seen.has(row.name)) {
                     seen.add(row.name);
                     out.push(row);
@@ -486,7 +496,7 @@ async function findOrgsByCompanyName(company: string, token: string): Promise<Re
     return out;
 }
 
-async function fetchContactsByEmail(email: string, token: string): Promise<Record<string, any>[]> {
+async function fetchContactsByEmail(email: string): Promise<Record<string, any>[]> {
     const e = normEmail(email);
     if (!e) return [];
     try {
@@ -495,15 +505,14 @@ async function fetchContactsByEmail(email: string, token: string): Promise<Recor
             fields: JSON.stringify(["name", "full_name", "email_id", "phone", "mobile_no"]),
             limit_page_length: 50,
         };
-        const res = await fetchFromERPNext("Contact", params, token);
-        const rows = extractResourceList(res);
+        const rows = await bffGetList("Contact", params);
         return rows.filter((r: any) => normEmail(String(r?.email_id ?? "")) === e);
     } catch {
         return [];
     }
 }
 
-async function fetchContactsByPhone(phone: string, token: string): Promise<Record<string, any>[]> {
+async function fetchContactsByPhone(phone: string): Promise<Record<string, any>[]> {
     const digits = normPhone(phone);
     if (!digits || digits.length < 5) return [];
     const raw = phone.trim();
@@ -519,8 +528,7 @@ async function fetchContactsByPhone(phone: string, token: string): Promise<Recor
             fields: JSON.stringify(["name", "full_name", "email_id", "phone", "mobile_no"]),
             limit_page_length: 50,
         };
-        const res1 = await fetchFromERPNext("Contact", p1, token);
-        merge(extractResourceList(res1));
+        merge(await bffGetList("Contact", p1));
     } catch {
         /* ignore */
     }
@@ -530,8 +538,7 @@ async function fetchContactsByPhone(phone: string, token: string): Promise<Recor
             fields: JSON.stringify(["name", "full_name", "email_id", "phone", "mobile_no"]),
             limit_page_length: 50,
         };
-        const res2 = await fetchFromERPNext("Contact", p2, token);
-        merge(extractResourceList(res2));
+        merge(await bffGetList("Contact", p2));
     } catch {
         /* ignore */
     }
@@ -542,8 +549,7 @@ async function fetchContactsByPhone(phone: string, token: string): Promise<Recor
                 fields: JSON.stringify(["name", "full_name", "email_id", "phone", "mobile_no"]),
                 limit_page_length: 50,
             };
-            const res3 = await fetchFromERPNext("Contact", p3, token);
-            for (const r of extractResourceList(res3)) {
+            for (const r of await bffGetList("Contact", p3)) {
                 const p = normPhone(String(r?.phone ?? ""));
                 const m = normPhone(String(r?.mobile_no ?? ""));
                 if (p === digits || m === digits) merge([r]);
@@ -556,17 +562,10 @@ async function fetchContactsByPhone(phone: string, token: string): Promise<Recor
 }
 
 async function fetchOrgNamesLinkedToContact(
-    contactName: string,
-    token: string
+    contactName: string
 ): Promise<string[]> {
     try {
-        const url = `${CONSTANTS.API_BASE_URL}/api/resource/Contact/${encodeURIComponent(contactName)}`;
-        const res = await fetch(url, {
-            headers: { Authorization: `${token}` },
-        });
-        if (!res.ok) return [];
-        const json = await res.json();
-        const data = json?.data;
+        const data = await bffGetDocument("Contact", contactName);
         const links = Array.isArray(data?.links) ? data.links : [];
         return links
             .filter((l: any) => String(l?.link_doctype ?? "") === "CRM Organization")
@@ -578,8 +577,7 @@ async function fetchOrgNamesLinkedToContact(
 }
 
 async function enrichContactRowsForDuplicateModal(
-    contacts: Record<string, any>[],
-    token: string
+    contacts: Record<string, any>[]
 ): Promise<LeadConversionDuplicateContactRow[]> {
     const rows = await Promise.all(
         contacts.map(async (c): Promise<LeadConversionDuplicateContactRow | null> => {
@@ -589,10 +587,10 @@ async function enrichContactRowsForDuplicateModal(
             const email_id = String(c?.email_id ?? "").trim();
             let account_name = "—";
             let linked_account_doc_name: string | undefined;
-            const orgLinks = await fetchOrgNamesLinkedToContact(name, token);
+            const orgLinks = await fetchOrgNamesLinkedToContact(name);
             if (orgLinks.length > 0) {
                 linked_account_doc_name = orgLinks[0];
-                const od = await safeFetchOrgByName(orgLinks[0], token);
+                const od = await safeFetchOrgByName(orgLinks[0]);
                 account_name =
                     od?.organization_name != null && String(od.organization_name).trim() !== ""
                         ? String(od.organization_name).trim()
@@ -645,17 +643,16 @@ function resolveMatchFieldLabel(
  */
 export async function fetchLeadConversionDuplicateInfo(
     lead: Record<string, any>,
-    token: string,
     mapping: ConversionMapMessage | null
 ): Promise<LeadConversionDuplicateInfo> {
     const leadEmail = pickLeadField(lead, "email", "email_id");
     if (leadEmail) {
-        const contactsByEmail = await fetchContactsByEmail(leadEmail, token);
+        const contactsByEmail = await fetchContactsByEmail(leadEmail);
         if (contactsByEmail.length > 0) {
             const c0 = contactsByEmail[0];
             const docName = String(c0?.name ?? "").trim();
             const display = String(c0?.full_name ?? docName ?? "").trim();
-            const matched_contacts = await enrichContactRowsForDuplicateModal(contactsByEmail, token);
+            const matched_contacts = await enrichContactRowsForDuplicateModal(contactsByEmail);
             return {
                 scenario: "contact_email",
                 has_duplicate: true,
@@ -686,15 +683,15 @@ export async function fetchLeadConversionDuplicateInfo(
         let orgs: Record<string, any>[] = [];
         let candidateLabel: DuplicateMatchFieldLabel = "Account Name";
         if (kind === "last_name") {
-            orgs = await findOrgsByExactDocumentNameOnly(value, token);
+            orgs = await findOrgsByExactDocumentNameOnly(value);
             candidateLabel = "Last Name";
         } else if (kind === "organization") {
-            orgs = await findOrgsByCompanyName(value, token);
+            orgs = await findOrgsByCompanyName(value);
             candidateLabel = "Organization";
         } else {
-            orgs = await findOrgsByExactDocumentNameOnly(value, token);
+            orgs = await findOrgsByExactDocumentNameOnly(value);
             if (orgs.length === 0) {
-                orgs = await findOrgsByCompanyName(value, token);
+                orgs = await findOrgsByCompanyName(value);
             }
             candidateLabel = "Account Name";
         }
@@ -714,7 +711,7 @@ export async function fetchLeadConversionDuplicateInfo(
     if (!companyAddedFromMapping) {
         const fallbackCompany = pickLeadCompany(lead);
         if (fallbackCompany) {
-            const orgs = await findOrgsByCompanyName(fallbackCompany, token);
+            const orgs = await findOrgsByCompanyName(fallbackCompany);
             if (orgs.length) {
                 reasons.push("company");
                 orgMappingLabel = mergeOrgMappingLabel(orgMappingLabel, "Organization");
@@ -732,16 +729,16 @@ export async function fetchLeadConversionDuplicateInfo(
     const phone = pickLeadField(lead, "phone", "mobile_no");
 
     if (phone) {
-        const contacts = await fetchContactsByPhone(phone, token);
+        const contacts = await fetchContactsByPhone(phone);
         let anyPhoneOrg = false;
         for (const c of contacts) {
             const cname = String(c?.name ?? "").trim();
             if (!cname) continue;
             const display = String(c?.full_name ?? cname).trim();
-            const orgNames = await fetchOrgNamesLinkedToContact(cname, token);
+            const orgNames = await fetchOrgNamesLinkedToContact(cname);
             for (const on of orgNames) {
                 anyPhoneOrg = true;
-                const doc = (await safeFetchOrgByName(on, token)) ?? { name: on };
+                const doc = (await safeFetchOrgByName(on)) ?? { name: on };
                 const prev = byName.get(on);
                 if (!prev) {
                     byName.set(on, orgDocToRow(doc, "phone", display));

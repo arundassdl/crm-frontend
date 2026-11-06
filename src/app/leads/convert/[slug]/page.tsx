@@ -1,11 +1,9 @@
 "use client";
-import { readAccessTokenDataParsed } from '@/utils/accessTokenDataStorage'
-
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import LeadConvertForm from "@/components/Leads/convert/LeadConvertForm";
-import { getDocument } from "@/services/api/common-erpnext-api/create-edit-api";
 import { getLayoutList } from "@/services/api/general_apis/layout-api";
+import { useCrmSession } from "@/components/CrmSessionContext";
 
 export default function LeadConvertPage() {
     const params = useParams();
@@ -13,30 +11,30 @@ export default function LeadConvertPage() {
     const raw = params?.slug != null ? String(params.slug) : "";
     const leadName = raw ? decodeURIComponent(raw) : "";
 
-    const [userToken] = useState<any>(() => {
-        try {
-            return readAccessTokenDataParsed() || {};
-        } catch {
-            return {};
-        }
-    });
-    const token = userToken?.access_token ?? "";
-    const roleProfile = userToken?.role_profile ?? "";
+    const session = useCrmSession();
 
     const [lead, setLead] = useState<Record<string, any> | null>(null);
     const [sourceLayout, setSourceLayout] = useState<string | null>(null);
     const [pageError, setPageError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!leadName || !token) {
-            if (!token) setPageError("Please sign in to convert a lead.");
+        if (!leadName || !session) {
+            if (!session) setPageError("Please sign in to convert a lead.");
             return;
         }
         let cancelled = false;
         (async () => {
             setPageError(null);
             try {
-                const doc = await getDocument("CRM Lead", leadName, token);
+                const response = await fetch("/api/detail-data", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ doctype: "CRM Lead", docname: leadName }),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload?.message || "Failed to load lead.");
+                const doc = payload?.record ?? payload;
                 if (cancelled) return;
                 if (!doc) {
                     setPageError("Lead not found.");
@@ -48,7 +46,7 @@ export default function LeadConvertPage() {
 
                 let layoutId = doc.layout_id != null && doc.layout_id !== "" ? String(doc.layout_id).trim() : "";
                 if (!layoutId || layoutId === "0") {
-                    const layouts = await getLayoutList("Leads", token, roleProfile);
+                    const layouts = await getLayoutList("Leads", "", "");
                     layoutId = Array.isArray(layouts) && layouts[0]?.value ? String(layouts[0].value) : "";
                 }
 
@@ -70,7 +68,7 @@ export default function LeadConvertPage() {
         return () => {
             cancelled = true;
         };
-    }, [leadName, token, roleProfile]);
+    }, [leadName, session]);
 
     const backToLead = () => {
         router.push(`/leads/detail/${encodeURIComponent(leadName)}`);
