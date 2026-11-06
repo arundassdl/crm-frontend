@@ -69,8 +69,8 @@ export function getRelatedListMeta(mainDoctype?: string, label?: string): Relate
 export function parentDoctypeForModule(parent_module: string): string {
   switch (parent_module) {
     case "Accounts": return "CRM Organization";
-    case "Deals": return "CRM Deals";
-    case "Leads": return "CRM Leads";
+    case "Deals": return "CRM Deal";
+    case "Leads": return "CRM Lead";
     case "Contacts": return "Contact";
     default: return "";
   }

@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { readAccessTokenDataParsed } from "@/utils/accessTokenDataStorage";
+import axios from "axios";
+import { useCrmSession } from "@/components/CrmSessionContext";
 import { getFormFields } from "@/services/api/general_apis/layout-api";
-import { fetchRawDataGridListing } from "@/services/api/common-erpnext-api/listing-api-get";
 import { getRelatedListKind } from "./relatedListMeta";
+import { buildRelatedFilters } from "@/lib/related-list-request";
 
 /**
  * A single rendered column of a related-list section, derived from the Settings
@@ -44,16 +45,9 @@ export function useRelatedListData(
   link_name: string,
   refreshTrigger?: number
 ): UseRelatedListDataResult {
-  const [userToken] = useState<any>(() => {
-    try {
-      return readAccessTokenDataParsed() || {};
-    } catch {
-      return {};
-    }
-  });
+  const session = useCrmSession();
 
   const [colFields, setColFields] = useState<any[]>([]);
-  const [joinQuery, setJoinQuery] = useState("");
   const [fieldMeta, setFieldMeta] = useState<Record<string, { label: string; type: string; in_list_view: boolean }>>({});
   const [fieldOrder, setFieldOrder] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
@@ -70,15 +64,15 @@ export function useRelatedListData(
     let cancelled = false;
     const fetchFields = async () => {
       setReady(false);
-      if (!userToken?.access_token || !mainDoctype) {
+      if (!session || !mainDoctype) {
         setReady(true);
         return;
       }
       try {
         const response: any = await getFormFields(
           config.child_module || mainDoctype,
-          userToken.access_token,
-          userToken.role_profile,
+          "",
+          "",
           ""
         );
         const fieldList: any[] = Array.isArray(response?.fields)
@@ -98,34 +92,12 @@ export function useRelatedListData(
             return { doctype: mainDoctype, field: fn, hidden: f.in_list_view ? "False" : "True" };
           });
 
-        // Address fields → LEFT JOINs + flattened sub-columns (mirrors the DataGrid variants).
-        const addressSubColFields: any[] = [];
-        const joinParts: string[] = [];
-        fieldList.forEach((f: any) => {
-          if (isAddressType(f.type || f.fieldtype) && Array.isArray(f.sub_fields)) {
-            const mainFieldName = f.fieldname || f.name;
-            const subDoctype = f.sub_fields[0]?.doctype || "Address";
-            const alias = mainFieldName.replace(/_address$/i, "_addr") || mainFieldName + "_alias";
-            joinParts.push(
-              `LEFT JOIN \`tab${subDoctype}\` AS \`tab${alias}\` ON \`tab${mainDoctype}\`.\`${mainFieldName}\` = \`tab${alias}\`.\`name\``
-            );
-            const mainLabel = f.label || mainFieldName;
-            f.sub_fields.forEach((sub: any) => {
-              const subFieldName = sub.fieldname || sub.name;
-              const subFieldAlias = `${mainFieldName}_${subFieldName}`;
-              const subKey = `${alias}.${subFieldName}`;
-              const headerName = `${mainLabel} - ${sub.label || subFieldName}`;
-              meta[subKey] = { label: headerName, type: "string", in_list_view: !!f.in_list_view };
-              order.push(subKey);
-              addressSubColFields.push({ doctype: alias, field: subFieldName, hidden: f.in_list_view ? "False" : "True", subFieldAlias });
-            });
-          }
-        });
-
-        // Dedupe, always fetch `name` for row identity + detail links.
+        // Dedupe, always fetch `name` for row identity + detail links. Address
+        // joins are intentionally excluded: the browser may not supply SQL or
+        // join expressions to the BFF.
         const initial = [{ doctype: mainDoctype, field: "name", hidden: "True" }];
         const seen = new Set(initial.map((f) => `${f.doctype}:${f.field}`));
-        const combined = [...parsedColFields, ...addressSubColFields].filter((f) => {
+        const combined = parsedColFields.filter((f) => {
           const k = `${f.doctype}:${f.field}`;
           if (seen.has(k)) return false;
           seen.add(k);
@@ -134,7 +106,6 @@ export function useRelatedListData(
 
         if (cancelled) return;
         setColFields([...initial, ...combined]);
-        setJoinQuery(joinParts.length ? joinParts.join(" ") : "");
         setFieldMeta(meta);
         setFieldOrder(order);
       } catch (err) {
@@ -147,7 +118,7 @@ export function useRelatedListData(
     return () => {
       cancelled = true;
     };
-  }, [userToken?.access_token, userToken?.role_profile, mainDoctype, config?.child_module]);
+  }, [session, mainDoctype, config?.child_module]);
 
   // ── Derive the visible/ordered columns purely from the Settings config ──
   const columns = useMemo<RelatedListColumn[]>(() => {
@@ -185,44 +156,27 @@ export function useRelatedListData(
 
   // ── Fetch rows filtered to the parent record (kind-aware WHERE, mirrors DataGrid variants) ──
   const fetchData = useCallback(async () => {
-    if (!config || !userToken?.access_token || !link_name || !ready || colFields.length === 0) return;
+    if (!config || !session || !link_name || !ready || colFields.length === 0) return;
     setLoading(true);
     try {
-      let where = "";
-      if (kind === "task") {
-        if (parent_module === "Contacts") {
-          where = ` AND \`tab${mainDoctype}\`.\`contact_name\` = '${link_name}'`;
-        } else {
-          const refDoctype =
-            parent_module === "Accounts" ? "CRM Organization" :
-            parent_module === "Leads" ? "CRM Leads" :
-            parent_module === "Deals" ? "CRM Deals" : "";
-          where = refDoctype
-            ? ` AND \`tab${mainDoctype}\`.\`reference_docname\` = '${link_name}' AND \`tab${mainDoctype}\`.\`reference_doctype\` = '${refDoctype}'`
-            : ` AND \`tab${mainDoctype}\`.\`${config.link_field_name}\` = '${link_name}'`;
-        }
-      } else {
-        where = ` AND \`tab${mainDoctype}\`.\`${config.link_field_name}\` = '${link_name}'`;
-      }
-
-      const result = await fetchRawDataGridListing(
-        { page: 0, pageSize: 100, filters: { items: [], quickFilterValues: [] }, sort: [] },
-        userToken.access_token,
-        colFields as any,
+      const filters = buildRelatedFilters({
         mainDoctype,
-        [],
-        "",
-        "",
-        [],
-        joinQuery,
-        where,
-        "",
-        "",
-        `${mainDoctype}.modified desc`,
-        "True"
-      );
-      setRows(result.data || []);
-      setTotalCount(result.totalCount || 0);
+        kind,
+        parentModule: parent_module,
+        linkName: link_name,
+        linkFieldName: config.link_field_name,
+      });
+      if (filters.length === 0) throw new Error("Related-list link field is unavailable");
+      const response = await axios.post("/api/datalist", {
+        module: mainDoctype,
+        fields: colFields,
+        filters,
+        limit_start: 0,
+        limit_page_length: 100,
+        order_by: "modified desc",
+      });
+      setRows(response.data?.records || []);
+      setTotalCount(Number(response.data?.total_count) || 0);
     } catch (err) {
       console.error("useRelatedListData: failed to load rows", err);
       setRows([]);
@@ -230,7 +184,7 @@ export function useRelatedListData(
     } finally {
       setLoading(false);
     }
-  }, [config, userToken?.access_token, link_name, ready, colFields, joinQuery, kind, mainDoctype, parent_module]);
+  }, [config, session, link_name, ready, colFields, kind, mainDoctype, parent_module]);
 
   useEffect(() => {
     fetchData();

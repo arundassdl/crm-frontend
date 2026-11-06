@@ -27,6 +27,7 @@ import { POST as dashboardSave } from "../src/app/api/dashboard/save-layout/rout
 import { GET as proxyGet } from "../src/app/api/proxy/[...path]/route";
 import { GET as logoutGet } from "../src/app/api/auth/logout/route";
 import { GET as privateFileGet } from "../src/app/api/files/download/route";
+import { buildRelatedFilters } from "../src/lib/related-list-request";
 const secret = "r77-test-only-key-not-used-in-any-environment-0001";
 const org = "TEAM-00076",
   backend = "https://crm.team-00076.evoq.app";
@@ -34,6 +35,40 @@ const keys = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const publicKey = keys.publicKey
   .export({ type: "spki", format: "pem" })
   .toString();
+test("related lists use structured filters and canonical CRM reference doctypes", () => {
+  assert.deepEqual(
+    buildRelatedFilters({
+      mainDoctype: "CRM Task",
+      kind: "task",
+      parentModule: "Deals",
+      linkName: "DEAL-1",
+    }),
+    [
+      ["CRM Task", "reference_docname", "=", "DEAL-1"],
+      ["CRM Task", "reference_doctype", "=", "CRM Deal"],
+    ],
+  );
+  assert.deepEqual(
+    buildRelatedFilters({
+      mainDoctype: "Contact",
+      kind: "contact",
+      parentModule: "Accounts",
+      linkName: "ORG-1' OR 1=1 --",
+      linkFieldName: "organization",
+    }),
+    [["Contact", "organization", "=", "ORG-1' OR 1=1 --"]],
+  );
+  assert.deepEqual(
+    buildRelatedFilters({
+      mainDoctype: "Contact",
+      kind: "contact",
+      parentModule: "Accounts",
+      linkName: "ORG-1",
+      linkFieldName: "organization` OR 1=1",
+    }),
+    [],
+  );
+});
 function session() {
   const now = Date.now();
   return {
