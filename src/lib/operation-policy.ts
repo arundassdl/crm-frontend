@@ -56,6 +56,9 @@ const METADATA_WRITE = new Set([
   "sdl_metadata.api.stage_probability.add_component_stage_probability",
   "sdl_metadata.api.stage_probability.update_component_stage_probability",
 ]);
+const AUTHORIZED_REPORTS = new Set([
+  "report_addon.api.authorized_datasets.run_dataset",
+]);
 export const CRM_DOCTYPES = new Set([
   "CRM Lead",
   "CRM Deal",
@@ -118,6 +121,7 @@ export function allowedMethod(
       throw new SecurityError(405, "METHOD_NOT_ALLOWED");
     return;
   }
+  if (AUTHORIZED_REPORTS.has(method)) return;
   if (method.startsWith("sdl_metadata.") || method.startsWith("report_addon."))
     throw new SecurityError(501, "FEATURE_BACKEND_NOT_VERIFIED");
   if (!READ.has(method) && !WRITE.has(method))

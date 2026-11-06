@@ -256,6 +256,15 @@ test("only individually certified metadata methods pass the BFF policy", () => {
   ])
     assert.throws(() => allowedMethod(method, "POST"));
 });
+test("only the controlled report dataset enters through the BFF", () => {
+  allowedMethod("report_addon.api.authorized_datasets.run_dataset", "GET");
+  for (const method of [
+    "report_addon.api.insights_query.get_insights_query_result",
+    "report_addon.api.report.save_report",
+    "report_addon.api.report.get_query_collections",
+  ])
+    assert.throws(() => allowedMethod(method, "POST"));
+});
 test("route wrapper refuses unauthenticated API before business code; errors are non-cacheable", async () => {
   let called = false;
   const guarded = protectedHandler(async (_req: NextRequest, _context: any) => {
