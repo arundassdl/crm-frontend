@@ -1,6 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, sign, createHmac } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { NextRequest, NextResponse } from "next/server";
 import {
   serializeSession,
@@ -68,6 +69,18 @@ test("related lists use structured filters and canonical CRM reference doctypes"
     }),
     [],
   );
+});
+test("Task Kanban workflows use the signed session and never browser credentials", () => {
+  for (const path of [
+    "../src/components/Tasks/Listing.tsx",
+    "../src/components/Tasks/CreateEdit.tsx",
+    "../src/components/Tasks/TaskKanbanView.tsx",
+    "../src/components/Common/TasksKanbanBorad.tsx",
+    "../src/components/Common/DataGrid/RawDynamicDataGrid.tsx",
+  ]) {
+    const source = readFileSync(new URL(path, import.meta.url), "utf8");
+    assert.doesNotMatch(source, /readAccessToken|access_token|Authorization\s*:/);
+  }
 });
 function session() {
   const now = Date.now();

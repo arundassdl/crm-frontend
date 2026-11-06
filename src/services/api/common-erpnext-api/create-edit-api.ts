@@ -561,7 +561,7 @@ export const fetchDetailData = async (doctype: any,docname: any,token: any,linke
   }
 };
 
-export async function createCustomDocument(doctype: string, data: any, token: string) {
+export async function createCustomDocument(doctype: string, data: any, _token: string) {
   try {
     let payload: Record<string, any> = {};
 
@@ -578,7 +578,7 @@ export async function createCustomDocument(doctype: string, data: any, token: st
 
     const res = await fetch('/api/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ doctype, data: payload }),
     });
 
@@ -800,7 +800,7 @@ export async function updateFieldCustomDocument(
   doctype: string,
   name: string,
   updateData: object,
-  token: string
+  _token: string
 ) {
   try {
     const data = applySalutationKeyForApi({
@@ -811,7 +811,6 @@ export async function updateFieldCustomDocument(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: token,
       },
       body: JSON.stringify({ doctype, name, data }),
     });
@@ -842,14 +841,13 @@ export async function updateFieldCustomDocument(
 export const deleteCustomDocument = async (
   doctype: string,
   docname: string,
-  token: string
+  _token: string
 ) => {
   try {
     const res = await fetch('/api/delete-doc', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: token,
       },
       body: JSON.stringify({ doctype, name: docname }),
     });

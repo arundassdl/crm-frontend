@@ -1,5 +1,5 @@
-import { readAccessTokenDataParsed } from '@/utils/accessTokenDataStorage'
 import React, { useEffect, useState } from "react";
+import { useCrmSession } from "@/components/CrmSessionContext";
 import { Box } from "@mui/material";
 import DrawerComponent from "@/components/Common/Form/Drawer/DrawerComponent";
 import CustomForm from "@/components/Common/Form/Drawer/CustomForm";
@@ -39,19 +39,15 @@ export default function AddEditTaskDrawer({
   const isLeadReferenceContext = hasReferenceContext && (referenceTypeLower === "crm lead" || referenceTypeLower === "lead");
 
   const [isFieldsFetched, setIsFieldsFetched] = useState(false);
-  const [userToken, setUserToken] = useState<any>(() => {
-    const initialValue = readAccessTokenDataParsed();
-    return initialValue || "";
-  });
+  const session = useCrmSession();
   const [formFields, setFormFields] = useState<FieldConfigNew[]>([]);
   const [selectedLayoutId, setSelectedLayoutId] = useState<string>("");
   const [layoutCount, setLayoutCount] = useState<number>(0);
 
   useEffect(() => {
     const fetchLayouts = async () => {
-      if (!userToken?.access_token) return;
-      const roleProfile = userToken?.role_profile || "";
-      const layouts = await getLayoutList(moduleName, userToken.access_token, roleProfile);
+      if (!session) return;
+      const layouts = await getLayoutList(moduleName, "", "");
       const count = Array.isArray(layouts) ? layouts.length : 0;
       setLayoutCount(count);
 
@@ -63,21 +59,19 @@ export default function AddEditTaskDrawer({
     };
 
     fetchLayouts();
-  }, [userToken?.access_token, userToken?.role_profile]);
+  }, [session]);
 
   useEffect(() => {
     const fetchFormFields = async () => {
-      if (!userToken?.access_token || !selectedLayoutId) {
+      if (!session || !selectedLayoutId) {
         if (!selectedLayoutId) setIsFieldsFetched(false);
         return;
       }
 
       setIsFieldsFetched(false);
-      const roleProfile = userToken?.role_profile || "";
-
       const [res, layoutData]: any[] = await Promise.all([
-        getFormFields(moduleName, userToken?.access_token, roleProfile, selectedLayoutId),
-        getLayout(moduleName, selectedLayoutId, userToken?.access_token),
+        getFormFields(moduleName, "", "", selectedLayoutId),
+        getLayout(moduleName, selectedLayoutId, ""),
       ]);
 
       let fieldsData: any[] = [];
@@ -128,7 +122,7 @@ export default function AddEditTaskDrawer({
     };
 
     fetchFormFields();
-  }, [userToken, selectedLayoutId, operation]);
+  }, [session, selectedLayoutId, operation]);
 
   const handleSubmit = async (values: any, action: any) => {
     // Identify dynamic field names
@@ -248,8 +242,8 @@ export default function AddEditTaskDrawer({
     // A single CRM Task is created/updated through the dedicated single-document API,
     // not the multi-document flow (which never confirmed real persistence).
     const apiRes: any = isEdit
-      ? await updateFieldCustomDocument(module, initialValues.name, taskPayload, userToken?.access_token)
-      : await createCustomDocument(module, taskPayload, userToken?.access_token);
+      ? await updateFieldCustomDocument(module, initialValues.name, taskPayload, "")
+      : await createCustomDocument(module, taskPayload, "");
 
     if (apiRes?.success) {
       showToast(apiRes?.message, "success");
@@ -267,7 +261,7 @@ export default function AddEditTaskDrawer({
     action.setSubmitting(false);
   };
 
-  const currentUser = userToken?.username || userToken?.email || "";
+  const currentUser = session?.userId || "";
 
   // Prefill the Contact/Lead + reference fields with the current record when opened
   // from a detail page, so the task is visibly linked before saving.

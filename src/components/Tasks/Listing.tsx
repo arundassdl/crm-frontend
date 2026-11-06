@@ -1,5 +1,5 @@
-import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage'
 import { useEffect, useState } from "react";
+import { useCrmSession } from "@/components/CrmSessionContext";
 import { useRouter } from "next/navigation";
 import { fetchRawDataGridListing } from "@/services/api/common-erpnext-api/listing-api-get";
 import { showToast } from "../ToastNotificationNew";
@@ -26,12 +26,7 @@ const TasksListing: React.FC<DealProps> = ({ link_name }) => {
   const module = "CRM Task";
   const module_name = "Tasks";
   const router = useRouter();
-  const [userToken, setUserToken] = useState<any>(() => {
-    const initialValue = JSON.parse(
-      readAccessTokenDataRaw()
-    );
-    return initialValue || "";
-  });
+  const session = useCrmSession();
   const [operation, setOperation] = useState("");
   const [open, setOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>([]);
@@ -58,7 +53,7 @@ const TasksListing: React.FC<DealProps> = ({ link_name }) => {
     CloseDialog();
   };
   const handleDelete = async (id: any) => {
-    let deleteRecord = await deleteClient(module, id, userToken?.access_token);
+    let deleteRecord = await deleteClient(module, id, "");
 
     if (deleteRecord?.success == true) {
       showToast("Deleted successfully", "success");
@@ -92,8 +87,8 @@ const TasksListing: React.FC<DealProps> = ({ link_name }) => {
       "",
       joinQuery,
       "",
-      userToken?.role_profile,
-      userToken?.username
+      "",
+      ""
     );
   };
 
@@ -153,7 +148,7 @@ const TasksListing: React.FC<DealProps> = ({ link_name }) => {
 
   useEffect(() => {
     const fetchAllCounts = async () => {
-      if (!userToken?.access_token || !isFieldsLoaded || colFields.length <= 1) return;
+      if (!session || !isFieldsLoaded || colFields.length <= 1) return;
 
       const statuses = ["All", ...statusOptions.map((o) => o.value)];
       const countsObj: Record<string, number> = {};
@@ -183,7 +178,7 @@ const TasksListing: React.FC<DealProps> = ({ link_name }) => {
             const res = await fetchDataWrapper(
               fetchRawDataGridListing,
               params,
-              userToken?.access_token
+              ""
             );
             countsObj[statusVal] = res?.totalCount || 0;
           })
@@ -197,16 +192,16 @@ const TasksListing: React.FC<DealProps> = ({ link_name }) => {
 
     fetchAllCounts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userToken?.access_token, colFields, isFieldsLoaded, refreshKey]);
+  }, [session, colFields, isFieldsLoaded, refreshKey]);
 
   useEffect(() => {
     const fetchFields = async () => {
-      if (userToken?.access_token) {
+      if (session) {
         try {
           const response: any = await getFormFields(
             module_name,
-            userToken.access_token,
-            userToken.role_profile,
+            "",
+            "",
             ""
           );
 
@@ -368,7 +363,7 @@ const TasksListing: React.FC<DealProps> = ({ link_name }) => {
 
     fetchFields();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userToken, module]);
+  }, [session, module]);
 
   return (
     <div>

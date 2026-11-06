@@ -1,7 +1,7 @@
 "use client";
 
-import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage';
 import React, { useEffect, useState, useMemo } from "react";
+import { useCrmSession } from "@/components/CrmSessionContext";
 import {
   GridColDef,
   GridActionsCellItem,
@@ -259,10 +259,7 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
   const [isEditPermission, setIsEditPermission] = useState(0);
   const [isDeletePermission, setIsDeletePermission] = useState(0);
 
-  const [userToken, setUserToken] = useState<any>(() => {
-    const initialValue = JSON.parse(readAccessTokenDataRaw());
-    return initialValue || "";
-  });
+  const session = useCrmSession();
 
   const [userPermission, setUserPermission] = useState<any>(() => {
     const initialValue = JSON.parse(localStorage.getItem("userpermission") || "[]");
@@ -357,17 +354,17 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
     if (fetchDataFunction.length === 2) {
       return await fetchDataFunction(
         dataParams,
-        userToken?.access_token,
+        "",
         safeSearchParams.toString()
       );
     }
     if (fetchDataFunction.length === 3) {
-      return await fetchDataFunction(dataParams, userToken?.access_token, [], module);
+      return await fetchDataFunction(dataParams, "", [], module);
     }
     if (fetchDataFunction.length === 4) {
       return await fetchDataFunction(
         dataParams,
-        userToken?.access_token,
+        "",
         [],
         module,
         [],
@@ -421,7 +418,6 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `${userToken?.access_token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -475,7 +471,7 @@ const RawDynamicDataGrid: React.FC<DynamicDataGridProps> = ({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterModel, refreshKey, module, userToken?.access_token, !!summary]);
+  }, [filterModel, refreshKey, module, session?.organization, !!summary]);
 
   const handleSortModelChange = (newSortModel) => {
     const params = new URLSearchParams(safeSearchParams);

@@ -1,5 +1,5 @@
-import { readAccessTokenDataRaw } from '@/utils/accessTokenDataStorage'
 import React, { useEffect, useState } from "react";
+import { useCrmSession } from "@/components/CrmSessionContext";
 import {
     Box,
     Paper,
@@ -81,12 +81,7 @@ const TasksKanbanBorad: React.FC<TasksKanbanBoradProps> = ({
     // const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
     const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
     const [newDealName, setNewDealName] = useState<{ [key: string]: string }>({});
-    const [userToken, setUserToken] = useState<any>(() => {
-        const initialValue = JSON.parse(
-            readAccessTokenDataRaw()
-        );
-        return initialValue || "";
-    });
+    const session = useCrmSession();
 
     useEffect(() => {
         setLocalTasks(tasks);
@@ -128,7 +123,7 @@ const TasksKanbanBorad: React.FC<TasksKanbanBoradProps> = ({
 
         setLocalTasks((prevTasks) =>
             prevTasks.map((task) =>
-                parseInt(task.name) === parseInt(draggableId)
+                String(task.name) === String(draggableId)
                     ? {
                         ...task,
                         status: foundStage.value,
@@ -142,15 +137,15 @@ const TasksKanbanBorad: React.FC<TasksKanbanBoradProps> = ({
         // const resp = await updateDealStageAPI(draggableId, newStageIndex);
         const payload = {
             doctype,
-            name: parseInt(draggableId),
+            name: draggableId,
             fieldname,
             value: foundStage.value,
         };
+        if (!session) throw new Error("CRM session ended");
         const res = await fetch("/api/set-value", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Authorization: `${userToken?.access_token}`,
             },
             body: JSON.stringify(payload),
         });
