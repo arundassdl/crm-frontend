@@ -26,6 +26,7 @@ import { POST as dataList } from "../src/app/api/datalist/route";
 import { POST as dashboardSave } from "../src/app/api/dashboard/save-layout/route";
 import { GET as proxyGet } from "../src/app/api/proxy/[...path]/route";
 import { GET as logoutGet } from "../src/app/api/auth/logout/route";
+import { GET as privateFileGet } from "../src/app/api/files/download/route";
 const secret = "r77-test-only-key-not-used-in-any-environment-0001";
 const org = "TEAM-00076",
   backend = "https://crm.team-00076.evoq.app";
@@ -321,6 +322,14 @@ test("actual CRM endpoints enforce auth/CSRF/org before any upstream calls", asy
         )
       ).status,
       409,
+    );
+    assert.equal(
+      (
+        await privateFileGet(
+          new NextRequest("https://crm.evoq.app/api/files/download?name=FILE-1"),
+        )
+      ).status,
+      401,
     );
     assert.equal(calls, 0);
   } finally {

@@ -69,6 +69,12 @@ async function rawPOST(req: NextRequest) {
   }
 
   try {
+    // Prove record visibility before sending any bytes. Frappe's upload_file
+    // performs the write check when attaching the private File document.
+    await frappeCall(req, "frappe.client.get", {
+      doctype: attachedToDoctype,
+      name: attachedToName,
+    });
     const res = await tenantFetch(req, "/api/method/upload_file", {
       method: "POST",
       body: uploadForm,

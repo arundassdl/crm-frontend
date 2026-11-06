@@ -2,6 +2,7 @@ import { protectedHandler } from "@/lib/security";
 import { NextRequest, NextResponse } from "next/server";
 import { bffErrorResponse, frappeCall } from "@/lib/tenant-fetch";
 import { isValidDoctype } from "@/lib/frappe-list";
+import { allowedDoctype } from "@/lib/operation-policy";
 
 /** Files attached to a record (R55). Response: { data: [...] } (Frappe resource shape). */
 async function rawPOST(req: NextRequest) {
@@ -26,6 +27,8 @@ async function rawPOST(req: NextRequest) {
     );
   }
   try {
+    allowedDoctype(doctype);
+    await frappeCall(req, "frappe.client.get", { doctype, name: String(name) });
     const res = await frappeCall(req, "frappe.client.get_list", {
       doctype: "File",
       fields: [
@@ -40,7 +43,7 @@ async function rawPOST(req: NextRequest) {
         ["attached_to_doctype", "=", doctype],
         ["attached_to_name", "=", String(name)],
       ],
-      limit_page_length: 0,
+      limit_page_length: 100,
     });
     return NextResponse.json({
       data: Array.isArray(res?.message) ? res.message : [],

@@ -1,6 +1,7 @@
 import { protectedHandler } from "@/lib/security";
 import { NextRequest, NextResponse } from "next/server";
 import { bffErrorResponse, frappeCall } from "@/lib/tenant-fetch";
+import { allowedDoctype } from "@/lib/operation-policy";
 
 /** Delete an attached file (R55) via frappe.client.delete. */
 async function rawPOST(req: NextRequest) {
@@ -21,6 +22,22 @@ async function rawPOST(req: NextRequest) {
     );
   }
   try {
+    const loaded = await frappeCall(req, "frappe.client.get", {
+      doctype: "File",
+      name: file.name,
+    });
+    const fileDoc = loaded?.message;
+    if (
+      !fileDoc?.attached_to_doctype ||
+      !fileDoc?.attached_to_name ||
+      fileDoc.is_private !== 1
+    )
+      return NextResponse.json({ error: "FILE_NOT_PERMITTED" }, { status: 403 });
+    allowedDoctype(fileDoc.attached_to_doctype);
+    await frappeCall(req, "frappe.client.get", {
+      doctype: fileDoc.attached_to_doctype,
+      name: fileDoc.attached_to_name,
+    });
     await frappeCall(req, "frappe.client.delete", {
       doctype: "File",
       name: file.name,
